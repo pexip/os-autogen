@@ -1,3 +1,9 @@
+autogen (1:5.12-0.1ubuntu1pexip1) pexip; urgency=low
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 24 Dec 2013 13:15:23 +0000
+
 autogen (1:5.12-0.1ubuntu1) oneiric; urgency=low
 
   * Merge from debian unstable. (LP: #817044) Remaining changes:

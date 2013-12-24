@@ -1,0 +1,52 @@
+New in 5.12 - June 2011
+
+* man page templates have been regularized so it is now easier to
+  use doc-section stanzas in the option definition files.
+
+* The Guile interface glue layer has dropped Guile version 1.4 and
+  has coelesced around pre-1.7 vs. 1.7-and-later interfaces, yielding
+  only two forms for each interface.
+
+* text_mmap() was hardened.
+
+* The new licensing scheme is now used in the distributed templates.
+
+New in 5.11.9 May 2011
+
+* licenses have been moved to separate files.  They are no longer
+  hard coded in autogen.  Consequently, clients may add their own.
+* BASH-ism fix.
+
+New in 5.11.8 March 2011
+
+* *Really* cope with Guile version number 2.0.
+  Some interfaces were "accidentally" removed between
+  version 1.9 and 2.0.  Oops.
+
+* AutoOpts argument types of "time and date" have been added
+  to the current support for time duration.
+
+* Fixed messup with a data structure.....
+
+New in 5.11.6 February 2011
+
+* Cope with Guile version number 2.0
+
+* XML character encodings are parsed in config files, thus
+  <opt-name>...&lt;...</opt-name> yields "...<..."
+
+* exit codes are enumerated for auto-opts projects
+  They will appear in an enumeration in the header file and
+  in generated documentation.
+
+* program documentation templates have been improved.  See docs.
+
+* packaging information
+  The PKGDATADIR and --with-packager... information are now
+  compiled into the option structure.  This makes it possible for
+  config file searches to look in ${PKGDATADIR} by using "$@/"
+  as the lead part of a "homerc" name.  e.g.
+     homerc = "$@/config";
+  will look for a file named "config" in that directory.
+  "help" and "version" information will now include any
+  --with-packager stuff.

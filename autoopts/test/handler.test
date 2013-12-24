@@ -1,0 +1,307 @@
+#! /bin/sh
+#  -*- Mode: Shell-script -*-
+# ----------------------------------------------------------------------
+# handler.test ---   test option handling
+#                    make sure that when it is not specified
+#                    then option processing consumes all args.
+#
+# Time-stamp:        "2011-04-15 16:37:53 bkorb"
+# Author:            Bruce Korb <bkorb@gnu.org>
+##
+##  This file is part of AutoOpts, a companion to AutoGen.
+##  AutoOpts is free software.
+##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##
+##  AutoOpts is available under any one of two licenses.  The license
+##  in use must be one of these two and the choice is under the control
+##  of the user of the license.
+##
+##   The GNU Lesser General Public License, version 3 or later
+##      See the files "COPYING.lgplv3" and "COPYING.gplv3"
+##
+##   The Modified Berkeley Software Distribution License
+##      See the file "COPYING.mbsd"
+##
+##  These files have the following md5sums:
+##
+##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
+##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
+##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+#
+# ----------------------------------------------------------------------
+
+. ./defs
+
+# # # # # # # # # # DEFINITIONS FILE # # # # # # # # #
+
+echo "creating ${testname}.def in `pwd`"
+cat > ${testname}.def <<_EOF_
+AutoGen Definitions options;
+prog-name = ${testname};
+prog-title = "Testing ${testname}";
+
+flag = {
+    name = first;
+    descrip = "first description";
+    extract_code;
+};
+
+flag = {
+    name = second;
+    descrip = "second description";
+    arg-type = keyword;
+    keyword = alpha, beta, gamma, omega;
+};
+
+flag = {
+    name = third;
+    descrip = "third description";
+    flag_code = "    SomeCodeOrOther();";
+};
+
+flag = {
+    name = fourth;
+    descrip = "fourth description";
+    arg-type = keyword;
+    keyword = alpha, beta, gamma, omega;
+    arg-default = gamma;
+    arg-optional;
+};
+
+flag = {
+    name = fifth;
+    descrip = "fifth description";
+    flag_proc = first;
+};
+
+flag = {
+    name = sixth;
+    descrip = "sixth description";
+    arg-type = set-member;
+    keyword = alpha, beta, gamma, omega;
+    arg-default = gamma, beta;
+};
+_EOF_
+
+echo ${AG_L} ${testname}.def
+${AG_L} ${testname}.def || \
+  failure AutoGen could not process
+
+${SED} '/START =/a\
+SampleCode();\
+XXX-REMOVE-XXX' ${testname}.c > ${testname}.tmp
+chmod 644 ${testname}.c
+${SED} -e '/^XXX-REMOVE-XXX$/d;s/XXX-REMOVE-XXX//' \
+    ${testname}.tmp > ${testname}.c
+
+${AG_L} ${testname}.def || \
+  failure AutoGen could not process
+
+# We are testing to ensure the procedures are created correctly.
+# The template line numbers and time stamps and all that cruft
+# vary too much, so sed them away.
+#
+${SED} -e '1,/Create the static procedure(s) declared above/d' \
+    -e '/extracted from.*near line/d' -e '/^#line/d' \
+    ${testname}.c > ${testname}.test
+
+# # # # # # # # # # SAMPLE OUTPUT FILE # # # # # # # # #
+
+echo creating ${testname}.sample
+cat > ${testname}.sample <<\_EOF_
+ */
+static void
+doUsageOpt(tOptions * pOptions, tOptDesc * pOptDesc)
+{
+    (void)pOptions;
+    USAGE(HANDLER_EXIT_SUCCESS);
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   For the first option.
+ */
+static void
+doOptFirst(tOptions* pOptions, tOptDesc* pOptDesc)
+{
+/*  START =-= First Opt Code =-= DO NOT CHANGE THIS COMMENT */
+SampleCode();
+/*  END   =-= First Opt Code =-= DO NOT CHANGE THIS COMMENT */
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   For the second option.
+ */
+static void
+doOptSecond(tOptions* pOptions, tOptDesc* pOptDesc)
+{
+    static char const zDef[2] = { 0x7F, 0 };
+
+    static char const * const azNames[5] = { zDef,
+        "alpha",  "beta",   "gamma",  "omega"
+    };
+
+    if (pOptions <= OPTPROC_EMIT_LIMIT) {
+        (void) optionEnumerationVal(pOptions, pOptDesc, azNames, 5);
+        return; /* protect AutoOpts client code from internal callbacks */
+    }
+
+    pOptDesc->optArg.argEnum =
+        optionEnumerationVal(pOptions, pOptDesc, azNames, 5);
+
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   For the third option.
+ */
+static void
+doOptThird(tOptions* pOptions, tOptDesc* pOptDesc)
+{
+    /* extracted from handler.def, line 21 */
+    SomeCodeOrOther();
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   For the fourth option.
+ */
+static void
+doOptFourth(tOptions* pOptions, tOptDesc* pOptDesc)
+{
+
+    static char const * const azNames[4] = {
+        "alpha",  "beta",   "gamma",  "omega"
+    };
+
+    if (pOptions <= OPTPROC_EMIT_LIMIT) {
+        (void) optionEnumerationVal(pOptions, pOptDesc, azNames, 4);
+        return; /* protect AutoOpts client code from internal callbacks */
+    }
+
+    if (pOptDesc->optArg.argString == NULL)
+        pOptDesc->optArg.argEnum = FOURTH_GAMMA;
+    else
+        pOptDesc->optArg.argEnum =
+            optionEnumerationVal(pOptions, pOptDesc, azNames, 4);
+
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *   For the sixth option.
+ */
+static void
+doOptSixth(tOptions* pOptions, tOptDesc* pOptDesc)
+{
+
+    static char const * const azNames[4] = {
+        "alpha",  "beta",   "gamma",  "omega"
+    };
+    optionSetMembers(pOptions, pOptDesc, azNames, 4);
+}
+
+#if ENABLE_NLS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <autoopts/usage-txt.h>
+
+static char* AO_gettext(char const* pz);
+static void  coerce_it(void** s);
+
+static char*
+AO_gettext(char const* pz)
+{
+    char* pzRes;
+    if (pz == NULL)
+        return NULL;
+    pzRes = _(pz);
+    if (pzRes == pz)
+        return pzRes;
+    pzRes = strdup(pzRes);
+    if (pzRes == NULL) {
+        fputs(_("No memory for duping translated strings\n"), stderr);
+        exit(HANDLER_EXIT_FAILURE);
+    }
+    return pzRes;
+}
+
+static void coerce_it(void** s) { *s = AO_gettext(*s);
+}
+
+/*
+ *  This invokes the translation code (e.g. gettext(3)).
+ */
+static void
+translate_option_strings(void)
+{
+    tOptions * const pOpt = &handlerOptions;
+
+    /*
+     *  Guard against re-translation.  It won't work.  The strings will have
+     *  been changed by the first pass through this code.  One shot only.
+     */
+    if (option_usage_text.field_ct != 0) {
+        /*
+         *  Do the translations.  The first pointer follows the field count
+         *  field.  The field count field is the size of a pointer.
+         */
+        tOptDesc * pOD = pOpt->pOptDesc;
+        char **    ppz = (char**)(void*)&(option_usage_text);
+        int        ix  = option_usage_text.field_ct;
+
+        do {
+            ppz++;
+            *ppz = AO_gettext(*ppz);
+        } while (--ix > 0);
+
+        coerce_it((void*)&(pOpt->pzCopyright));
+        coerce_it((void*)&(pOpt->pzCopyNotice));
+        coerce_it((void*)&(pOpt->pzFullVersion));
+        coerce_it((void*)&(pOpt->pzUsageTitle));
+        coerce_it((void*)&(pOpt->pzExplain));
+        coerce_it((void*)&(pOpt->pzDetail));
+        coerce_it((void*)&(pOpt->pzPackager));
+        option_usage_text.field_ct = 0;
+
+        for (ix = pOpt->optCt; ix > 0; ix--, pOD++)
+            coerce_it((void*)&(pOD->pzText));
+    }
+
+    if ((pOpt->fOptSet & OPTPROC_NXLAT_OPT_CFG) == 0) {
+        tOptDesc * pOD = pOpt->pOptDesc;
+        int        ix;
+
+        for (ix = pOpt->optCt; ix > 0; ix--, pOD++) {
+            coerce_it((void*)&(pOD->pz_Name));
+            coerce_it((void*)&(pOD->pz_DisableName));
+            coerce_it((void*)&(pOD->pz_DisablePfx));
+        }
+        /* prevent re-translation */
+        handlerOptions.fOptSet |= OPTPROC_NXLAT_OPT_CFG | OPTPROC_NXLAT_OPT;
+    }
+}
+
+#endif /* ENABLE_NLS */
+
+#ifdef  __cplusplus
+}
+#endif
+/* handler.c ends here */
+_EOF_
+
+cmp -s ${testname}.test ${testname}.sample || { set +x ; \
+  failure "`diff -c ${testname}.test ${testname}.sample`" ; }
+
+cleanup
+
+## Local Variables:
+## mode: shell-script
+## indent-tabs-mode: nil
+## sh-indentation: 2
+## End:
+
+# end of handler.test

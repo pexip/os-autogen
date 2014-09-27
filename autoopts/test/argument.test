@@ -5,12 +5,11 @@
 #                    make sure that when it is not specified
 #                    then option processing consumes all args.
 #
-# Time-stamp:        "2011-03-27 13:57:06 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -22,11 +21,11 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 #
 # ----------------------------------------------------------------------
 
@@ -39,7 +38,6 @@ export testname test_main argument long_opts
 ${SHELLX} ${stdopts} option:'opt init' second=020 || \
     failure "Could not run stdopts.def"
 
-echo ${AG_L} ${testname}.def
 ${AG_L} ${testname}.def || \
   failure AutoGen could not process
 
@@ -49,14 +47,14 @@ compile "-?"
 
 basehlp=${testname}.hlp
 echo creating ${basehlp}
-cat > ${basehlp} <<'_EOF_'
+clean_help > ${basehlp} <<'_EOF_'
 test_argument - Test AutoOpts for argument
-USAGE:  argument [ -<flag> [<val>] ]...
+Usage:  argument [ -<flag> [<val>] ]...
   Flg Arg Option-Name    Description
    -o Str option         The option option descrip
    -s Num second         The second option descrip
-   -? no  help           Display extended usage information and exit
-   -! no  more-help      Extended usage information passed thru pager
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
 
 _EOF_
 
@@ -81,6 +79,8 @@ cat >&3 <<- _EOF_
 	    arg-range = "3->021";
 	    arg-range = "040->0x1FFF";
 	    scaled;
+	    flag-code[1] = '    /* no-op one  */;';
+	    flag-code[0] = '    /* no-op zero */;';
 	};
 	include = '#include <stdlib.h>';
 	_EOF_
@@ -88,33 +88,35 @@ exec 3>&-
 
 ${AG_L} ${testname}2.def || \
   failure AutoGen could not process
-( ${SED} '/TEST MAIN PROCEDURE:/,$d;/^#/s/_ARGUMENT_/_ARGUMENT2_/' \
+{
+  ${SED} '/#if.*TEST-MAIN-PROCEDURE:/,/#endif.*END-TEST-MAIN/d
+         /^#/s/_ARGUMENT_/_ARGUMENT2_/' \
     ${testname}2.c
   cat <<EOF
 int main( int argc, char** argv ) {
   optionProcess( &test_argumentOptions, argc, argv );
   return 0; }
 EOF
-) > XX
+} > XX
 mv ${testname}2.c ${testname}2.c.save
 mv -f XX ${testname}2.c
 
 Csrc=${testname}2
 compile "-?"
 
-cat > ${testname}2.hlp <<'_EOF_'
+clean_help > ${testname}2.hlp <<'_EOF_'
 test_argument - Test AutoOpts for argument
-USAGE:  argument2 [ -<flag> [<val>] ]...
+Usage:  argument2 [ -<flag> [<val>] ]...
   Flg Arg Option-Name    Description
    -o Str option         The option option descrip
    -s Num second         The second option descrip
 				- is scalable with a suffix: k/K/m/M/g/G/t/T
-				- It must lie in one of the ranges:
+				- it must lie in one of the ranges:
 				  -1 exactly, or
 				  3 to 17, or
 				  32 to 8191
-   -? no  help           Display extended usage information and exit
-   -! no  more-help      Extended usage information passed thru pager
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
 
 _EOF_
 
@@ -130,8 +132,11 @@ cmp -s ${testname}2.hlp ${testname}2.help || \
 ./${testname}2 -o string -s 8k > /dev/null || \
   failure ${testname} could not handle 8k
 
-./${testname}2 -o string -s 8K > /dev/null && \
+./${testname}2 -o string -s 8K > ${testname}2-bad.out 2>&1 && \
   failure ${testname} did handle 8K
+
+${GREP} 'error:.* value .* is out of range\.$' ${testname}2-bad.out || \
+  failure "missing 'is out of range' message"
 
 # # # # # # # # # # T E S T   3 # # # # # # # # # # #
 
@@ -148,7 +153,9 @@ exec 3>&-
 
 ${AG_L} ${testname}3.def || \
   failure AutoGen could not process
-( ${SED} '/TEST MAIN PROCEDURE:/,$d;/^#/s/_ARGUMENT_/_ARGUMENT3_/' \
+{
+  ${SED} '/^#if.*TEST MAIN PROCEDURE:/,/#endif.*defined TEST_/d
+          /^#/s/_ARGUMENT_/_ARGUMENT3_/' \
     ${testname}3.c
   cat <<EOF
 int main( int argc, char** argv ) {
@@ -158,22 +165,22 @@ int main( int argc, char** argv ) {
     putc(ch, stdout); }
   return fclose(OPT_VALUE_SECOND); }
 EOF
-) > XX
+} > XX
 mv ${testname}3.c ${testname}3.c.save
 mv -f XX ${testname}3.c
 
 Csrc=${testname}3
 compile "-?"
 
-cat > ${testname}3.hlp <<'_EOF_'
+clean_help > ${testname}3.hlp <<'_EOF_'
 test_argument - Test AutoOpts for argument
-USAGE:  argument3 [ -<flag> [<val>] ]...
+Usage:  argument3 [ -<flag> [<val>] ]...
   Flg Arg Option-Name    Description
    -o Str option         The option option descrip
    -s Fil second         The second option descrip
 				- file must pre-exist
-   -? no  help           Display extended usage information and exit
-   -! no  more-help      Extended usage information passed thru pager
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
 
 _EOF_
 
@@ -188,6 +195,35 @@ cmp -s ${testname}3.hlp ${testname}3.help || \
 
 cmp -s ${testname}3.hlp ${testname}3-a.hlp || \
   failure "`diff ${testname}3.hlp ${testname}3-a.hlp`"
+# # # # # # # # # # T E S T   4 # # # # # # # # # # #
+
+${SED} /arg-range/d ${testname}2.def > ${testname}4.def
+
+${AG_L} ${testname}4.def || \
+  failure AutoGen could not process
+${SED} -n '/^doOptSecond/,/^}/p' ${testname}4.c > ${testname}4.res
+Csrc=${testname}4
+compile '-?'
+
+cat > ${testname}4.base <<- _EOF_
+	doOptSecond(tOptions* pOptions, tOptDesc* pOptDesc)
+	{
+	    /*
+	     * Be sure the flag-code[0] handles special values for the options pointer
+	     * viz. (poptions <= OPTPROC_EMIT_LIMIT) *and also* the special flag bit
+	     * ((poptdesc->fOptState & OPTST_RESET) != 0) telling the option to
+	     * reset its state.
+	     */
+	    /* extracted from argument4.def, line 22 */
+	    /* no-op zero */;
+	    optionNumericVal(pOptions, pOptDesc);
+	    /* no-op one  */;
+	}
+	_EOF_
+
+cmp -s ${testname}4.base ${testname}4.res || \
+  failure "`diff ${testname}4.base ${testname}4.res`"
+
 # # # # # # # # # # T E S T   E N D # # # # # # # # # #
 
 cleanup

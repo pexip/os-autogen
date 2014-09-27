@@ -2,16 +2,18 @@
 /**
  * @file expPrint.c
  *
- *  Time-stamp:        "2011-01-20 16:21:45 bkorb"
- *
  *  The following code is necessary because the user can give us
  *  a printf format requiring a string pointer yet fail to provide
  *  a valid pointer, thus it will fault.  This code protects
  *  against the fault so an error message can be emitted instead of
  *  a core dump :-)
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -69,45 +71,39 @@ safePrintf(char** ppzBuf, char const * pzFmt, void** argV)
         sigaction(SIGSEGV, &sa, &saSave2);
     }
 
-    {
-        static char const zBadArgs[] = "Bad args to sprintf";
-        static char const zBadFmt[]  =
-            "%s ERROR:  %s processing printf format:\n\t%s\n";
+    /*
+     *  IF the sprintfv call below is going to address fault,
+     *  THEN ...
+     */
+    if (sigsetjmp(printJumpEnv, 0) != 0) {
+#ifndef HAVE_STRSIGNAL
+        extern char* strsignal(int signo);
+#endif
+        /*
+         *  IF the fprintf command in the then clause has not failed yet,
+         *  THEN perform that fprintf
+         */
+        if (sigsetjmp(printJumpEnv, 0) == 0)
+            fprintf(trace_fp, SAFE_PRINTF_BAD_FMT, ag_pname,
+                    strsignal(printJumpSignal), pzFmt);
 
         /*
-         *  IF the sprintfv call below is going to address fault,
-         *  THEN ...
+         *  The "sprintfv" command below faulted, so we exit
          */
-        if (sigsetjmp(printJumpEnv, 0) != 0) {
-#ifndef HAVE_STRSIGNAL
-            extern char* strsignal(int signo);
-#endif
-            /*
-             *  IF the fprintf command in the then clause has not failed yet,
-             *  THEN perform that fprintf
-             */
-            if (sigsetjmp(printJumpEnv, 0) == 0)
-                fprintf(pfTrace, zBadFmt, pzProg,
-                        strsignal(printJumpSignal), pzFmt);
-
-            /*
-             *  The "sprintfv" command below faulted, so we exit
-             */
-            AG_ABEND(zBadArgs);
-        }
+        AG_ABEND(SAFE_PRINTF_BAD_ARGS);
     }
 #endif /* ! defined(DEBUG_ENABLED) */
 
     {
-        int printSize = asprintfv(ppzBuf, pzFmt, (snv_constpointer*)argV);
-        if ((printSize & ~0xFFFFFU) != 0) /* 1MB max */
-            AG_ABEND(aprf("asprintfv returned 0x%08X\n", printSize));
+        int p_sz = asprintfv(ppzBuf, pzFmt, (snv_constpointer*)argV);
+        if (((unsigned)p_sz & ~0xFFFFFU) != 0) /* 1MB max */
+            AG_ABEND(aprf(ASPRINTFV_FAIL_FMT, p_sz));
 
 #if ! defined(DEBUG_ENABLED)
         sigaction(SIGBUS,  &saSave1, NULL);
         sigaction(SIGSEGV, &saSave2, NULL);
 #endif
-        return printSize;
+        return p_sz;
     }
 }
 
@@ -116,15 +112,16 @@ LOCAL SCM
 run_printf(char const * pzFmt, int len, SCM alist)
 {
     SCM     res;
-    void*   args[8];
-    void**  arglist;
-    void**  argp;
+    void *  args[8];
+    void ** arglist;
+    void ** argp;
 
     if (len < 8)
         arglist = argp = args;
-    else
-        arglist =
-        argp    = (void**)malloc((len+1) * sizeof(void*));
+    else {
+        size_t sz = (size_t)((unsigned)(len+1) * sizeof(void*));
+        arglist = argp = malloc(sz);
+    }
 
     while (len-- > 0) {
         SCM  car = SCM_CAR(alist);
@@ -132,19 +129,20 @@ run_printf(char const * pzFmt, int len, SCM alist)
         switch (ag_scm_type_e(car)) {
         default:
         case GH_TYPE_UNDEFINED:
-            *(argp++) = (char*)"???";
+            *(argp++) = (char*)RUN_PRINTF_HUH;
             break;
 
         case GH_TYPE_BOOLEAN:
-            *(argp++) = (void*)((car == SCM_BOOL_F) ? "#f" : "#t");
+            *(argp++) = (void*)((car == SCM_BOOL_F)
+                                ? SCM_FALSE_STR : SCM_TRUE_STR);
             break;
 
         case GH_TYPE_CHAR:
-            *(char*)(argp++) = AG_SCM_CHAR(car);
+            *(char*)(argp++) = (char)AG_SCM_CHAR(car);
             break;
 
         case GH_TYPE_PAIR:
-            *(argp++) = (char*)"..";
+            *(argp++) = (char*)(SCM_LIST_STR+1);
             break;
 
         case GH_TYPE_NUMBER:
@@ -157,12 +155,12 @@ run_printf(char const * pzFmt, int len, SCM alist)
             break;
 
         case GH_TYPE_PROCEDURE:
-            *(argp++) = (char*)"(*)()";
+            *(argp++) = (char*)SCM_PROC_CAST;
             break;
 
         case GH_TYPE_VECTOR:
         case GH_TYPE_LIST:
-            *(argp++) = (char*)"...";
+            *(argp++) = (char*)SCM_LIST_STR;
             break;
         }
     }
@@ -172,10 +170,10 @@ run_printf(char const * pzFmt, int len, SCM alist)
      *  Free up any allocations made by ``gh_scm2newstr''
      */
     {
-        char*   pzBuf;
-        size_t  bfSize = safePrintf(&pzBuf, pzFmt, arglist);
-        res = AG_SCM_STR2SCM(pzBuf, bfSize);
-        free(pzBuf);
+        char *  bf;
+        size_t  bf_sz = (size_t)safePrintf(&bf, pzFmt, arglist);
+        res = AG_SCM_STR2SCM(bf, bf_sz);
+        free(bf);
     }
 
     if (arglist != args)
@@ -198,8 +196,8 @@ run_printf(char const * pzFmt, int len, SCM alist)
 SCM
 ag_scm_sprintf(SCM fmt, SCM alist)
 {
-    int   list_len = scm_ilength(alist);
-    char* pzFmt    = ag_scm2zchars(fmt, zFormat);
+    int    list_len = (int)scm_ilength(alist);
+    char * pzFmt    = ag_scm2zchars(fmt, WORD_FORMAT);
 
     if (list_len <= 0)
         return fmt;
@@ -224,8 +222,8 @@ ag_scm_sprintf(SCM fmt, SCM alist)
 SCM
 ag_scm_printf(SCM fmt, SCM alist)
 {
-    int   list_len = scm_ilength(alist);
-    char* pzFmt    = ag_scm2zchars(fmt, zFormat);
+    int    list_len = (int)scm_ilength(alist);
+    char * pzFmt    = ag_scm2zchars(fmt, WORD_FORMAT);
 
     AG_SCM_DISPLAY(run_printf(pzFmt, list_len, alist));
     return SCM_UNDEFINED;
@@ -248,9 +246,9 @@ ag_scm_printf(SCM fmt, SCM alist)
 SCM
 ag_scm_fprintf(SCM port, SCM fmt, SCM alist)
 {
-    int   list_len = scm_ilength(alist);
-    char* pzFmt    = ag_scm2zchars(fmt, zFormat);
-    SCM   res      = run_printf(pzFmt, list_len, alist);
+    int    list_len = (int)scm_ilength(alist);
+    char * pzFmt    = ag_scm2zchars(fmt, WORD_FORMAT);
+    SCM    res      = run_printf(pzFmt, list_len, alist);
 
     return  scm_display(res, port);
 }
@@ -271,41 +269,30 @@ ag_scm_fprintf(SCM port, SCM fmt, SCM alist)
 SCM
 ag_scm_hide_email(SCM display, SCM eaddr)
 {
-    static char const zFmt[]   = "&#%d;";
-    static char const zStrt[]  =
-        "<script language=\"JavaScript\" type=\"text/javascript\">\n"
-        "<!--\n"
-        "var one = 'm&#97;';\n"
-        "var two = 'i&#108;t';\n"
-        "document.write('<a href=\"' + one + two );\n"
-        "document.write('&#111;:";
+    char *  disp    = ag_scm2zchars(display, "fmt");
+    char *  end_adr = ag_scm2zchars(eaddr,   "eaddr");
+    ssize_t st_len  = HIDE_EMAIL_START_STR_LEN;
 
-    static char const zEnd[]   = "');\n"
-        "document.write('\" >%s</a>');\n"
-        "//-->\n</script>";
+    ssize_t str_size = (ssize_t)(
+        (strlen(end_adr) * HTML_DEC_DIGIT_LEN)
+        + (size_t)st_len + HIDE_EMAIL_END_FMT_LEN + strlen(disp));
 
-    char*  pzDisp = ag_scm2zchars(display, zFormat);
-    char*  pzEadr = ag_scm2zchars(eaddr,   zFormat);
-    size_t str_size = (strlen(pzEadr) * sizeof(zFmt))
-            + sizeof(zStrt) + sizeof(zEnd) + strlen(pzDisp);
+    char *  res  = scribble_get(str_size);
+    char *  scan = res;
 
-    char*  pzRes  = ag_scribble(str_size);
-    char*  pzScan = pzRes;
-
-    strcpy(pzScan, zStrt);
-    pzScan += sizeof(zStrt) - 1;
+    memcpy(scan, HIDE_EMAIL_START_STR, (size_t)st_len);
+    scan += st_len;
 
     for (;;) {
-        if (*pzEadr == NUL)
+        if (*end_adr == NUL)
             break;
-        pzScan += sprintf(pzScan, zFmt, *(pzEadr++));
+        scan += sprintf(scan, HTML_DEC_DIGIT, *(end_adr++));
     }
 
-    pzScan += sprintf(pzScan, zEnd, pzDisp);
+    scan += sprintf(scan, HIDE_EMAIL_END_FMT, disp);
 
-    return AG_SCM_STR2SCM(pzRes, (size_t)(pzScan - pzRes));
+    return AG_SCM_STR2SCM(res, (size_t)(scan - res));
 }
-
 
 /*=gfunc   format_arg_count
  *
@@ -337,7 +324,7 @@ ag_scm_hide_email(SCM display, SCM eaddr)
 SCM
 ag_scm_format_arg_count(SCM fmt)
 {
-    char* pzFmt = ag_scm2zchars(fmt, zFormat);
+    char* pzFmt = ag_scm2zchars(fmt, WORD_FORMAT);
     int   ct    = 0;
     for (;;) {
         switch (*(pzFmt++)) {
@@ -351,7 +338,9 @@ ag_scm_format_arg_count(SCM fmt)
 
     return AG_SCM_INT2SCM(ct);
 }
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

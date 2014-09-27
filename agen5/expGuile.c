@@ -2,13 +2,15 @@
 /**
  * @file expGuile.c
  *
- *  Time-stamp:        "2011-06-03 12:13:11 bkorb"
- *
  *  This module implements the expression functions that should
  *  be part of Guile.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,6 +26,58 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ *  As of Guile 1.7.x, access to the NUL terminated string referenced by
+ *  an SCM is no longer guaranteed.  Therefore, we must extract the string
+ *  into one of our "scribble" buffers.
+ *
+ * @param  s     the string to convert
+ * @param  type  a string describing the string
+ * @return a NUL terminated string, or it aborts.
+ */
+LOCAL char *
+ag_scm2zchars(SCM s, const char * type)
+{
+#if GUILE_VERSION < 107000  /* pre-Guile 1.7.x */
+
+    if (! AG_SCM_STRING_P(s))
+        AG_ABEND(aprf(NOT_STR_FMT, type));
+
+    if (SCM_SUBSTRP(s))
+        s = scm_makfromstr(SCM_CHARS(s), SCM_LENGTH(s), 0);
+    return SCM_CHARS(s);
+
+#else
+    size_t len;
+    char * buf;
+
+    if (! AG_SCM_STRING_P(s))
+        AG_ABEND(aprf(NOT_STR_FMT, type));
+
+    len = scm_c_string_length(s);
+    if (len == 0) {
+        static char z = NUL;
+        return &z;
+    }
+
+    buf = scribble_get((ssize_t)len);
+
+    {
+        size_t buflen = scm_to_locale_stringbuf(s, buf, len);
+        if (buflen != len)
+            AG_ABEND(aprf(SCM2ZCHARS_BAD_VAL, buflen, len));
+    }
+
+    buf[len] = NUL;
+    return buf;
+#endif
+}
+
+/**
+ * convert complex Guile type to an enum value.
+ * @param typ the SCM for which we wish to know the type
+ * @returns teGuileType -- our own enumeration, since Guile does not have one.
+ */
 LOCAL teGuileType
 ag_scm_type_e(SCM typ)
 {
@@ -48,8 +102,7 @@ ag_scm_c_eval_string_from_file_line(
     SCM port = scm_open_input_string(AG_SCM_STR02SCM(pzExpr));
 
     if (OPT_VALUE_TRACE >= TRACE_EVERYTHING)
-        fprintf(pfTrace, "eval from file %s line %d:\n%s\n", pzFile, line,
-                pzExpr);
+        fprintf(trace_fp, TRACE_EVAL_STRING, pzFile, line, pzExpr);
 
     {
         static SCM    file      = SCM_UNDEFINED;
@@ -66,6 +119,7 @@ ag_scm_c_eval_string_from_file_line(
             SCM ln = AG_SCM_INT2SCM(line);
             scm_set_port_filename_x(port, file);
             scm_set_port_line_x(port, ln);
+            scm_set_port_column_x(port, SCM_INUM0);
         }
     }
 
@@ -103,7 +157,7 @@ ag_scm_max(SCM list)
 #   ifndef MAX
 #     define MAX(m,v) ((v > m) ? v : m)
 #   endif
-    len = scm_ilength(list);
+    len = (int)scm_ilength(list);
     if (len <= 0)
         return SCM_UNDEFINED;
 
@@ -162,7 +216,7 @@ ag_scm_min(SCM list)
 #   ifndef MIN
 #     define MIN(m,v) ((v < m) ? v : m)
 #   endif
-    len = scm_ilength(list);
+    len = (int)scm_ilength(list);
     if (len <= 0)
         return SCM_UNDEFINED;
 
@@ -215,7 +269,7 @@ ag_scm_min(SCM list)
 SCM
 ag_scm_sum(SCM list)
 {
-    int  len = scm_ilength(list);
+    int  len = (int)scm_ilength(list);
     long sum = 0;
 
     if (len <= 0)
@@ -259,30 +313,24 @@ ag_scm_sum(SCM list)
 SCM
 ag_scm_string_to_c_name_x(SCM str)
 {
-    static char const zFun[] = "ag_scm_string_to_c_name_x";
-    static char const zMap[] = "cannot map unprintable chars to C name chars";
-    int   len;
-    char* pz;
+    int    len;
+    char * pz;
 
     if (! AG_SCM_STRING_P(str))
-        scm_wrong_type_arg(zFun, 1, str);
+        scm_wrong_type_arg(STR_TO_C_NAME, 1, str);
 
-    len = AG_SCM_STRLEN(str);
-    pz  = (char*)(void*)AG_SCM_CHARS(str);
-    while (--len >= 0) {
+    for (pz = C(char *, AG_SCM_CHARS(str)), len = (int)AG_SCM_STRLEN(str);
+         --len >= 0;
+         pz++) {
+
         char ch = *pz;
-        if (! IS_ALPHANUMERIC_CHAR(ch)) {
+        if (IS_ALPHANUMERIC_CHAR(ch) || IS_WHITESPACE_CHAR(ch))
+            continue;
 
-            if (IS_WHITESPACE_CHAR(ch))
-                ;
+        if (! IS_GRAPHIC_CHAR(ch))
+            scm_misc_error(STR_TO_C_NAME, STR_TO_C_MAP_FAIL, str);
 
-            else if (IS_GRAPHIC_CHAR(ch))
-                *pz = '_';
-
-            else
-                scm_misc_error(zFun, zMap, str);
-        }
-        pz++;
+        *pz = '_';
     }
 
     return str;
@@ -301,18 +349,18 @@ ag_scm_string_to_c_name_x(SCM str)
 SCM
 ag_scm_string_upcase_x(SCM str)
 {
-    int   len;
-    char* pz;
+    int    len;
+    char * pz;
 
     if (! AG_SCM_STRING_P(str))
         return SCM_UNDEFINED;
 
-    len = AG_SCM_STRLEN(str);
-    pz  = (char*)(void*)AG_SCM_CHARS(str);
+    len = (int)AG_SCM_STRLEN(str);
+    pz  = C(char *, AG_SCM_CHARS(str));
     while (--len >= 0) {
          char ch = *pz;
         if (IS_LOWER_CASE_CHAR(ch))
-            *pz = toupper(ch);
+            *pz = (char)toupper((int)ch);
         pz++;
     }
 
@@ -356,28 +404,28 @@ SCM
 ag_scm_string_capitalize_x(SCM str)
 {
     int     len;
-    char*   pz;
-    ag_bool word_start = AG_TRUE;
+    char *  pz;
+    bool    w_start = true;
 
     if (! AG_SCM_STRING_P(str))
         return SCM_UNDEFINED;
 
-    len = AG_SCM_STRLEN(str);
-    pz  = (char*)(void*)AG_SCM_CHARS(str);
+    len = (int)AG_SCM_STRLEN(str);
+    pz  = C(char *, AG_SCM_CHARS(str));
 
     while (--len >= 0) {
         char ch = *pz;
 
         if (! IS_ALPHANUMERIC_CHAR(ch)) {
-            word_start = AG_TRUE;
+            w_start = true;
 
-        } else if (word_start) {
-            word_start = AG_FALSE;
+        } else if (w_start) {
+            w_start = false;
             if (IS_LOWER_CASE_CHAR(ch))
-                *pz = toupper(ch);
+                *pz = (char)toupper((int)ch);
 
         } else if (IS_UPPER_CASE_CHAR(ch))
-            *pz = tolower(ch);
+            *pz = (char)tolower(ch);
 
         pz++;
     }
@@ -422,18 +470,18 @@ ag_scm_string_capitalize(SCM str)
 SCM
 ag_scm_string_downcase_x(SCM str)
 {
-    int   len;
-    char* pz;
+    int    len;
+    char * pz;
 
     if (! AG_SCM_STRING_P(str))
         return SCM_UNDEFINED;
 
-    len = AG_SCM_STRLEN(str);
-    pz  = (char*)(void*)AG_SCM_CHARS(str);
+    len = (int)AG_SCM_STRLEN(str);
+    pz  = C(char *, AG_SCM_CHARS(str));
     while (--len >= 0) {
         char ch = *pz;
         if (IS_UPPER_CASE_CHAR(ch))
-            *pz = tolower(ch);
+            *pz = (char)tolower(ch);
         pz++;
     }
 
@@ -478,46 +526,48 @@ ag_scm_string_downcase(SCM str)
 SCM
 ag_scm_string_to_camelcase(SCM str)
 {
-    int   len;
-    char* pzd, * res;
-    char* pzs;
-    ag_bool cap_done = AG_FALSE;
+    int    len;
+    char * pzd, * res;
+    char * pzs;
+    bool   cap_done = false;
 
     if (! AG_SCM_STRING_P(str))
         return SCM_UNDEFINED;
 
-    len = AG_SCM_STRLEN(str);
-    res = pzd = ag_scribble(len + 1);
-    pzs = (char*)(void*)AG_SCM_CHARS(str);
+    len = (int)AG_SCM_STRLEN(str);
+    res = pzd = scribble_get(len + 1);
+    pzs = C(char *, AG_SCM_CHARS(str));
 
     while (--len >= 0) {
-        unsigned int ch = *(pzs++);
+        unsigned int ch = (unsigned int)*(pzs++);
         if (IS_LOWER_CASE_CHAR(ch)) {
             if (! cap_done) {
-                ch = toupper(ch);
-                cap_done = AG_TRUE;
+                ch = (unsigned)toupper((int)ch);
+                cap_done = true;
             }
 
         } else if (IS_UPPER_CASE_CHAR(ch)) {
             if (cap_done)
-                ch = tolower(ch);
+                ch = (unsigned)tolower((int)ch);
             else
-                cap_done = AG_TRUE;
+                cap_done = true;
 
         } else if (IS_DEC_DIGIT_CHAR(ch)) {
-            cap_done = AG_FALSE;
+            cap_done = false;
 
         } else {
-            cap_done = AG_FALSE;
+            cap_done = false;
             continue;
         }
 
-        *(pzd++) = ch;
+        *(pzd++) = (char)ch;
     }
 
-    return AG_SCM_STR2SCM(res, (pzd - res));
+    return AG_SCM_STR2SCM(res, (size_t)(pzd - res));
 }
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

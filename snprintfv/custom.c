@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -135,7 +134,7 @@ printf_generic (STREAM *stream, struct printf_info *const pinfo, union printf_ar
   out = stream_new (fil, SNV_UNLIMITED, NULL, snv_filputc);
   user_func (out, pinfo, args);
   stream_delete (out);
-  len = fillen (fil);
+  len = (int)fillen (fil);
   p = fildelete (fil);
 
   /* Left pad to the width if the supplied argument is less than

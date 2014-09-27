@@ -2,12 +2,14 @@
 /**
  * @file tpLoad.c
  *
- * Time-stamp:        "2011-06-03 12:14:53 bkorb"
- *
  *  This module will load a template and return a template structure.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  * This file is part of AutoGen.
- * Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,89 +25,132 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static tTlibMark magicMark = TEMPLATE_MAGIC_MARKER;
-
 /* = = = START-STATIC-FORWARD = = = */
-static ag_bool
+static bool
 read_okay(char const * pzFName);
+
+static char const *
+expand_dir(char const ** dir_pp, char * name_buf);
 
 static size_t
 cnt_macros(char const * pz);
 
 static void
-load_macs(tTemplate * pT, char const * pzF, char const * pzN,
-          char const * pzData);
+load_macs(templ_t * tpl, char const * fname, char const * pzData);
 
-static tTemplate *
-digest_pseudo_macro(tmap_info_t * minfo, char * real_file);
-
-static void
-wrap_up_depends(void);
+static templ_t *
+digest_tpl(tmap_info_t * minfo, char * fname);
 /* = = = END-STATIC-FORWARD = = = */
 
 /**
  * Return the template structure matching the name passed in.
  */
-LOCAL tTemplate *
-findTemplate(char const * pzTemplName)
+LOCAL templ_t *
+find_tpl(char const * pzTemplName)
 {
-    tTemplate * pT = pNamedTplList;
+    templ_t * pT = named_tpls;
     while (pT != NULL) {
-        if (streqvcmp(pzTemplName, pT->pzTplName) == 0)
+        if (streqvcmp(pzTemplName, pT->td_name) == 0)
             break;
-        pT = (tTemplate*)(void*)(pT->pNext);
+        pT = C(templ_t *, (pT->td_scan));
     }
     return pT;
 }
 
 /**
- * the name is a regular file with read access
+ * the name is a regular file with read access.
+ * @param[in] pzFName  file name to check
+ * @returns \a true when the named file exists and is a regular file
+ * @returns \a false otherwise.
  */
-static ag_bool
+static bool
 read_okay(char const * pzFName)
 {
     struct stat stbf;
     if (stat(pzFName, &stbf) != 0)
-        return AG_FALSE;
+        return false;
     if (! S_ISREG(stbf.st_mode))
-        return AG_FALSE;
-    return (access(pzFName, R_OK) == 0) ? AG_TRUE : AG_FALSE;
+        return false;
+    return (access(pzFName, R_OK) == 0) ? true : false;
 }
 
+/**
+ * Expand a directory name that starts with '$'.
+ *
+ * @param[in,out] dir_pp pointer to pointer to directory name
+ * @returns the resulting pointer
+ */
+static char const *
+expand_dir(char const ** dir_pp, char * name_buf)
+{
+    char * res = (void *)*dir_pp;
+
+    if (res[1] == NUL)
+        AG_ABEND(aprf(LOAD_FILE_SHORT_NAME, res));
+
+    if (! optionMakePath(name_buf, (int)AG_PATH_MAX, res,
+                         autogenOptions.pzProgPath)) {
+        /*
+         * The name expanded to "empty", so substitute curdir.
+         */
+        strcpy(res, FIND_FILE_CURDIR);
+
+    } else {
+        free(res);
+        AGDUPSTR(res, name_buf, "find dir name");
+       *dir_pp = res; /* save computed name for later */
+    }
+
+    return res;
+}
 
 /**
- *  Starting with the current directory, search the directory
- *  list trying to find the base template file name.
+ *  Search for a file.
+ *
+ *  Starting with the current directory, search the directory list trying to
+ *  find the base template file name.  If there is a referring template (a
+ *  template with an "INCLUDE" macro), then try that, too, before giving up.
+ *
+ *  @param[in]  in_name    the file name we are looking for.
+ *  @param[out] res_name   where we stash the file name we found.
+ *  @param[in]  sfx_list   a list of suffixes to try, if \a in_name has none.
+ *  @param[in]  referring_tpl  file name of the template with a INCLUDE macro.
+ *
+ *  @returns  \a SUCCESS when \a res_name is valid
+ *  @returns  \a FAILURE when the file is not found.
  */
 LOCAL tSuccess
-findFile(char const * pzFName,
-         char * pzFullName,
-         char const * const * papSuffixList,
-         char const * pzReferrer)
+find_file(char const * in_name,
+          char *       res_name,
+          char const * const * sfx_list,
+          char const * referring_tpl)
 {
-    char * pzRoot;
-    char * pzSfx;
-    void * deallocAddr = NULL;
+    bool   no_suffix;
+    void * free_me = NULL;
+    tSuccess   res = SUCCESS;
 
-    tSuccess res = SUCCESS;
+    size_t nm_len = strlen(in_name);
+    if (nm_len >= AG_PATH_MAX - MAX_SUFFIX_LEN)
+        return FAILURE;
 
     /*
      *  Expand leading environment variables.
      *  We will not mess with embedded ones.
      */
-    if (*pzFName == '$') {
-        if (! optionMakePath(pzFullName, (int)AG_PATH_MAX, pzFName,
+    if (*in_name == '$') {
+        if (! optionMakePath(res_name, (int)AG_PATH_MAX, in_name,
                              autogenOptions.pzProgPath))
             return FAILURE;
 
-        AGDUPSTR(pzFName, pzFullName, "find file name");
-        deallocAddr = (void*)pzFName;
+        AGDUPSTR(in_name, res_name, "find file name");
+        free_me = (void*)in_name;
 
         /*
-         *  pzFName now points to the name the file system can use.
-         *  It must _not_ point to pzFullName because we will likely
+         *  in_name now points to the name the file system can use.
+         *  It must _not_ point to res_name because we will likely
          *  rewrite that value using this pointer!
          */
+        nm_len = strlen(in_name);
     }
 
     /*
@@ -113,213 +158,202 @@ findFile(char const * pzFName,
      *  a suffix for the file name, then append ".tpl".
      *  Check for immediate access once again.
      */
-    pzRoot = strrchr(pzFName, '/');
-    pzSfx  = (pzRoot != NULL)
-             ? strchr(++pzRoot, '.')
-             : strchr(pzFName,  '.');
+    {
+        char * bf = strrchr(in_name, '/');
+        bf = (bf != NULL) ? strchr(bf, '.') : strchr(in_name,  '.');
+        no_suffix = (bf == NULL);
+    }
 
     /*
      *  The referrer is useful only if it includes a directory name.
+     *  If not NULL, referring_tpl becomes an allocated directory name.
      */
-    if (pzReferrer != NULL) {
-        char * pz = strrchr(pzReferrer, '/');
+    if (referring_tpl != NULL) {
+        char * pz = strrchr(referring_tpl, '/');
         if (pz == NULL)
-            pzReferrer = NULL;
+            referring_tpl = NULL;
         else {
-            AGDUPSTR(pzReferrer, pzReferrer, "pzReferrer");
-            pz = strrchr(pzReferrer, '/');
+            AGDUPSTR(referring_tpl, referring_tpl, "referring_tpl");
+            pz = strrchr(referring_tpl, '/');
             *pz = NUL;
         }
     }
 
-    /*
-     *  IF the file name does not contain a directory separator,
-     *  then we will use the TEMPL_DIR search list to keep hunting.
-     */
     {
-        static char const curdir[]  = ".";
-        static char const zDirFmt[] = "%s/%s";
-
         /*
-         *  Search each directory in our directory search list
-         *  for the file.  We always force one copy of this option.
+         *  Search each directory in our directory search list for the file.
+         *  We always force two copies of this option, so we know it exists.
+         *  Later entries are more recently added and are searched first.
+         *  We start the "dirlist" pointing to the real last entry.
          */
         int  ct = STACKCT_OPT(TEMPL_DIRS);
-        char const ** ppzDir = STACKLST_OPT(TEMPL_DIRS) + ct - 1;
-        char const *  pzDir  = curdir;
+        char const ** dirlist = STACKLST_OPT(TEMPL_DIRS) + ct - 1;
+        char const *  c_dir   = FIND_FILE_CURDIR;
 
-        if (*pzFName == '/')
-            ct = 0;
+        /*
+         *  IF the file name starts with a directory separator,
+         *  then we only search once, looking for the exact file name.
+         */
+        if (*in_name == '/')
+            ct = -1;
 
-        do  {
+        for (;;) {
             char * pzEnd;
-            void * coerce;
 
             /*
-             *  IF one of our template paths starts with '$', then expand it.
+             *  c_dir is always FIND_FILE_CURDIR the first time through
+             *  and is never that value after that.
              */
-            if (*pzDir == '$') {
-                if (! optionMakePath(pzFullName, (int)AG_PATH_MAX, pzDir,
-                                     autogenOptions.pzProgPath)) {
-                    coerce = (void *)pzDir;
-                    strcpy(coerce, curdir);
+            if (c_dir == FIND_FILE_CURDIR) {
 
-                } else {
-                    AGDUPSTR(pzDir, pzFullName, "find directory name");
-                    coerce = (void *)ppzDir[1];
-                    free(coerce);
-                    ppzDir[1] = pzDir; /* save the computed name for later */
-                }
-            }
-
-            if ((*pzFName == '/') || (pzDir == curdir)) {
-                size_t nln = strlen(pzFName);
-                if (nln >= AG_PATH_MAX - MAX_SUFFIX_LEN)
-                    break;
-
-                memcpy(pzFullName, pzFName, nln);
-                pzEnd  = pzFullName + nln;
+                memcpy(res_name, in_name, nm_len);
+                pzEnd  = res_name + nm_len;
                 *pzEnd = NUL;
-            }
-            else {
-                pzEnd = pzFullName
-                    + snprintf(pzFullName, AG_PATH_MAX - MAX_SUFFIX_LEN,
-                               zDirFmt, pzDir, pzFName);
+
+            } else {
+                unsigned int fmt_len;
+
+                /*
+                 *  IF one of our template paths starts with '$', then expand it
+                 *  and replace it now and forever (the rest of this run, anyway).
+                 */
+                if (*c_dir == '$')
+                    c_dir = expand_dir(dirlist+1, res_name);
+
+                fmt_len = (unsigned)snprintf(
+                    res_name, AG_PATH_MAX - MAX_SUFFIX_LEN,
+                    FIND_FILE_DIR_FMT, c_dir, in_name);
+                if (fmt_len >= AG_PATH_MAX - MAX_SUFFIX_LEN)
+                    break; // fail-return
+                pzEnd = res_name + fmt_len;
             }
 
-            if (read_okay(pzFullName))
-                goto findFileReturn;
+            if (read_okay(res_name))
+                goto find_file_done;
 
             /*
              *  IF the file does not already have a suffix,
              *  THEN try the ones that are okay for this file.
              */
-            if ((pzSfx == NULL) && (papSuffixList != NULL)) {
-                char const * const * papSL = papSuffixList;
+            if (no_suffix && (sfx_list != NULL)) {
+                char const * const * sfxl = sfx_list;
                 *(pzEnd++) = '.';
 
                 do  {
-                    strcpy(pzEnd, *(papSL++)); /* must fit */
-                    if (read_okay(pzFullName))
-                        goto findFileReturn;
+                    strcpy(pzEnd, *(sfxl++)); /* must fit */
+                    if (read_okay(res_name))
+                        goto find_file_done;
 
-                } while (*papSL != NULL);
+                } while (*sfxl != NULL);
             }
-
-            if (*pzFName == '/')
-                break;
 
             /*
-             *  IF there is a referrer, use it before the rest of the
-             *  TEMPL_DIRS We detect first time through by *both* pzDir value
-             *  and ct value.  "ct" will have this same value next time
-             *  through and occasionally "pzDir" will be set to "curdir", but
-             *  never again when ct is STACKCT_OPT(TEMPL_DIRS)
+             *  IF we've exhausted the search list,
+             *  THEN see if we're done, else go through search dir list.
+             *
+             *  We try one more thing if there is a referrer.
+             *  If the searched-for file is a full path, "ct" will
+             *  start at -1 and we will leave the loop here and now.
              */
-            if (  (pzReferrer != NULL)
-               && (pzDir == curdir)
-               && (ct == STACKCT_OPT(TEMPL_DIRS))) {
-
-                pzDir = pzReferrer;
-                ct++;
+            if (--ct < 0) {
+                if ((referring_tpl == NULL) || (ct != -1))
+                    break;
+                c_dir = referring_tpl;
 
             } else {
-                pzDir = *(ppzDir--);
+                c_dir = *(dirlist--);
             }
-        } while (--ct >= 0);
+        }
     }
 
     res = FAILURE;
 
- findFileReturn:
-    AGFREE(deallocAddr);
-    AGFREE(pzReferrer);
+ find_file_done:
+    AGFREE(free_me);
+    AGFREE(referring_tpl);
     return res;
 }
 
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *  Figure out how many macros there are in the template
- *  so that we can allocate the right number of pointers.
+ *  Count the macros in a template.
+ *  We need to allocate the right number of pointers.
  */
 static size_t
 cnt_macros(char const * pz)
 {
     size_t  ct = 2;
     for (;;) {
-        pz = strstr(pz, zStartMac);
+        pz = strstr(pz, st_mac_mark);
         if (pz == NULL)
             break;
         ct += 2;
-        if (strncmp(pz - endMacLen, zEndMac, endMacLen) == 0)
+        if (strncmp(pz - end_mac_len, end_mac_mark, end_mac_len) == 0)
             ct--;
-        pz += startMacLen;
+        pz += st_mac_len;
     }
     return ct;
 }
 
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
  *  Load the macro array and file name.
+ *  @param[in,out]  tpl     the template to load
+ *  @param[in]      fname   the source file name of the template
+ *  @param[in]      pzN     someting
+ *  @param[in]      data    the template text
  */
 static void
-load_macs(tTemplate * pT, char const * pzF, char const * pzN,
-          char const * pzData)
+load_macs(templ_t * tpl, char const * fname, char const * pzData)
 {
-    tMacro* pMac   = pT->aMacros;
+    macro_t * pMac = tpl->td_macros;
 
     {
-        char*   pzText = (char*)(pMac + pT->macroCt);
-        size_t  len;
+        char *  txt = (char *)(pMac + tpl->td_mac_ct);
 
-        AGDUPSTR(pT->pzTplFile, pzF, "templ file");
+        AGDUPSTR(tpl->td_file, fname, "templ file");
 
-        len = strlen(pzN) + 1;
-        memcpy((void*)pzText, (void*)pzN, len);
-        pT->pzTplName   = pzText;
-        pzText         += len;
-        pT->pzTemplText = pzText;
-        pT->pNext       = pzText + 1;
+        memcpy(txt, PSEUDO_MAC_TPL_FILE, PSEUDO_MAC_TPL_FILE_LEN+1);
+        tpl->td_name = txt;
+        tpl->td_text = (txt += PSEUDO_MAC_TPL_FILE_LEN);
+        tpl->td_scan = txt + 1;
     }
 
-    pCurTemplate = pT;
+    current_tpl = tpl;
 
     {
-        tMacro* pMacEnd = parseTemplate(pMac, &pzData);
+        macro_t * e_mac = parse_tpl(pMac, &pzData);
         int     ct;
 
         /*
          *  Make sure all of the input string was scanned.
          */
         if (pzData != NULL)
-            AG_ABEND("Template parse ended unexpectedly");
+            AG_ABEND(LOAD_MACS_BAD_PARSE);
 
-        ct = pMacEnd - pMac;
+        ct = (int)(e_mac - pMac);
 
         /*
          *  IF there are empty macro slots,
          *  THEN pack the text
          */
-        if (ct < pT->macroCt) {
-            int     delta = sizeof(tMacro) * (pT->macroCt - ct);
-            void*   data  =
-                (pT->pzTplName == NULL) ? pT->pzTemplText : pT->pzTplName;
-            size_t  size  = pT->pNext - (char*)data;
-            memmove((void*)pMacEnd, data, size);
+        if (ct < tpl->td_mac_ct) {
+            int     delta =
+                (int)(sizeof(macro_t) * (size_t)(tpl->td_mac_ct - ct));
+            void *  data  =
+                (tpl->td_name == NULL) ? tpl->td_text : tpl->td_name;
+            size_t  size  = (size_t)(tpl->td_scan - (char *)data);
+            memmove((void*)e_mac, data, size);
 
-            pT->pzTemplText -= delta;
-            pT->pNext       -= delta;
-            pT->pzTplName   -= delta;
-            pT->macroCt      = ct;
+            tpl->td_text  -= delta;
+            tpl->td_scan  -= delta;
+            tpl->td_name  -= delta;
+            tpl->td_mac_ct = ct;
         }
     }
 
-    pT->descSize = pT->pNext - (char*)pT;
-    pT->pNext    = NULL;
+    tpl->td_size = (size_t)(tpl->td_scan - (char *)tpl);
+    tpl->td_scan = NULL;
 
     /*
      *  We cannot reallocate a smaller array because
@@ -331,49 +365,24 @@ load_macs(tTemplate * pT, char const * pzF, char const * pzN,
         static char const zSum[] =
             "loaded %d macros from %s\n"
             "\tBinary template size:  0x%zX\n\n";
-        fprintf(pfTrace, zSum, pT->macroCt, pzF, pT->descSize);
+        fprintf(trace_fp, zSum, tpl->td_mac_ct, fname, tpl->td_size);
     }
 #endif
 }
 
-LOCAL void
-append_source_name(char const * pz)
-{
-    static char const fmt[] = " \\\n\t%s\n";
-    size_t ln = strlen(pz) + sizeof(fmt) - 2 /* one for '%' and one for 's' */;
-    char * insert_pt;
-
-    if (source_used + ln >= source_size) {
-        pzSourceList =
-            AGREALOC(pzSourceList, source_size + ln + 2048, "srclist");
-        source_size += ln + 2048;
-    }
-
-    insert_pt = (char *)pzSourceList + source_used;
-    ln = sprintf(insert_pt, fmt, pz);
-
-    /*
-     *  See if we've done this file before.
-     */
-    {
-        char * p = strstr(pzSourceList, insert_pt);
-        if (p == insert_pt) {
-            source_used += ln - 1;
-            p += ln - 1;
-        } else
-            p = insert_pt;
-
-        *p = NUL;
-    }
-}
-
 /**
- * Process the stuff in the pseudo macro.
+ * Load a template from mapped memory.  Load up the pseudo macro,
+ * count the macros, allocate the data, and parse all the macros.
+ *
+ * @param[in] minfo  information about the mapped memory.
+ * @param[in] fname  the full path input file name.
+ *
+ * @returns the digested data
  */
-static tTemplate *
-digest_pseudo_macro(tmap_info_t * minfo, char * real_file)
+static templ_t *
+digest_tpl(tmap_info_t * minfo, char * fname)
 {
-    tTemplate * pRes;
+    templ_t * res;
 
     /*
      *  Count the number of macros in the template.  Compute
@@ -381,37 +390,38 @@ digest_pseudo_macro(tmap_info_t * minfo, char * real_file)
      *  and the size of the template data.  These may get reduced
      *  by comments.
      */
-    char const * pzData =
-        loadPseudoMacro((char const *)minfo->txt_data, real_file);
+    char const * dta =
+        load_pseudo_mac((char const *)minfo->txt_data, fname);
 
-    size_t macroCt  = cnt_macros(pzData);
-    size_t alocSize = (sizeof(*pRes) + (macroCt * sizeof(tMacro))
+    size_t mac_ct   = cnt_macros(dta);
+    size_t alloc_sz = (sizeof(*res) + (mac_ct * sizeof(macro_t))
                        + minfo->txt_size
-                       - (pzData - (char const *)minfo->txt_data)
-                       + strlen(real_file) + 0x10) & ~0x0F;
+                       - (size_t)(dta - (char const *)minfo->txt_data)
+                       + strlen(fname) + 0x10)
+                    & (size_t)(~0x0F);
 
-    pRes = (tTemplate*)AGALOC(alocSize, "main template");
-    memset((void*)pRes, 0, alocSize);
+    res = (templ_t*)AGALOC(alloc_sz, "main template");
+    memset((void*)res, 0, alloc_sz);
 
     /*
      *  Initialize the values:
      */
-    pRes->magic     = magicMark;
-    pRes->descSize  = alocSize;
-    pRes->macroCt   = macroCt;
+    res->td_magic  = magic_marker;
+    res->td_size   = alloc_sz;
+    res->td_mac_ct = (int)mac_ct;
 
-    strcpy(pRes->zStartMac, zStartMac); /* must fit */
-    strcpy(pRes->zEndMac, zEndMac);     /* must fit */
-    load_macs(pRes, real_file, "*template file*", pzData);
+    strcpy(res->td_start_mac, st_mac_mark); /* must fit */
+    strcpy(res->td_end_mac,   end_mac_mark);   /* must fit */
+    load_macs(res, fname, dta);
 
-    pRes->pzTplName   -= (long)pRes;
-    pRes->pzTemplText -= (long)pRes;
-    pRes = (tTemplate*)AGREALOC((void*)pRes, pRes->descSize,
+    res->td_name -= (long)res;
+    res->td_text -= (long)res;
+    res = (templ_t*)AGREALOC((void*)res, res->td_size,
                                 "resize template");
-    pRes->pzTplName   += (long)pRes;
-    pRes->pzTemplText += (long)pRes;
+    res->td_name += (long)res;
+    res->td_text += (long)res;
 
-    return pRes;
+    return res;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -419,20 +429,21 @@ digest_pseudo_macro(tmap_info_t * minfo, char * real_file)
  *  Starting with the current directory, search the directory
  *  list trying to find the base template file name.
  */
-LOCAL tTemplate *
-loadTemplate(char const * pzFileName, char const * referrer)
+LOCAL templ_t *
+tpl_load(char const * fname, char const * referrer)
 {
-    static tmap_info_t mapInfo;
-    static char        zRealFile[ AG_PATH_MAX ];
+    static tmap_info_t map_info;
+    static char        tpl_file[ AG_PATH_MAX ];
 
     /*
      *  Find the template file somewhere
      */
     {
-        static char const * const apzSfx[] = { "tpl", "agl", NULL };
-        if (! SUCCESSFUL(findFile(pzFileName, zRealFile, apzSfx, referrer))) {
+        static char const * const sfx_list[] = {
+            LOAD_TPL_SFX_TPL, LOAD_TPL_SFX_AGL, NULL };
+        if (! SUCCESSFUL(find_file(fname, tpl_file, sfx_list, referrer))) {
             errno = ENOENT;
-            AG_CANT("map data file", pzFileName);
+            AG_CANT(LOAD_TPL_CANNOT_MAP, fname);
         }
     }
 
@@ -442,163 +453,109 @@ loadTemplate(char const * pzFileName, char const * referrer)
      */
     {
         struct stat stbf;
-        if (stat(zRealFile, &stbf) != 0)
-            AG_CANT("stat file", pzFileName);
+        if (stat(tpl_file, &stbf) != 0)
+            AG_CANT(LOAD_TPL_CANNOT_STAT, fname);
 
         if (! S_ISREG(stbf.st_mode)) {
             errno = EINVAL;
-            AG_CANT("not regular file", pzFileName);
+            AG_CANT(LOAD_TPL_IRREGULAR, fname);
         }
 
-        if (outTime <= stbf.st_mtime)
-            outTime = stbf.st_mtime + 1;
+        if (outfile_time < stbf.st_mtime)
+            outfile_time = stbf.st_mtime;
     }
 
-    text_mmap(zRealFile, PROT_READ|PROT_WRITE, MAP_PRIVATE, &mapInfo);
-    if (TEXT_MMAP_FAILED_ADDR(mapInfo.txt_data))
-        AG_ABEND(aprf("Could not open template '%s'", zRealFile));
+    text_mmap(tpl_file, PROT_READ|PROT_WRITE, MAP_PRIVATE, &map_info);
+    if (TEXT_MMAP_FAILED_ADDR(map_info.txt_data))
+        AG_ABEND(aprf(LOAD_TPL_CANNOT_OPEN, tpl_file));
 
-    if (pfDepends != NULL)
-        append_source_name(zRealFile);
+    if (dep_fp != NULL)
+        add_source_file(tpl_file);
 
     /*
      *  Process the leading pseudo-macro.  The template proper
      *  starts immediately after it.
      */
     {
-        tMacro    * pSaveMac = pCurMacro;
-        tTemplate * pRes;
-        pCurMacro = NULL;
+        macro_t * sv_mac = cur_macro;
+        templ_t * res;
+        cur_macro = NULL;
 
-        pRes = digest_pseudo_macro(&mapInfo, zRealFile);
-        pCurMacro = pSaveMac;
-        text_munmap(&mapInfo);
+        res = digest_tpl(&map_info, tpl_file);
+        cur_macro = sv_mac;
+        text_munmap(&map_info);
 
-        return pRes;
+        return res;
     }
 }
 
 /**
- * Deallocate anything we allocated related to a template,
- * including the pointer passed in.
+ * Deallocate anything related to a template.
+ * This includes the pointer passed in and any macros that have an
+ * unload procedure associated with it.
+ *
+ *  @param[in] tpl  the template to unload
  */
 LOCAL void
-unloadTemplate(tTemplate* pT)
+tpl_unload(templ_t * tpl)
 {
-    tMacro* pMac = pT->aMacros;
-    int ct = pT->macroCt;
+    macro_t * mac = tpl->td_macros;
+    int ct = tpl->td_mac_ct;
 
     while (--ct >= 0) {
-        tpUnloadProc proc;
-        unsigned int ix = pMac->funcCode;
+        unload_proc_p_t proc;
+        unsigned int ix = mac->md_code;
 
         /*
          * "select" functions get remapped, depending on the alias used for
-         * the selection.  See the "teFuncType" enumeration in functions.h.
+         * the selection.  See the "mac_func_t" enumeration in functions.h.
          */
         if (ix >= FUNC_CT)
             ix = FTYP_SELECT;
 
-        proc = apUnloadProc[ ix ];
+        proc = unload_procs[ ix ];
         if (proc != NULL)
-            (*proc)(pMac);
+            (*proc)(mac);
 
-        pMac++;
+        mac++;
     }
 
-    AGFREE((void*)(pT->pzTplFile));
-    AGFREE(pT);
-}
-
-/**
- *  Finish off the dependency file
- */
-static void
-wrap_up_depends(void)
-{
-    static mode_t const fil_mode =
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-
-    static char const fmt[] =
-        "\n\n%1$s_SList =%2$s\n"
-        "\n%3$s : $(%1$s_SList)\n"
-        "\n$(%1$s_TList) : %3$s\n"
-        "\t@:\n";
-
-    fprintf(pfDepends, fmt, pz_targ_base, pzSourceList, pzDepTarget);
-    fclose(pfDepends);
-    pfDepends = NULL;
-
-    /*
-     * "startTime" is engineered to be 1 second earlier than the mod time
-     * of any of the output files.
-     */
-    {
-        struct utimbuf tbuf = {
-            .actime  = time(NULL),
-            .modtime = startTime
-        };
-
-        utime(pzDepFile, &tbuf);
-
-        /*
-         * If the target is not the dependency file, then ensure that the
-         * file exists and set its time to the same time.  Ignore all errors.
-         */
-        if (strcmp(pzDepFile, pzDepTarget) != 0) {
-            if (access(pzDepTarget, R_OK) != 0)
-                close( open(pzDepTarget, O_CREAT, fil_mode));
-
-            utime(pzDepTarget, &tbuf);
-        }
-    }
-
-    chmod(pzDepFile, fil_mode);
-
-    /*
-     * Trim off the temporary suffix and rename the dependency file into
-     * place.  We used a mkstemp name in case autogen failed.
-     */
-    {
-        char * pze = strrchr(pzDepFile, '-');
-        char * pzn;
-
-        *pze = NUL;
-        AGDUPSTR(pzn, pzDepFile, "dep file");
-        *pze = '-';
-        rename(pzDepFile, pzn);
-        AGFREE(pzn);
-    }
+    AGFREE((void*)(tpl->td_file));
+    AGFREE(tpl);
 }
 
 /**
  *  This gets called when all is well at the end.
+ *  The supplied template and all named templates are unloaded.
+ *
+ *  @param[in] tpl  the last template standing
  */
 LOCAL void
-cleanup(tTemplate* pTF)
+cleanup(templ_t * tpl)
 {
     if (HAVE_OPT(USED_DEFINES))
         print_used_defines();
 
-    if (pfDepends != NULL)
+    if (dep_fp != NULL)
         wrap_up_depends();
 
     optionFree(&autogenOptions);
 
     for (;;) {
-        tTemplate* pT = pNamedTplList;
-        if (pT == NULL)
+        tpl_unload(tpl);
+        tpl = named_tpls;
+        if (tpl == NULL)
             break;
-        pNamedTplList = (tTemplate*)(void*)(pT->pNext);
-        unloadTemplate(pT);
+        named_tpls = C(templ_t *, (tpl->td_scan));
     }
 
-    AGFREE(forInfo.fi_data);
-    unloadTemplate(pTF);
-    unloadDefs();
+    free_for_context(INT_MAX);
+    unload_defs();
 }
 
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

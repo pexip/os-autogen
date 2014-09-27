@@ -1,12 +1,17 @@
+
+/**
+ *  @file getdefs.h
+ *  @group columns
+ *  @{
+ */
 /*  -*- Mode: C -*-
  *
- *    getdefs Copyright (c) 1999-2011 by Bruce Korb - all rights reserved
+ *    getdefs Copyright (C) 1999-2014 by Bruce Korb - all rights reserved
  *
- *  Time-stamp:        "2011-03-06 12:23:11 bkorb"
  *  Author:            Bruce Korb <bkorb@gnu.org>
  *
  *  This file is part of AutoGen.
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -25,8 +30,6 @@
 #ifndef GETDEFS_HEADER
 #define GETDEFS_HEADER
 
-#include "config.h"
-#include "compat/compat.h"
 #include <sys/wait.h>
 #include <utime.h>
 #include <stdarg.h>
@@ -41,8 +44,8 @@
 #define COUNT(a)       (sizeof(a)/sizeof(a[0]))
 #define MARK_CHAR      ':'
 
-#define AG_NAME_CHAR(c) (zUserNameCh[(unsigned)(c)] & 2)
-#define USER_NAME_CH(c) (zUserNameCh[(unsigned)(c)] & 1)
+#define AG_NAME_CHAR(c) (zUserNameCh[(unsigned char)(c)] & 2)
+#define USER_NAME_CH(c) (zUserNameCh[(unsigned char)(c)] & 1)
 char zUserNameCh[ 256 ] = { '\0' };
 
 /*
@@ -56,7 +59,7 @@ size_t   indexAlloc  = 0;    /* allocation size */
 /*
  *  Name of program to process output (normally ``autogen'')
  */
-tCC*     pzAutogen   = "autogen";
+char const *    pzAutogen   = "autogen";
 
 /*
  *  const global strings
@@ -86,7 +89,6 @@ DEF_STRING( zDne,
  *  The patterns we accept for output may specify a particular group,
  *  certain members within certain groups or all members of all groups
  */
-char const *    pzDefPat   = NULL;
 regex_t         define_re;
 regex_t         attrib_re;
 
@@ -114,7 +116,8 @@ pid_t   agPid      = -1;
 #define LOCAL static
 #endif /* GETDEFS_HEADER */
 
-/* emacs
+/** @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

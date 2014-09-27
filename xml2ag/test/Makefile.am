@@ -3,10 +3,9 @@
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
 ## Author:          Bruce Korb <bkorb@gnu.org>
-## Time-stamp:      "2010-07-18 08:47:05 bkorb"
 ##
 ## This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -38,6 +37,4 @@ $(TESTS) : perm-stamp
 perm-stamp :
 	cd $(srcdir) ; chmod +x *.test
 
-# Makefile.am ends here
-
- XML2AG=
+# end of Makefile.am

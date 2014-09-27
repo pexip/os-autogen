@@ -1,14 +1,16 @@
 
 /**
- * \file xml2ag.c
- *
- *  Time-stamp:         "2010-08-04 20:49:34 bkorb"
+ *  @file xml2ag.c
  *
  *  This is the main routine for xml2ag.
- *  xml2ag Copyright (c) 2002-2011 by Bruce Korb - all rights reserved
  *
+ *  @group xml2ag
+ *  @{
+ */
+/*
+ *  xml2ag Copyright (C) 2002-2014 by Bruce Korb - all rights reserved
  *  This file is part of AutoGen.
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -24,14 +26,14 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-tSCC zConflict[] =
+static char const zConflict[] =
     "the file name operand conflicts with the definitions option.\n";
 
-tSCC zTextFmt[] =
+static char const zTextFmt[] =
     "text = '%s';\n";
 
 
-tSCC* typeName[] = {
+static char const* typeName[] = {
     "0 - inval",
     "ELEMENT_NODE",
     "ATTRIBUTE_NODE",
@@ -225,7 +227,7 @@ trim( char const* pzSrc, size_t* pSz )
             if (pSz != NULL) *pSz = 0;
             return zNil;
         }
-        strSize = (pzEnd - pzSrc);
+        strSize = (size_t)(pzEnd - pzSrc);
     }
 
     /*
@@ -281,12 +283,12 @@ trim( char const* pzSrc, size_t* pSz )
 static xmlNodePtr
 printHeader( xmlDocPtr pDoc )
 {
-    tSCC zDef[] = "AutoGen Definitions %s%s;\n";
-    char const* pzSfx = ".tpl";
+    static char const zDef[] = "AutoGen Definitions %s%s;\n";
+    char const * pzSfx = ".tpl";
 
     xmlNodePtr pRootNode = xmlDocGetRootElement( pDoc );
-    xmlChar*   pTpl = NULL;
-    xmlChar*   pzTpl;
+    xmlChar *  pTpl = NULL;
+    xmlChar *  pzTpl;
 
     if (pRootNode == NULL) {
         fprintf( stderr, "Root node not found\n" );

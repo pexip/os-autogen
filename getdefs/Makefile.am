@@ -2,11 +2,10 @@
 ## ---------------------------------------------------------------------
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-04-20 09:52:36 bkorb"
 ## Author:	    Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -35,9 +34,9 @@ RUNAG           = $(AGexe) -L$(top_srcdir)/autoopts/tpl \
 	 -L$(top_builddir)/autoopts/tpl
 
 if AMDEP
-DEP_ARG         = -MF$(DEPDIR)/opts-dep -MT$@
-INF_DEP         = -b$(TARG) -MF$(DEPDIR)/info-dep -MT$@
-MAN_DEP         = -b$(TARG) -MF$(DEPDIR)/man-dep  -MT$@
+DEP_ARG         = -MF$(DEPDIR)/opts-dep -MT$@ -MP
+INF_DEP         = -b$(TARG) -MF$(DEPDIR)/info-dep -MT$@ -MP
+MAN_DEP         = -b$(TARG) -MF$(DEPDIR)/man-dep  -MTstamp-man -MP
 include $(DEPDIR)/opts-dep
 include $(DEPDIR)/info-dep
 include $(DEPDIR)/man-dep
@@ -51,7 +50,7 @@ getdefs_LDADD   = $(top_builddir)/autoopts/libopts.la
 man_MANS        = $(TARG).1
 DOCFILES        = $(TARG).texi $(TARG).menu $(TARG).1
 DISTCLEANFILES  = $(DOCFILES) $(nodist_getdefs_SOURCES) *-stamp
-INCLUDES        = @INCLIST@
+AM_CPPFLAGS     = @INCLIST@
 AG_ENV          = top_builddir=$(top_builddir) \
   top_srcdir=$(top_srcdir) PATH=`cd ../columns >/dev/null && pwd`:$$PATH ; \
   export top_builddir top_srcdir PATH
@@ -65,8 +64,6 @@ gd.c : $(gdsrcs)
 	echo '#define  PKGDATADIR "$(pkgdatadir)"' ; \
 	echo ; echo '#define  DEFINING 1' ; \
 	echo '#include "autoopts/project.h"' ; \
-	echo '// #define AUTOOPTS_INTERNAL 1' ; \
-	echo '#include "autoopts/ag-char-map.h"' ; \
 	for f in opts.c $(gdsrcs) ; \
 	do echo "#include \"$$f\"" ; done
 
@@ -74,7 +71,8 @@ $(getdefs_OBJECTS) opts.h opts.c : stamp-opts
 stamp-opts : opts.def
 	@test -x $(AGexe) || { cd ../agen5   && $(MAKE) $(AGnam) ; }
 	@test -x $(CLexe) || { cd ../columns && $(MAKE) $(CLnam) ; }
-	$(AG_ENV) ; $(RUNAG) $(DEP_ARG) $(srcdir)/opts.def
+	$(AG_ENV) ; DEPFILE=$(DEPFILE_opts) \
+	  $(RUNAG) $(DEP_ARG) $(srcdir)/opts.def
 
 $(DOCFILES) : stamp-doc
 stamp-doc :
@@ -87,4 +85,8 @@ stamp-doc :
 
 .NOTPARALLEL:
 
-# getdefs/Makefile.am ends here
+.PHONY : local-maintainer-clean
+local-maintainer-clean : clean-stamp-opts clean-stamp-doc clean-stamp-man
+	rm -f *~
+
+# end of getdefs/Makefile.am

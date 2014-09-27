@@ -3,33 +3,47 @@
 h
 c
 
-# Time-stamp:      "2011-01-28 10:30:50 bkorb"
-
+=][=
 # This file contains the templates used to generate the
 # option descriptions for client programs, and it declares
 # the macros used in the templates.
 
-##  This file is part of AutoOpts, a companion to AutoGen.
-##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
-##
-##  AutoOpts is available under any one of two licenses.  The license
-##  in use must be one of these two and the choice is under the control
-##  of the user of the license.
-##
-##   The GNU Lesser General Public License, version 3 or later
-##      See the files "COPYING.lgplv3" and "COPYING.gplv3"
-##
-##   The Modified Berkeley Software Distribution License
-##      See the file "COPYING.mbsd"
-##
-##  These files have the following md5sums:
-##
-##  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd
+#  This file is part of AutoOpts, a companion to AutoGen.
+#  AutoOpts is free software.
+#  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+#
+#  AutoOpts is available under any one of two licenses.  The license
+#  in use must be one of these two and the choice is under the control
+#  of the user of the license.
+#
+#   The GNU Lesser General Public License, version 3 or later
+#      See the files "COPYING.lgplv3" and "COPYING.gplv3"
+#
+#   The Modified Berkeley Software Distribution License
+#      See the file "COPYING.mbsd"
+#
+#  These files have the following sha256 sums:
+#
+#  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+#  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+#  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
+=][=
+;;# START-BUILDTREE-ISMS
+;;
+(shell "CLexe=${AGexe%/agen5/*}/columns/columns
+  test -x \"${CLexe}\" || {
+    CLexe=${AGexe%/autogen}/columns
+    test -x \"${CLexe}\" || die 'columns program is not findable'
+  }"
+)
+=][= # END-BUILDTREE-ISMS
 
-=][= (dne " *  " "/*  ")    =][=
+(shell "CLexe=`echo ${AGexe} | sed 's@/autogen@/columns@'`
+       test -x \"${CLexe}\" || CLexe=`which columns`")
+
+# END-INSTALL-ONLY-CODE     =][=
+
+ (dne " *  " "/*  ")        =][=
 
 CASE    (suffix)            =][=
 
@@ -51,7 +65,9 @@ CASE    (suffix)            =][=
   (if (exist? "flag.extract-code")
       (shellf "test -f %1$s.c && rm -f %1$s.c.save" (base-name)))  =][=
 
-ESAC =]
+ESAC =][=
+IF (exist? "addtogroup")    =]
+/** @} */[= ENDIF           =]
 /* [= (out-name) =] ends here */[=
 
 # options.tpl ends here     =]

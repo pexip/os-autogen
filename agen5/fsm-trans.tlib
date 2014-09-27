@@ -1,7 +1,7 @@
 [= AutoGen5 Template  -*- Mode: Text -*-
 
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -17,6 +17,8 @@
 ## with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =][=
+(make-tmp-dir)
+
 (define get-up (lambda (nm)
     (string-upcase! (string->c-name! (get nm)))  ))
 
@@ -53,23 +55,22 @@ ENDDEF state-table
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
 
 DEFINE  enumerate-transitions   =]
-/*
+/**
  *  Enumeration of the valid transition types
  *  Some transition types may be common to several transitions.
  */
 typedef enum {
 [=(string-upcase! (shellf
- "sed '$s/,$//;s/^/    %s_TR_/' .fsm.xlist" PFX))=]
+ "sed '$s/,$//;s/^/    %s_TR_/' ${tmp_dir}/xlist" PFX))=]
 } te_[=(. pfx)=]_trans;
 #define [=(. PFX)=]_TRANSITION_CT  [=
-   `tct="\`wc -l < .fsm.xlist\`"
+   `tct="\`wc -l < ${tmp_dir}/xlist\`"
    echo $tct`=]
 
-/*
- *  the state transition handling map
- *  This table maps the state enumeration + the event enumeration to
- *  the new state and the transition enumeration code (in that order).
- *  It is indexed by first the current state and then the event code.
+/**
+ *  State transition handling map.  Map the state enumeration and the event
+ *  enumeration to the new state and the transition enumeration code (in that
+ *  order).  It is indexed by first the current state and then the event code.
  */
 typedef struct [=(. pfx)=]_transition [= (. t-trans) =];
 struct [=(. pfx)=]_transition {
@@ -120,10 +121,9 @@ ENDDEF  enumerate-transitions
 DEFINE callback-transitions
 
 =]
-/*
- *  This is the prototype for the callback routines.  They are to
- *  return the next state.  Normally, that should be the value of
- *  the "maybe_next" argument.
+/**
+ *  Callback routine prototype.  They return the next state.  Normally, that
+ *  should be the value of the "maybe_next" argument.
  */
 typedef te_[=(. pfx)=]_state ([=(. pfx)=]_callback_t)([=
     emit-cookie-args =]
@@ -132,10 +132,10 @@ typedef te_[=(. pfx)=]_state ([=(. pfx)=]_callback_t)([=
     te_[=(. pfx)=]_event trans_evt );
 
 static [=(. pfx)=]_callback_t
-[=(shellf "sed '$s/,$/;/;s/^/    %s_do_/' .fsm.xlist" pfx)=]
+[=(shellf "sed '$s/,$/;/;s/^/    %s_do_/' ${tmp_dir}/xlist" pfx)=]
 
-/*
- *  This declares all the state transition handling routines
+/**
+ *  Declare all the state transition handling routines.
  */
 typedef struct transition [= (. t-trans) =];
 struct transition {[=
@@ -146,9 +146,9 @@ struct transition {[=
              (string-append pfx "_callback_t*") "trans_proc") =]
 };
 
-/*
- *  This table maps the state enumeration + the event enumeration to
- *  the new state and the transition enumeration code (in that order).
+/**
+ *  State transition maps.  Map the enumeration and the event enumeration
+ *  to the new state and the transition enumeration code (in that order).
  *  It is indexed by first the current state and then the event code.
  */
 static const [= (. t-trans) =]
@@ -192,7 +192,7 @@ DEFINE machine-step  =][=
 [= IF (exist? "debug-flag") \=]
 #ifdef [= (get "debug-flag") =]
         firstNext = /* next line */
-#endif /* [= "debug-flag =] */
+#endif /* [= debug-flag =] */
 [= ENDIF \=]
         nxtSt = pTT->next_state;
         [=(. trans-name)=] = pTT->[=(. trans-field)=];
@@ -203,7 +203,7 @@ DEFINE machine-step  =][=
             [=(. PFX)=]_STATE_NAME( [=(. pfx)=]_state ), [=(. pfx)=]_state,
             [=(. PFX)=]_EVT_NAME( trans_evt ), trans_evt,
             [=(. PFX)=]_STATE_NAME( nxtSt ), nxtSt );
-#endif /* [= "debug-flag =] */
+#endif /* [= debug-flag =] */
 [= ENDIF \=][=
 
   IF (not (=* (get "method") "case"))  =][=
@@ -222,7 +222,7 @@ DEFINE machine-step  =][=
     if (nxtSt != firstNext)
         printf( "transition code changed destination state to %s(%d)\n",
                 [=(. PFX)=]_STATE_NAME( nxtSt ), nxtSt );
-#endif /* [= "debug-flag =] */
+#endif /* [= debug-flag =] */
 [= ENDIF \=][=
 
   IF (not (=* (get "type") "reent")) =]
@@ -253,7 +253,7 @@ ENDDEF fsm-proc-variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
 
 DEFINE make-loop-proc  =]
-/*
+/**
  *  Run the FSM.  Will return [=(. PFX)=]_ST_DONE or [=(. PFX)=]_ST_INVALID
  */
 [=mode=]te_[=(. pfx)=]_state
@@ -270,7 +270,7 @@ ENDDEF make-loop-proc
 
 DEFINE looping-machine
 
-  =][= make-loop-proc mode = "" =]
+  =][= INVOKE make-loop-proc mode = "" =]
 {
     te_[=(. pfx)=]_state [=(. pfx)=]_state = [=(. PFX)=]_ST_INIT;
     te_[=(. pfx)=]_event trans_evt;[=
@@ -284,7 +284,7 @@ DEFINE looping-machine
     echo \"$cookies\" | \
         sed -e 's@.*[^a-z0-9_A-Z]\\([a-zA-Z0-9_]*\\)*$@\\1;@' \
             -e 's/^/    (void)saved_/'" ))
-    
+
   =][=
   ENDIF=]
 
@@ -297,10 +297,11 @@ DEFINE looping-machine
 [=(extract fsm-source "        /* %s == FIND TRANSITION == %s */" ""
            "        trans_evt = GET_NEXT_TRANS();" ) =][=
   ENDIF =]
-[=  (out-push-new ".fsm.cktbl")=][=
+[=  (out-push-new (string-append tmp-dir "/cktbl"))=][=
     INVOKE machine-step =][=
-    (out-pop)
-    (shell "sed 's/^ /     /;s/                /            /' .fsm.cktbl") =]
+    (out-pop) (shell
+    "sed 's/^ /     /;s/                /            /' ${tmp_dir}/cktbl")
+=]
     }
     return [=(. pfx)=]_state;
 }[=
@@ -310,7 +311,7 @@ ENDDEF looping-machine
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
 
 DEFINE make-step-proc  =]
-/*
+/**
  *  Step the FSM.  Returns the resulting state.  If the current state is
  *  [=(. PFX)=]_ST_DONE or [=(. PFX)=]_ST_INVALID, it resets to
  *  [=(. PFX)=]_ST_INIT and returns [=(. PFX)=]_ST_INIT.

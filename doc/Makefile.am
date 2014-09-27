@@ -2,11 +2,10 @@
 ##
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-05-03 17:40:57 bkorb"
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -28,20 +27,29 @@
 INFO_DEPS       = autogen.info
 MIexe           = $(MAKEINFO) --no-split
 MAKEINFOFLAGS   = -I$(top_srcdir)/autoopts -I../autoopts
+passenv         = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
+	top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)"
 
+run_mktexi      = $(passenv) $(POSIX_SHELL) $${dashx} \
+	$(srcdir)/mk-agen-texi.sh
 all : $(INFO_DEPS)
 
 BUILT_SOURCES   = autogen.texi
 info_TEXINFOS   = $(BUILT_SOURCES)
-EXTRA_DIST	= snprintfv.texi snprintfv.menu autogen-texi.txt \
-		auto-opts.tpl autogen-intro.texi \
-		gendocs_template gendocs.sh
+EXTRA_DIST	= \
+    agdoc.texi            auto-opts.tlib      autogen-intro.texi \
+    autogen-intro.texi    autogen-texi.txt    fdl.texi \
+    gendocs_template      libopts.texi        mk-agen-texi.sh    \
+    invoke-autogen.texi   invoke-columns.texi \
+    invoke-getdefs.texi   invoke-xml2ag.texi  \
+    invoke-snprintfv.texi snprintfv.texi      \
+    invoke-bitmaps.texi   bitmaps.texi
 
 # MAINTAINERCLEANFILES  = MakeDep.inc
 TEXI2DVI_FLAGS  =  --texinfo='@pagesizes 9.5in,7.0in'
 
 agdoc.texi      : # self-depends upon all executables
-	MAKE="$(MAKE)" ./mk-agen-texi.sh
+	$(run_mktexi) $@
 
 autogen.dvi     : agdoc.texi
 autogen.texi    : agdoc.texi mk-agen-texi.sh
@@ -57,8 +65,6 @@ clobber : maintainer-clean
 .NOTPARALLEL:
 
 gnudocs             : $(srcdir)/gendocs_template agdoc.texi
-	title=`sed -n 's/^@title  *//p' agdoc.texi` ; \
-	opts='--texi2html' ; \
-	$(POSIX_SHELL) $(srcdir)/gendocs.sh $$opts autogen "$$title"
+	$(run_mktexi) $@
 
 # doc/Makefile.am ends here

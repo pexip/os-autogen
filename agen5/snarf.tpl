@@ -1,10 +1,8 @@
 [= AutoGen5 template  -*- Mode: Text -*-
 
-# Time-stamp:        "2011-01-31 14:16:48 bkorb"
-
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -31,12 +29,13 @@ where ``basename'' may be of your choosing.
 
 The following definitions are used:
 
-group      A module prefix that preceeds the "scm_" prefix to all symbols
+group      A module prefix that precedes the "scm_" prefix to all symbols
 init       the name of the created initialization routine.  This defaults
            to "scm_init" or "group_init", if "group" is specified.
            You must specify this for shared libraries.
 init-code  code to put at the start of the init routine
 fini-code  code to put at the end of the init routine
+addtogroup The doxygen group to add definitions to
 
 gfunc      this is a compound definition containing the following definitions
   name     the name of the function.  The Scheme string name will normally be
@@ -94,15 +93,24 @@ way.  If you are extracting them from `getdefs(1AG)' comments, then:
             (string-append (get "group") "_scm_")
             "scm_" ))
 (out-push-new (string-append (base-name) ".h"))
+(define date-range (shell "date +1992-%Y"))
 (dne " *  " "/* ")=]
  *
- *  copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) [=(. date-range)=] Bruce Korb - all rights reserved
  *
 [=(gpl "AutoGen" " *  ")=]
+ */
+/** \file [= (define group-name (get "addtogroup" (get "group")))
+             (out-name) =]
+ *  Guile Implementation Routines - for the [= (. group-name) =] group[=
+IF (exist? "addtogroup") =]
  *
- *  Guile Implementation Routines[=% group " - for the %s group" =]
+ * @addtogroup [= addtogroup =]
+ * @{[=
+ENDIF =]
  */
 [=(make-header-guard  "GUILE_PROCS")=]
+
 #if GUILE_VERSION >= 108000
 # include <libguile.h>
 #else
@@ -138,7 +146,7 @@ FOR symbol      =][=
 extern SCM [= (string-append scm-prefix "sym_" (get "name") ";") =][=
   ENDIF         =][=
 ENDFOR symbol   =]
-
+[= (if (exist? "addtogroup") "/** @} */") =]
 #endif /* [=(. header-guard)=] */
 [=
 
@@ -147,7 +155,7 @@ ENDFOR symbol   =]
 
 =]
  *
- *  copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) [=(. date-range)=] Bruce Korb - all rights reserved
  *
 [=
 (string-table-new "g_nm")
@@ -161,9 +169,15 @@ ENDFOR symbol   =]
           (get "name")  )  ) ) ))
 
 (gpl "AutoGen" " *  ")=]
+ */
+/** \file [= (out-name) =]
  *
- *  Guile Initializations - [=% group (string-capitalize! "%s ")
-                            =]Global Variables
+ * Guile Initializations - [=(. group-name)=] Global Variables[=
+IF (exist? "addtogroup") =]
+ *
+ * @addtogroup [= addtogroup =]
+ * @{[=
+ENDIF =]
  */
 #include "[= (. header-file) =]"
 typedef SCM (*scm_callback_t)(void);
@@ -207,7 +221,7 @@ agrelay_scm_[= (get "name")     =]([=
     if (OPT_VALUE_TRACE >= TRACE_EVERYTHING) {
         static char const proc_z[] =
             "Called ag_scm_[= name =]()\n";
-        fwrite(proc_z, sizeof(proc_z) - 1, 1, pfTrace);
+        fwrite(proc_z, sizeof(proc_z) - 1, 1, trace_fp);
     }
     return ag_scm_[= name =]([= (. pass-list) =]);
 }
@@ -237,8 +251,8 @@ ENDIF debug-enabled exists
                    _Ar, _Ao, _Ax)
 #endif
 [= (if (exist? "debug-enabled") "#endif /* DEBUG_ENABLED */\n") =]
-/*
- * [=group=] Initialization procedure.
+/**
+ * [=(get "addtogroup" (get "group"))=] Initialization procedure.
  */
 void
 [=(. init-proc)=](void)
@@ -276,6 +290,7 @@ void
       (prefix "    " (get "fini-code")) "") =]
 }
 #undef NEW_PROC
+[= (if (exist? "addtogroup") "/** @} */") =]
 /* end of [= (out-name) =] */
 [= #
 

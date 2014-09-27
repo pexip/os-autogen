@@ -2,12 +2,11 @@
 ##
 ## Makefile.am
 ##
-## Time-stamp:      "2011-01-26 09:01:35 bkorb"
-## Author:          Bruce Korb <bkorb@gnu.org>
+## Author: Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -19,35 +18,38 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
+libsrc     = libopts-@AO_CURRENT@.@AO_REVISION@.@AO_AGE@.tar.gz
 EXTRA_DIST = defs.in stdopts.def $(TESTS)
-TESTS      = nested.test cfg-edit.test alias.test \
-    argument.test cond.test    config.test  enums.test   equiv.test \
-    errors.test   getopt.test  handler.test immediate.test \
-    keyword.test  library.test main.test    nls.test     rc.test \
-    shell.test    stdopts.test time.test    usage.test   vers.test
+TESTS      = \
+    alias.test   argument.test cfg-edit.test  cond.test      \
+    config.test  doc.test      enums.test     equiv.test     \
+    errors.test  getopt.test   handler.test   immediate.test \
+    keyword.test library.test  main.test      nested.test    \
+    nls.test     rc.test       shell.test     stdopts.test   \
+    time.test    usage.test    vendor.test    vers.test
 
-testsubdir = ./testdir
+getopt.test : ../$(libsrc)
+../$(libsrc):
+	cd .. ; echo $(MAKE) $(libsrc) ; $(MAKE) $(libsrc) >/dev/null 2>&1
 
-TESTS_ENVIRONMENT = set -a ; TERM='' \
-	CFLAGS='$(DEFS) $(CFLAGS)' CPPFLAGS='$(CPPFLAGS)' \
-	DEBUG_USAGE='$(DEBUG_USAGE)' testsubdir=$(testsubdir) INCS='$(INCS)'
-#`
 distclean-local:
-	-rm -rf $(testsubdir) FAILURES
+	@-rm -rf *-testd FAILURES
 
 check : perm-stamp
 
 perm-stamp :
 	@-cd $(srcdir) ; chmod +x *.test 2>/dev/null
 
-verbose :
-	rm -rf FAILURES testdir ; VERBOSE=true ; export VERBOSE ; \
+verbose : distclean-local
+	VERBOSE=true ; export VERBOSE ; \
 	$(MAKE) check TESTS="$(TESTS)"
+
+.PHONY : distclean-local verbose perm-stamp
 
 # Makefile.am ends here

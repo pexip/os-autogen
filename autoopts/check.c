@@ -1,16 +1,15 @@
 /**
  * @file check.c
  *
- * @brief consistency checks.
+ * @brief option consistency checks.
  *
- *  Time-stamp:      "2011-05-24 17:50:10 bkorb"
- *
- *  This file contains the routines that deal with processing quoted strings
- *  into an internal format.
- *
+ * @addtogroup autoopts
+ * @{
+ */
+/*
  *  This file is part of AutoOpts, a companion to AutoGen.
  *  AutoOpts is free software.
- *  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoOpts is available under any one of two licenses.  The license
  *  in use must be one of these two and the choice is under the control
@@ -22,60 +21,64 @@
  *   The Modified Berkeley Software Distribution License
  *      See the file "COPYING.mbsd"
  *
- *  These files have the following md5sums:
+ *  These files have the following sha256 sums:
  *
- *  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
- *  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
- *  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+ *  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+ *  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+ *  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
  */
 
 /**
  *  Check for conflicts based on "must" and "cannot" attributes.
  */
-static ag_bool
-has_conflict(tOptions * pOpts, tOptDesc * pOD)
+static bool
+has_conflict(tOptions * pOpts, tOptDesc * od)
 {
-    if (pOD->pOptMust != NULL) {
-        int const * pMust = pOD->pOptMust;
+    if (od->pOptMust != NULL) {
+        int const * must = od->pOptMust;
 
-        while (*pMust != NO_EQUIVALENT) {
-            tOptDesc * p = pOpts->pOptDesc + *(pMust++);
+        while (*must != NO_EQUIVALENT) {
+            tOptDesc * p = pOpts->pOptDesc + *(must++);
             if (UNUSED_OPT(p)) {
-                const tOptDesc * pN = pOpts->pOptDesc + pMust[-1];
-                fprintf(stderr, zReqFmt, pOD->pz_Name, pN->pz_Name);
-                return AG_TRUE;
+                const tOptDesc * ood = pOpts->pOptDesc + must[-1];
+                fprintf(stderr, zneed_fmt, pOpts->pzProgName,
+                        od->pz_Name, ood->pz_Name);
+                return true;
             }
         }
     }
 
-    if (pOD->pOptCant != NULL) {
-        int const * pCant = pOD->pOptCant;
+    if (od->pOptCant != NULL) {
+        int const * cant = od->pOptCant;
 
-        while (*pCant != NO_EQUIVALENT) {
-            tOptDesc * p = pOpts->pOptDesc + *(pCant++);
+        while (*cant != NO_EQUIVALENT) {
+            tOptDesc * p = pOpts->pOptDesc + *(cant++);
             if (SELECTED_OPT(p)) {
-                const tOptDesc* pN = pOpts->pOptDesc + pCant[-1];
-                fprintf(stderr, zCantFmt, pOD->pz_Name, pN->pz_Name);
-                return AG_TRUE;
+                const tOptDesc * ood = pOpts->pOptDesc + cant[-1];
+                fprintf(stderr, zconflict_fmt, pOpts->pzProgName,
+                        od->pz_Name, ood->pz_Name);
+                return true;
             }
         }
     }
 
-    return AG_FALSE;
+    return false;
 }
 
 /**
  *  Check that the option occurs often enough.  Too often is already checked.
  */
-static ag_bool
+static bool
 occurs_enough(tOptions * pOpts, tOptDesc * pOD)
 {
+    (void)pOpts;
+
     /*
      *  IF the occurrence counts have been satisfied,
      *  THEN there is no problem.
      */
     if (pOD->optOccCt >= pOD->optMinCt)
-        return AG_TRUE;
+        return true;
 
     /*
      *  IF MUST_SET means SET and PRESET are okay,
@@ -83,12 +86,13 @@ occurs_enough(tOptions * pOpts, tOptDesc * pOD)
      */
     if (  (pOD->fOptState & OPTST_MUST_SET)
        && (pOD->fOptState & (OPTST_PRESET | OPTST_SET)) )
-        return AG_TRUE;
+        return true;
 
     if (pOD->optMinCt > 1)
-         fprintf(stderr, zNotEnough, pOD->pz_Name, pOD->optMinCt);
-    else fprintf(stderr, zNeedOne, pOD->pz_Name);
-    return AG_FALSE;
+         fprintf(stderr, zneed_more, pOpts->pzProgName, pOD->pz_Name,
+                 pOD->optMinCt);
+    else fprintf(stderr, zneed_one,  pOpts->pzProgName, pOD->pz_Name);
+    return false;
 }
 
 /**
@@ -96,7 +100,7 @@ occurs_enough(tOptions * pOpts, tOptDesc * pOD)
  *
  *  Make sure that the argument list passes our consistency tests.
  */
-LOCAL ag_bool
+LOCAL bool
 is_consistent(tOptions * pOpts)
 {
     tOptDesc * pOD   = pOpts->pOptDesc;
@@ -114,7 +118,7 @@ is_consistent(tOptions * pOpts)
          */
         if (SELECTED_OPT(pOD)) {
             if (has_conflict(pOpts, pOD))
-                return AG_FALSE;
+                return false;
         }
 
         /*
@@ -126,7 +130,7 @@ is_consistent(tOptions * pOpts)
            || (pOD->optEquivIndex == pOD->optIndex) )
 
             if (! occurs_enough(pOpts, pOD))
-                return AG_FALSE;
+                return false;
 
         if (--oCt <= 0)
             break;
@@ -145,7 +149,7 @@ is_consistent(tOptions * pOpts)
         if ((pOpts->fOptSet & OPTPROC_NO_ARGS) != 0) {
             if (pOpts->origArgCt > pOpts->curOptIdx) {
                 fprintf(stderr, zNoArgs, pOpts->pzProgName);
-                return AG_FALSE;
+                return false;
             }
         }
 
@@ -154,11 +158,20 @@ is_consistent(tOptions * pOpts)
          */
         else if ((pOpts->fOptSet & OPTPROC_ARGS_REQ) != 0) {
             if (pOpts->origArgCt <= pOpts->curOptIdx) {
-                fprintf(stderr, zArgsMust, pOpts->pzProgName);
-                return AG_FALSE;
+                fprintf(stderr, zargs_must, pOpts->pzProgName);
+                return false;
             }
         }
     }
 
-    return AG_TRUE;
+    return true;
 }
+
+/** @}
+ *
+ * Local Variables:
+ * mode: C
+ * c-file-style: "stroustrup"
+ * indent-tabs-mode: nil
+ * End:
+ * end of autoopts/check.c */

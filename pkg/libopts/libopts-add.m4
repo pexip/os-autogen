@@ -1,15 +1,13 @@
 
 dnl @synopsis  LIBOPTS_CHECK
 dnl
-dnl Time-stamp:        "2010-11-29 15:45:54 bkorb"
-dnl
 dnl If autoopts-config works, add the linking information to LIBS.
 dnl Otherwise, add ``libopts-${ao_rev}'' to SUBDIRS and run all
 dnl the config tests that the library needs.  Invoke the
 dnl "INVOKE_LIBOPTS_MACROS" macro iff we are building libopts.
 dnl
 dnl  This file is part of AutoGen.
-dnl  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+dnl  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 dnl
 dnl  AutoGen is free software: you can redistribute it and/or modify it
 dnl  under the terms of the GNU General Public License as published by the
@@ -33,18 +31,18 @@ AC_DEFUN([LIBOPTS_CHECK_COMMON],[
 	    [ifelse($1, , [libopts], [$1])])
   AC_ARG_ENABLE([local-libopts],
     AC_HELP_STRING([--enable-local-libopts],
-       [Force using the supplied libopts tearoff code]),[
+       [Use the supplied libopts tearoff code]),[
     if test x$enableval = xyes ; then
        AC_MSG_NOTICE([Using supplied libopts tearoff])
-       LIBOPTS_LDADD='$(top_builddir)/AO_Libopts_Dir/libopts.la'
        LIBOPTS_CFLAGS='-I$(top_srcdir)/AO_Libopts_Dir'
        NEED_LIBOPTS_DIR=true
+       LIBOPTS_LDADD='$(top_builddir)/AO_Libopts_Dir/libopts.la'
     fi])
 
   AC_ARG_ENABLE([libopts-install],
-    AC_HELP_STRING([--disable-libopts-install],
-       [Do not install libopts with client installation]))
-  AM_CONDITIONAL([INSTALL_LIBOPTS],[test "X${enable_libopts_install}" != Xno])
+    AC_HELP_STRING([--enable-libopts-install],
+       [Install libopts with client installation]))
+  AM_CONDITIONAL([INSTALL_LIBOPTS],[test "X${enable_libopts_install}" = Xyes])
 
   [if test -z "${NEED_LIBOPTS_DIR}" ; then]
      AC_MSG_CHECKING([whether autoopts-config can be found])
@@ -98,20 +96,24 @@ AC_DEFUN([LIBOPTS_CHECK_COMMON],[
   m4_popdef([AO_Libopts_Dir])
 [# end of AC_DEFUN of LIBOPTS_CHECK_COMMON]
 ])
+dnl
 dnl AC_CONFIG_FILES conditionalization requires using AM_COND_IF, however
 dnl AM_COND_IF is new to Automake 1.11.  To use it on new Automake without
 dnl requiring same, a fallback implementation for older Automake is provided.
 dnl Note that disabling of AC_CONFIG_FILES requires Automake 1.11, this code
 dnl is correct only in terms of m4sh generated script.
-m4_ifndef([AM_COND_IF], [AC_DEFUN([AM_COND_IF], [
-if test -z "$$1_TRUE"; then :
-  m4_n([$2])[]dnl
-m4_ifval([$3],
-[else
-  $3
-])dnl
-fi[]dnl
-])])
+dnl
+m4_ifndef([AM_COND_IF],
+  [AC_DEFUN([AM_COND_IF], [
+    if test -z "$$1_TRUE"; then :
+      m4_n([$2])[]dnl
+      m4_ifval([$3],[
+    else
+      $3
+    ])dnl
+    fi[]dnl
+  ])dnl
+])
 dnl
 AC_DEFUN([LIBOPTS_CHECK_NOBUILD], [
   m4_pushdef([AO_Libopts_Dir],
@@ -129,9 +131,8 @@ AC_DEFUN([LIBOPTS_CHECK], [
   LIBOPTS_CHECK_COMMON(AO_Libopts_Dir)
   AM_COND_IF([NEED_LIBOPTS], [
     INVOKE_LIBOPTS_MACROS
-    AC_CONFIG_FILES(AO_Libopts_Dir/Makefile)
-  ])dnl
+  ])
+  AC_CONFIG_FILES(AO_Libopts_Dir/Makefile)
   m4_popdef([AO_Libopts_Dir])dnl
 # end of AC_DEFUN of LIBOPTS_CHECK
 ])
-

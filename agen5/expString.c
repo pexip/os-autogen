@@ -2,13 +2,15 @@
 /**
  * @file expString.c
  *
- *  Time-stamp:        "2011-05-31 16:34:42 bkorb"
- *
  *  This module implements expression functions that
  *  manipulate string values.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,213 +28,38 @@
 
 /* = = = START-STATIC-FORWARD = = = */
 static size_t
-string_size(char const * pzScn, size_t newLineSize);
+stringify_for_sh(char * pzNew, uint_t qt, char const * pzDta);
 
 static SCM
-makeString(char const * pzText, char const * pzNewLine, size_t newLineSize);
-
-static size_t
-stringify_for_sh(char * pzNew, u_int qt, char const * pzDta, size_t dtaSize);
-
-static SCM
-shell_stringify(SCM obj, u_int qt);
+shell_stringify(SCM obj, uint_t qt);
 
 static int
 sub_count(char const * haystack, char const * needle);
 
 static void
 do_substitution(
-    char const * pzStr,
-    size_t       strLen,
+    char const * src_str,
+    ssize_t      str_len,
     SCM          match,
     SCM          repl,
-    char **      ppzRes,
-    size_t *     pResLen);
+    char **      ppz_res,
+    ssize_t *    res_len);
 /* = = = END-STATIC-FORWARD = = = */
 
 static size_t
-string_size(char const * pzScn, size_t newLineSize)
-{
-    /*
-     *  Start by counting the start and end quotes, plus the NUL.
-     */
-    size_t dtaSize = sizeof("\"\"");
-
-    for (;;) {
-        char ch = *(pzScn++);
-        if ((ch >= ' ') && (ch <= '~')) {
-
-            /*
-             *  One for each character, plus a backquote when needed
-             */
-            dtaSize++;
-            if ((ch == '"') || (ch == '\\'))
-                dtaSize++;
-        }
-
-        /*
-         *  When not a normal character, then count the characters
-         *  required to represent whatever it is.
-         */
-        else switch (ch) {
-        case NUL:
-            return dtaSize;
-
-        case NL:
-            dtaSize += newLineSize;
-            break;
-
-        case TAB:
-        case '\a':
-        case '\b':
-        case '\f':
-        case '\r':
-        case '\v':
-            dtaSize += 2;
-            break;
-
-        default:
-            dtaSize += 4;
-        }
-    }
-}
-
-static SCM
-makeString(char const * pzText, char const * pzNewLine, size_t newLineSize)
-{
-    char     z[SCRIBBLE_SIZE];
-    char*    pzDta;
-    char*    pzFre;
-    char const * pzScn   = pzText;
-    size_t   dtaSize = string_size(pzText, newLineSize);
-
-    /*
-     *  We now know how big the string is going to be.
-     *  Allocate what we need.
-     */
-    if (dtaSize >= sizeof(z))
-         pzFre = pzDta = AGALOC(dtaSize, "quoting string");
-    else pzFre = pzDta = z;
-
-    *(pzDta++) = '"';
-
-    for (;;) {
-        unsigned char ch = (unsigned char)*pzScn;
-        if ((ch >= ' ') && (ch <= '~')) {
-            if ((ch == '"') || (ch == '\\'))
-                /*
-                 *  We must escape these characters in the output string
-                 */
-                *(pzDta++) = '\\';
-            *(pzDta++) = ch;
-
-        } else switch (ch) {
-        case NUL:
-            goto copyDone;
-
-        case NL:
-            /*
-             *  place contiguous new-lines on a single line
-             */
-            while (pzScn[1] == NL) {
-                *(pzDta++) = '\\';
-                *(pzDta++) = 'n';
-                pzScn++;
-            }
-
-            /*
-             *  Replace the new-line with its escaped representation.
-             *  Also, break and restart the output string, indented
-             *  7 spaces (so that after the '"' char is printed,
-             *  any contained tabbing will look correct).
-             *  Do *not* start a new line if there are no more data.
-             */
-            if (pzScn[1] == NUL) {
-                *(pzDta++) = '\\';
-                *(pzDta++) = 'n';
-                goto copyDone;
-            }
-
-            strcpy(pzDta, pzNewLine);
-            pzDta += newLineSize;
-            break;
-
-        case '\a':
-            *(pzDta++) = '\\';
-            *(pzDta++) = 'a';
-            break;
-
-        case '\b':
-            *(pzDta++) = '\\';
-            *(pzDta++) = 'b';
-            break;
-
-        case '\f':
-            *(pzDta++) = '\\';
-            *(pzDta++) = 'f';
-            break;
-
-        case '\r':
-            *(pzDta++) = '\\';
-            *(pzDta++) = 'r';
-            break;
-
-        case TAB:
-            *(pzDta++) = '\\';
-            *(pzDta++) = 't';
-            break;
-
-        case '\v':
-            *(pzDta++) = '\\';
-            *(pzDta++) = 'v';
-            break;
-
-        default:
-        {
-            static char const zFmt[] = "\\%03o";
-            /*
-             *  sprintf is safe here, because we already computed
-             *  the amount of space we will be using.
-             */
-            sprintf(pzDta, zFmt, ch);
-            pzDta += 4;
-        }
-        }
-
-        pzScn++;
-    } copyDone:
-
-    /*
-     *  End of string.  Terminate the quoted output.
-     *  If necessary, deallocate the text string.
-     *  Return the scan resumption point.
-     */
-    *(pzDta++) = '"';
-    *pzDta = NUL;
-
-    {
-        SCM res = AG_SCM_STR02SCM(pzFre);
-        if (pzFre != z)
-            AGFREE(pzFre);
-        return res;
-    }
-}
-
-static size_t
-stringify_for_sh(char * pzNew, u_int qt, char const * pzDta, size_t dtaSize)
+stringify_for_sh(char * pzNew, uint_t qt, char const * pzDta)
 {
     char * pz = pzNew;
-    *(pz++) = qt;
+    *(pz++) = (char)qt;
 
     for (;;) {
-        char c = (*(pz++) = *(pzDta++));
+        char c = *(pz++) = *(pzDta++);
         switch (c) {
         case NUL:
-            pz[-1]  = qt;
+            pz[-1]  = (char)qt;
             *pz     = NUL;
-            dtaSize = (pz - pzNew);
 
-            return (pz - pzNew);
+            return (size_t)(pz - pzNew);
 
         case '\\':
             /*
@@ -256,7 +83,7 @@ stringify_for_sh(char * pzNew, u_int qt, char const * pzDta, size_t dtaSize)
                  *  then we will double the backslash and a third backslash
                  *  will be inserted when we emit the quote character.
                  */
-                if (c != qt)
+                if ((unsigned)c != qt)
                     break;
                 /* FALLTHROUGH */
 
@@ -266,7 +93,7 @@ stringify_for_sh(char * pzNew, u_int qt, char const * pzDta, size_t dtaSize)
             break;
 
         case '"': case '`':
-            if (c == qt) {
+            if ((unsigned)c == qt) {
                 /*
                  *  This routine does both `xx` and "xx" strings, we have
                  *  to worry about this stuff differently.  I.e., in ""
@@ -281,7 +108,7 @@ stringify_for_sh(char * pzNew, u_int qt, char const * pzDta, size_t dtaSize)
 }
 
 static SCM
-shell_stringify(SCM obj, u_int qt)
+shell_stringify(SCM obj, uint_t qt)
 {
     char*  pzNew;
     size_t dtaSize = 3;
@@ -305,7 +132,7 @@ shell_stringify(SCM obj, u_int qt)
     } loopDone1:;
 
     pzNew = AGALOC(dtaSize, "shell string");
-    dtaSize = stringify_for_sh(pzNew, qt, pzDta, dtaSize);
+    dtaSize = stringify_for_sh(pzNew, qt, pzDta);
 
     {
         SCM res = AG_SCM_STR2SCM(pzNew, dtaSize);
@@ -329,58 +156,64 @@ sub_count(char const * haystack, char const * needle)
     return repCt;
 }
 
-/* * * * *
+/**
+ *  Replace marker text.
  *
- *  Substitution routines.  These routines implement a sed-like
- *  experience, except that we don't use regex-es.  It is straight
- *  text substitution.
+ *  Replace all occurrances of the marker text with the substitution text.
+ *  The result is stored in an automatically freed temporary buffer.
+ *
+ *  @param src_str  The source string
+ *  @param str_len  The length of the string
+ *  @param match    the SCM-ized marker string
+ *  @param repl     the SCM-ized replacement string
+ *  @param ppz_res  pointer to the result pointer
+ *  @param res_len  pointer to result length
  */
 static void
 do_substitution(
-    char const * pzStr,
-    size_t       strLen,
+    char const * src_str,
+    ssize_t      str_len,
     SCM          match,
     SCM          repl,
-    char **      ppzRes,
-    size_t *     pResLen)
+    char **      ppz_res,
+    ssize_t *    res_len)
 {
-    char* pzMatch = ag_scm2zchars(match, "match text");
-    char* pzRepl  = ag_scm2zchars(repl,  "repl text");
-    int   matchL  = AG_SCM_STRLEN(match);
-    int   replL   = AG_SCM_STRLEN(repl);
-    int   endL    = strLen;
+    char* pzMatch  = ag_scm2zchars(match, "match text");
+    char* rep_str  = ag_scm2zchars(repl,  "repl text");
+    int   mark_len = (int)AG_SCM_STRLEN(match);
+    int   repl_len = (int)AG_SCM_STRLEN(repl);
 
-    int   repCt   = sub_count(pzStr, pzMatch);
-    char const * pz = pzStr;
-    char * pzRes;
-    char * pzScan;
+    {
+        int ct = sub_count(src_str, pzMatch);
+        if (ct == 0)
+            return; /* No substitutions -- no work. */
 
-    /*
-     *  No substitutions -- no work.  The caller will have to track
-     *  whether or not to deallocate the result.
-     */
-    if (repCt == 0)
-        return;
-
-    endL   = endL + (replL * repCt) - (matchL * repCt);
-    pzScan = pzRes = ag_scribble(endL + 1);
-    pz     = pzStr;
-
-    for (;;) {
-        char const * pzNxt = strstr(pz, pzMatch);
-        if (pzNxt == NULL)
-            break;
-        if (pz != pzNxt) {
-            memcpy(pzScan, pz, (size_t)(pzNxt - pz));
-            pzScan += (pzNxt - pz);
-        }
-        memcpy(pzScan, pzRepl, (size_t)replL);
-        pzScan += replL;
-        pz = pzNxt + matchL;
+        str_len += (repl_len - mark_len) * ct;
     }
-    strcpy(pzScan, pz);
-    *ppzRes = pzRes;
-    *pResLen = (pzScan - pzRes) + strlen(pz);
+
+    {
+        char * dest = scribble_get(str_len + 1);
+        *ppz_res = dest;
+        *res_len = str_len;
+
+        for (;;) {
+            char const * next = strstr(src_str, pzMatch);
+            size_t len;
+
+            if (next == NULL)
+                break;
+            len = (size_t)(next - src_str);
+            if (len != 0) {
+                memcpy(dest, src_str, len);
+                dest += len;
+            }
+            memcpy(dest, rep_str, (size_t)repl_len);
+            dest   += repl_len;
+            src_str = next + mark_len;
+        }
+
+        strcpy(dest, src_str);
+    }
 }
 
 
@@ -391,7 +224,7 @@ do_substitution(
  *  The "match" and "repl" trees *must* be identical in structure.
  */
 LOCAL void
-do_multi_subs(char ** ppzStr, size_t * pStrLen, SCM match, SCM repl)
+do_multi_subs(char ** ppzStr, ssize_t * pStrLen, SCM match, SCM repl)
 {
     char* pzStr = *ppzStr;
     char* pzNxt = pzStr;
@@ -434,6 +267,24 @@ do_multi_subs(char ** ppzStr, size_t * pStrLen, SCM match, SCM repl)
  *  EXPRESSION EVALUATION ROUTINES
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/*=gfunc mk_gettextable
+ *
+ * what:   print a string in a gettext-able format
+ * exparg: string, a multi-paragraph string
+ *
+ * doc: Returns SCM_UNDEFINED.  The input text string is printed
+ *      to the current output as one puts() call per paragraph.
+=*/
+SCM
+ag_scm_mk_gettextable(SCM txt)
+{
+    if (AG_SCM_STRING_P(txt)) {
+        char const * pz = ag_scm2zchars(txt, "txt");
+        optionPrintParagraphs(pz, false, cur_fpstack->stk_fp);
+    }
+    return SCM_UNDEFINED;
+}
+
 /*=gfunc in_p
  *
  * what:   test for string in list
@@ -469,7 +320,7 @@ ag_scm_in_p(SCM obj, SCM list)
         return SCM_BOOL_F;
     }
 
-    len = scm_ilength(list);
+    len = (int)scm_ilength(list);
     if (len == 0)
         return SCM_BOOL_F;
 
@@ -528,7 +379,7 @@ ag_scm_join(SCM sep, SCM list)
     if (! AG_SCM_STRING_P(sep))
         return SCM_UNDEFINED;
 
-    sv_l_len = l_len = scm_ilength(list);
+    sv_l_len = l_len = (int)scm_ilength(list);
     if (l_len == 0)
         return AG_SCM_STR02SCM(zNil);
 
@@ -565,7 +416,7 @@ ag_scm_join(SCM sep, SCM list)
     }
 
     l_len = sv_l_len;
-    pzRes = pzScan = ag_scribble(str_len);
+    pzRes = pzScan = scribble_get((ssize_t)str_len);
 
     /*
      *  Now, copy each one into the output
@@ -609,145 +460,80 @@ ag_scm_join(SCM sep, SCM list)
  *
  * doc:
  *  Prefix every line in the second string with the first string.
+ *  This includes empty lines, though trailing white space will
+ *  be removed if the line consists only of the "prefix".
+ *  Also, if the last character is a newline, then *two* prefixes will
+ *  be inserted into the result text.
  *
  *  For example, if the first string is "# " and the second contains:
  *  @example
- *  two
- *  lines
+ *  "two\nlines\n"
  *  @end example
  *  @noindent
  *  The result string will contain:
  *  @example
  *  # two
  *  # lines
+ *  #
  *  @end example
+ *
+ *  The last line will be incomplete:  no newline and no space after the
+ *  hash character, either.
 =*/
 SCM
-ag_scm_prefix(SCM prefix, SCM text)
+ag_scm_prefix(SCM prefx, SCM txt)
 {
-    char*    pzPfx;
-    char*    pzText;
-    char*    pzDta;
-    size_t   out_size, rem_size;
-    size_t   pfx_size;
-    char*    pzRes;
+    char *   prefix   = ag_scm2zchars(prefx, "pfx");
+    char *   text     = ag_scm2zchars(txt,   "txt");
+    char *   scan     = text;
+    size_t   pfx_size = strlen(prefix);
+    char *   r_str;   /* result string */
 
-    pzPfx   = ag_scm2zchars(prefix, "prefix");
-    pzDta   = \
-    pzText  = ag_scm2zchars(text, "text");
-    pfx_size = strlen(pzPfx);
-    out_size = pfx_size;
+    {
+        size_t out_size = pfx_size + 1; // NUL or NL byte adjustment
+        for (;;) {
+            switch (*(scan++)) {
+            case NUL:
+                out_size += scan - text;
+                goto exit_count;
+            case NL:
+                out_size += pfx_size;
+            }
+        } exit_count:;
 
-    for (;;) {
-        switch (*(pzText++)) {
-        case NUL:
-            goto exit_count;
-        case NL:
-            out_size += pfx_size;
-            /* FALLTHROUGH */
-        default:
-            out_size++;
-        }
-    } exit_count:;
+        r_str = scan = scribble_get((ssize_t)out_size);
+    }
 
-    pzText = pzDta;
-    pzRes  = pzDta = ag_scribble(rem_size = out_size);
-    strcpy(pzDta, pzPfx);
-    pzDta    += pfx_size;
-    rem_size -= pfx_size;
+    memcpy(scan, prefix, pfx_size);
+    scan += pfx_size;
     pfx_size++;
 
     for (;;) {
-        char ch = *(pzText++);
+        char ch = *(text++);
         switch (ch) {
         case NUL:
-            if (rem_size != 0)
-                AG_ABEND("(prefix ...) failed");
-
-            return AG_SCM_STR2SCM(pzRes, out_size);
+            /*
+             * Trim trailing white space on the final line.
+             */
+            scan = SPN_HORIZ_WHITE_BACK(r_str, scan);
+            return AG_SCM_STR2SCM(r_str, scan - r_str);
 
         case NL:
-            *pzDta    = ch;
-            strcpy(pzDta+1, pzPfx);
-            pzDta    += pfx_size;
-            rem_size -= pfx_size;
+            /*
+             * Trim trailing white space on previous line first.
+             */
+            scan  = SPN_HORIZ_WHITE_BACK(r_str, scan);
+            *scan = NL;
+            memcpy(scan+1, prefix, pfx_size - 1);
+            scan += pfx_size;  // prefix length plus 1 for new line
             break;
 
         default:
-            rem_size--;
-            *(pzDta++) = ch;
+            *(scan++) = ch;
             break;
         }
     }
 }
-
-
-/*=gfunc shell
- *
- * what:  invoke a shell script
- * general_use:
- *
- * exparg: command, shell command - the result value is stdout
- *
- * doc:
- *  Generate a string by writing the value to
- *  a server shell and reading the output back in.  The template
- *  programmer is responsible for ensuring that it completes
- *  within 10 seconds.  If it does not, the server will be killed,
- *  the output tossed and a new server started.
- *
- *  NB:  This is the same server process used by the '#shell'
- *  definitions directive and backquoted @code{`} definitions.
- *  There may be left over state from previous shell expressions
- *  and the @code{`} processing in the declarations.  However, a
- *  @code{cd} to the original directory is always issued before
- *  the new command is issued.
-=*/
-SCM
-ag_scm_shell(SCM cmd)
-{
-    if (! AG_SCM_STRING_P(cmd))
-        return SCM_UNDEFINED;
-    {
-        char* pz = runShell(ag_scm2zchars(cmd, "command"));
-        cmd   = AG_SCM_STR02SCM(pz);
-        AGFREE((void*)pz);
-        return cmd;
-    }
-}
-
-
-/*=gfunc shellf
- *
- * what:  format a string, run shell
- * general_use:
- *
- * exparg: format, formatting string
- * exparg: format-arg, list of arguments to formatting string, opt, list
- *
- * doc:  Format a string using arguments from the alist,
- *       then send the result to the shell for interpretation.
-=*/
-SCM
-ag_scm_shellf(SCM fmt, SCM alist)
-{
-    int   len = scm_ilength(alist);
-    char* pz;
-
-#ifdef DEBUG_ENABLED
-    if (len < 0)
-        AG_ABEND("invalid alist to shellf");
-#endif
-
-    pz  = ag_scm2zchars(fmt, "format");
-    fmt = run_printf(pz, len, alist);
-
-    pz  = runShell(ag_scm2zchars(fmt, "shell script"));
-    fmt = AG_SCM_STR02SCM(pz);
-    AGFREE((void*)pz);
-    return fmt;
-}
-
 
 /*=gfunc raw_shell_str
  *
@@ -771,15 +557,15 @@ ag_scm_shellf(SCM fmt, SCM alist)
 SCM
 ag_scm_raw_shell_str(SCM obj)
 {
-    char*      pzDta;
-    char*      pz;
-    char*      pzFree;
+    char * data;
+    char * pz;
+    char * pzFree;
 
-    pzDta = ag_scm2zchars(obj, "AG Object");
+    data = ag_scm2zchars(obj, "AG Object");
 
     {
         size_t dtaSize = AG_SCM_STRLEN(obj) + 3; /* NUL + 2 quotes */
-        pz = pzDta-1;
+        pz = data-1;
         for (;;) {
             pz = strchr(pz+1, '\'');
             if (pz == NULL)
@@ -793,14 +579,14 @@ ag_scm_raw_shell_str(SCM obj)
     /*
      *  Handle leading single quotes before starting the first quote.
      */
-    while (*pzDta == '\'') {
+    while (*data == '\'') {
         *(pz++) = '\\';
         *(pz++) = '\'';
 
         /*
          *  IF pure single quotes, then we're done.
          */
-        if (*++pzDta == NUL) {
+        if (*++data == NUL) {
             *pz = NUL;
             goto returnString;
         }
@@ -812,7 +598,7 @@ ag_scm_raw_shell_str(SCM obj)
     *(pz++) = '\'';
 
     for (;;) {
-        switch (*(pz++) = *(pzDta++)) {
+        switch (*(pz++) = *(data++)) {
         case NUL:
             goto loopDone;
 
@@ -822,12 +608,12 @@ ag_scm_raw_shell_str(SCM obj)
              *  Now, insert escaped quotes for every quote char we find, then
              *  restart the quoting.
              */
-            pzDta--;
+            data--;
             do {
                 *(pz++) = '\\';
                 *(pz++) = '\'';
-            } while (*++pzDta == '\'');
-            if (*pzDta == NUL) {
+            } while (*++data == '\'');
+            if (*data == NUL) {
                 *pz = NUL;
                 goto returnString;
             }
@@ -913,7 +699,7 @@ ag_scm_raw_shell_str(SCM obj)
 SCM
 ag_scm_shell_str(SCM obj)
 {
-    return shell_stringify(obj, (unsigned)'"');
+    return shell_stringify(obj, (unsigned char)'"');
 }
 
 /*=gfunc sub_shell_str
@@ -931,7 +717,7 @@ ag_scm_shell_str(SCM obj)
 SCM
 ag_scm_sub_shell_str(SCM obj)
 {
-    return shell_stringify(obj, (unsigned)'`');
+    return shell_stringify(obj, (unsigned char)'`');
 }
 
 
@@ -949,13 +735,13 @@ ag_scm_stack(SCM obj)
 {
     SCM         res;
     SCM *       pos = &res;
-    tDefEntry** ppDE;
-    tDefEntry*  pDE;
+    def_ent_t** ppDE;
+    def_ent_t*  pDE;
     SCM         str;
 
     res = SCM_EOL;
 
-    ppDE = findEntryList(ag_scm2zchars(obj, "AG Object"));
+    ppDE = find_def_ent_list(ag_scm2zchars(obj, "AG Object"));
     if (ppDE == NULL)
         return SCM_EOL;
 
@@ -965,10 +751,10 @@ ag_scm_stack(SCM obj)
         if (pDE == NULL)
             break;
 
-        if (pDE->valType != VALTYP_TEXT)
+        if (pDE->de_type != VALTYP_TEXT)
             return SCM_UNDEFINED;
 
-        str  = AG_SCM_STR02SCM(pDE->val.pzText);
+        str  = AG_SCM_STR02SCM(pDE->de_val.dvu_text);
         *pos = scm_cons(str, SCM_EOL);
         pos  = SCM_CDRLOC(*pos);
     }
@@ -994,10 +780,12 @@ ag_scm_stack(SCM obj)
 SCM
 ag_scm_kr_string(SCM str)
 {
-    static char const zNewLine[] = "\\n\\\n";
-
-    return makeString(ag_scm2zchars(str, "string"),
-                      zNewLine, sizeof(zNewLine)-1);
+    char const * pz = ag_scm2zchars(str, "krstr");
+    SCM res;
+    pz  = optionQuoteString(pz, KR_STRING_NEWLINE);
+    res = AG_SCM_STR02SCM(pz);
+    AGFREE(pz);
+    return res;
 }
 
 
@@ -1023,10 +811,12 @@ ag_scm_kr_string(SCM str)
 SCM
 ag_scm_c_string(SCM str)
 {
-    static char const zNewLine[] = "\\n\"\n       \"";
-
-    return makeString(ag_scm2zchars(str, "string"),
-                      zNewLine, sizeof(zNewLine)-1);
+    char const * pz = ag_scm2zchars(str, "cstr");
+    SCM res;
+    pz  = optionQuoteString(pz, C_STRING_NEWLINE);
+    res = AG_SCM_STR02SCM(pz);
+    AGFREE(pz);
+    return res;
 }
 
 
@@ -1051,33 +841,33 @@ SCM
 ag_scm_string_tr_x(SCM str, SCM from_xform, SCM to_xform)
 {
     unsigned char ch_map[ 1 << 8 /* bits-per-byte */ ];
-    int   i      = sizeof(ch_map) - 1;
-    char* pzFrom = ag_scm2zchars(from_xform, "string");
-    char* pzTo   = ag_scm2zchars(to_xform, "string");
+    int   i    = sizeof(ch_map) - 1;
+    char* from = ag_scm2zchars(from_xform, "str");
+    char* to   = ag_scm2zchars(to_xform, "str");
 
     do  {
-        ch_map[i] = i;
+        ch_map[i] = (unsigned char)i;
     } while (--i > 0);
 
-    for (;i <= sizeof(ch_map) - 1;i++) {
-        unsigned char fch = (unsigned char)*(pzFrom++);
-        unsigned char tch = (unsigned char)*(pzTo++);
+    for (; i <= (int)sizeof(ch_map) - 1; i++) {
+        unsigned char fch = (unsigned char)*(from++);
+        unsigned char tch = (unsigned char)*(to++);
 
         if (tch == NUL) {
-            pzTo--;
-            tch = pzTo[-1];
+            to--;
+            tch = (unsigned char)to[-1];
         }
 
         switch (fch) {
         case NUL:
-            goto mapDone;
+            goto map_done;
 
         case '-':
             if ((i > 0) && (tch == '-')) {
-                unsigned char fs = (unsigned char)pzFrom[-2];
-                unsigned char fe = (unsigned char)pzFrom[0];
-                unsigned char ts = (unsigned char)pzTo[-2];
-                unsigned char te = (unsigned char)pzTo[0];
+                unsigned char fs = (unsigned char)from[-2];
+                unsigned char fe = (unsigned char)from[0];
+                unsigned char ts = (unsigned char)to[-2];
+                unsigned char te = (unsigned char)to[0];
                 if (te != NUL) {
                     while (fs < fe) {
                         ch_map[ fs++ ] = ts;
@@ -1090,17 +880,16 @@ ag_scm_string_tr_x(SCM str, SCM from_xform, SCM to_xform)
         default:
             ch_map[ fch ] = tch;
         }
-    } mapDone:;
+    } map_done:;
 
-    pzTo = (char*)(void*)AG_SCM_CHARS(str);
-    i    = AG_SCM_STRLEN(str);
+    to = C(char *, AG_SCM_CHARS(str));
+    i    = (int)AG_SCM_STRLEN(str);
     while (i-- > 0) {
-        *pzTo = ch_map[ (int)*pzTo ];
-        pzTo++;
+        *to = (char)ch_map[ (int)*to ];
+        to++;
     }
     return str;
 }
-
 
 /*=gfunc string_tr
  *
@@ -1122,7 +911,6 @@ ag_scm_string_tr(SCM Str, SCM From, SCM To)
     return ag_scm_string_tr_x(res, From, To);
 }
 
-
 /*=gfunc string_substitute
  *
  * what:  multiple global replacements
@@ -1134,37 +922,36 @@ ag_scm_string_tr(SCM Str, SCM From, SCM To)
  *
  * doc: @code{match} and  @code{repl} may be either a single string or
  *      a list of strings.  Either way, they must have the same structure
- *      and number of elements.  For example, to replace all less than
- *      and all greater than characters, do something like this:
+ *      and number of elements.  For example, to replace all amphersands,
+ *      less than and greater than characters, do something like this:
  *
  * @example
  *      (string-substitute source
- *      ("&"     "<"    ">")
- *      ("&amp;" "&lt;" "&gt;"))
+ *          (list "&"     "<"    ">")
+ *          (list "&amp;" "&lt;" "&gt;"))
  * @end example
 =*/
 SCM
-ag_scm_string_substitute(SCM Str, SCM Match, SCM Repl)
+ag_scm_string_substitute(SCM str, SCM Match, SCM Repl)
 {
-    char const *  pzStr;
-    size_t len;
-    SCM    res;
+    char const *  text;
+    ssize_t len;
+    SCM     res;
 
-    if (! AG_SCM_STRING_P(Str))
+    if (! AG_SCM_STRING_P(str))
         return SCM_UNDEFINED;
 
-    pzStr = AG_SCM_CHARS(Str);
-    len   = AG_SCM_STRLEN(Str);
+    text = AG_SCM_CHARS(str);
+    len   = (ssize_t)AG_SCM_STRLEN(str);
 
     if (AG_SCM_STRING_P(Match))
-        do_substitution(pzStr, len, Match, Repl, (char**)&pzStr, &len);
+        do_substitution(text, len, Match, Repl, (char**)&text, &len);
     else
-        do_multi_subs((char**)&pzStr, &len, Match, Repl);
+        do_multi_subs((char**)&text, &len, Match, Repl);
 
-    res = AG_SCM_STR2SCM(pzStr, len);
+    res = AG_SCM_STR2SCM(text, (size_t)len);
     return res;
 }
-
 
 /*=gfunc time_string_to_number
  *
@@ -1192,11 +979,13 @@ ag_scm_time_string_to_number(SCM time_spec)
 
     pz = AG_SCM_CHARS(time_spec);
     time_period = parse_duration(pz);
-    
+
     return AG_SCM_INT2SCM((int)time_period);
 }
 
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

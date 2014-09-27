@@ -2,46 +2,61 @@
 
   AutoGen5 template man
 
-## cmd-doc.tlib -- Template for command line man/mdoc pages
-##
-## Time-stamp:      "2011-06-13 08:30:13 bkorb"
-##
-##  This file is part of AutoOpts, a companion to AutoGen.
-##  AutoOpts is free software.
-##  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
-##
-##  AutoOpts is available under any one of two licenses.  The license
-##  in use must be one of these two and the choice is under the control
-##  of the user of the license.
-##
-##   The GNU Lesser General Public License, version 3 or later
-##      See the files "COPYING.lgplv3" and "COPYING.gplv3"
-##
-##   The Modified Berkeley Software Distribution License
-##      See the file "COPYING.mbsd"
-##
-##  These files have the following md5sums:
-##
-##  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd
+# cmd-doc.tlib -- Template for command line man/mdoc pages
+#
+#  This file is part of AutoOpts, a companion to AutoGen.
+#  AutoOpts is free software.
+#  Copyright (C) 1992-2013 Bruce Korb - all rights reserved
+#
+#  AutoOpts is available under any one of two licenses.  The license
+#  in use must be one of these two and the choice is under the control
+#  of the user of the license.
+#
+#   The GNU Lesser General Public License, version 3 or later
+#      See the files "COPYING.lgplv3" and "COPYING.gplv3"
+#
+#   The Modified Berkeley Software Distribution License
+#      See the file "COPYING.mbsd"
+#
+#  These files have the following sha256 sums:
+#
+#  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+#  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+#  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
-# Produce a man page for section 1, 6 or 8 commands.  Which is
+# Produce a man page for section 1, 5, 6 or 8 commands.  Which is
 # selected via: -DMAN_SECTION=n.  "n" may have a suffix, if desired.
 # These sections have default section names that may be overridden
 # with -DSECTIN_NAME=XX, also passed to the autogen invocation.
 #
 :+][+:
 
+   ;;# START-BUILDTREE-ISMS
+   ;;
+   (shell "CLexe=${AGexe%/agen5/*}/columns/columns
+  test -x \"${CLexe}\" || {
+    CLexe=${AGexe%/autogen}/columns
+    test -x \"${CLexe}\" || die 'columns program is not findable'
+  }")
+
+:+][+: # END-BUILDTREE-ISMS
+
+(shell "CLexe=`echo ${AGexe} | sed 's@/autogen@/columns@'`
+       test -x \"${CLexe}\" || CLexe=`which columns`")
+
+# END-INSTALL-ONLY-CODE :+][+:
+
 (define down-prog-name (string-downcase! (get "prog-name")))
 (define UP-PROG-NAME   (get-up-name "prog-name"))
 
+(define command-doc    #t)
 (define tmp-val        (getenv "MAN_SECTION"))
 (define man-sect       (if (exist? "cmd-section") (get "cmd-section") "1"))
 (define file-name      "")
 (define sect-name      "")
 (define macro-name     "")
 (define tmp-str        "")
+(define fname-line     "")
 (define use-flags      (exist? "flag.value"))
 (define named-mode     (not (or use-flags (exist? "long-opts") )))
 
@@ -51,11 +66,12 @@
 
 (define section-name
    (if (=* man-sect "1") "User Commands"
+   (if (=* man-sect "5") "File Formats"
    (if (=* man-sect "6") "Games"
    (if (=* man-sect "8") "System Management"
    (error
-    "the agman-cmd template only produces section 1, 6 and 8 man pages")
-))))
+    "the agman-cmd template only produces section 1, 5, 6 and 8 man pages")
+)))))
 (set! tmp-val (getenv "SECTION_NAME"))
 (if (defined? 'tmp-val) (if (string? tmp-val)
     (set! section-name tmp-val) ))
@@ -72,7 +88,7 @@
 ) )
 
 (define name-to-fname (lambda (nm)
-    (string-tr (string-downcase sec-type) " " "-") ))
+    (string-tr (string-downcase nm) " " "-") ))
 
 (define sect-line-fname (lambda () (begin
     (out-push-new file-name)
@@ -90,7 +106,11 @@
   "\nSee \\fBOPTION PRESETS\\fP for configuration environment variables.")
 
 (emit (head-line))
-(dne ".\\\"  ")                       :+][+:#
+(dne ".\\\"  ")                       :+]
+.Sh NAME
+.Nm [+: prog-name                     :+]
+.Nd [+: prog-title                    :+]
+[+: INCLUDE "tpl-config.tlib"         :+][+:#
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  B U I L D   D O C
@@ -98,68 +118,143 @@
 
 DEFINE build-doc                      :+][+:
 
+(if (not command-doc) (begin
+    (set! home-rc-files #f)
+    (set! home-rc-text "")
+)   )                                 :+][+:
+
 INVOKE doc-sections                   :+][+:
 INVOKE ao-sections                    :+][+:
-
-(out-push-new (string-append tmp-dir "/.assemble")) \:+]
-
-cat_n_rm() {
-  test -f ${tmp_dir}/$1 || return 0
-  grep -E -v '^[ 	]*$' ${tmp_dir}/$1
-  rm -f ${tmp_dir}/$1
-}
-
-#.\" Insert these sections first, in the prescribed order
-#
-for f in synopsis description options option-presets
-do cat_n_rm $f ; done
-test -f ${tmp_dir}/name && rm -f ${tmp_dir}/name
-
-#.\" These sections go last, in the prescribed order
-#
-for f in implementation-notes environment files examples exit-status errors \
-      compatibility see-also conforming-to history authors copyright bugs notes
-do cat_n_rm $f ; done > ${tmp_dir}/.fini
-
-#.\" Insert the contents of all remaining files in alphabetic order,
-#.\" except remove any blank lines.
-#
-set ${tmp_dir}/*
-test -f "$1" && cat $* | grep -E -v '^[ 	]*$'
-
-#.\" Now insert the sections we squirreled away for the end.
-#
-cat  ${tmp_dir}/.fini
-[+: (out-pop)
-    (shell ". ${tmp_dir}/.assemble")  :+][+:
+INVOKE assemble-sections              :+][+:
 
 ENDDEF build-doc
+
+.\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+.\"  A S S E M B L E   S E C T I O N S
+.\"
+.\" Emit the files for each section that was provided, and do conversions
+.\"
+.\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
+
+DEFINE assemble-sections    :+][+:
+
+(out-push-new)
+
+:+][+:
+#.\" Insert the sections in the prescribed order
+#.\" Ensure a newline between them all.  We strip blank lines,
+#.\" so extra blank lines get removed.
+#:+]
+{
+    cvt_prog='[+:
+
+        (define target-form   (if man-page "man" "mdoc"))
+        (define source-form   (get "option-format" "texi"))
+        (define converter     (string-append source-form "2" target-form ))
+        (set! tmp-str (find-file converter))
+
+        (if (not (defined? 'tmp-str))
+            (error (string-append "cannot locate " converter)))
+        tmp-str :+]'
+    cvt_prog=`cd \`dirname "$cvt_prog"\` >/dev/null && pwd
+         `/`basename "$cvt_prog"`
+    cd $tmp_dir
+    test -x "$cvt_prog" || die "'$cvt_prog' is not executable"
+
+    list='synopsis description options option-presets'
+    for f in $list
+    do  test -f $f && {
+            cat $f ; echo
+        }
+    done > .doc
+    rm -f $list name
+
+    list='implementation-notes environment files examples exit-status errors
+        compatibility see-also conforming-to history authors copyright bugs
+        notes'
+    for f in $list
+    do  test -f $f && {
+            cat $f ; echo
+        }
+    done > .end-doc
+    rm -f $list
+
+    list=`ls -1 *`' .end-doc'
+    for f in $list
+    do  test -f $f && {
+            cat $f ; echo
+        }
+    done >> .doc
+    rm -f $list
+} 2>/dev/null
+[+:
+IF (exist? "doc-sub")       :+][+:
+  (out-push-new (string-append tmp-dir "/.cmds")) :+][+:
+  FOR doc-sub               :+][+:
+
+    IF (define field-name (get "sub-type" target-form))
+       (~~ target-form field-name)  :+][+:
+
+       (set! field-name (get "sub-name"))
+       (define rep-string (string-append "<<" field-name ">>"))
+       (emit (string-substitute (get "sub-text") rep-string (get field-name)))
+       "\n"
+
+    :+][+:  ENDIF           :+][+:
+
+  ENDFOR doc-sub            :+][+:
+
+  (out-pop)
+  (define post-proc-cmd (string-append
+          (get "doc-sub-cmd" "sed -f %s %s") " | "
+          egrep-prog " -v '^[ 	]*$'"))
+  (sprintf post-proc-cmd ".cmds" ".doc")
+  :+][+:
+ELSE                       \:+]
+[+:(. egrep-prog):+] -v '^[ 	]*$' .doc[+:
+ENDIF doc-sub exists        :+] | $cvt_prog > .final-doc[+:
+
+(shell (out-pop #t))
+(insert-file (string-append tmp-dir "/.final-doc"))
+
+:+][+:
+
+ENDDEF assemble-sections
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  D O C   S E C T I O N S
 .\"
 .\" Emit the files for each section that was provided.
-.\"
+.\" If multiple sections exist, they get glued together with ".Pp"
+.\" between them.
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
 
 DEFINE doc-sections                   :+][+:
 
 FOR doc-section                       :+][+:
-
-  CASE
+  IF
     (define sec-type (string-upcase (get "ds-type")))
     (define sec-name (name-to-fname sec-type))
-    (out-push-new (string-append tmp-dir "/" sec-name))
     (define cvt-fn (find-file (string-append
          (get "ds-format" "man") "2mdoc")))
     (if (not (defined? 'cvt-fn))
         (error (sprintf "Cannot locate converter for %s"
                (get "ds-format" "man"))))
+
+    (define sec-file (string-append tmp-dir "/" sec-name))
+    (access? sec-file R_OK)           :+][+:
+        (out-push-add sec-file)
+        (emit ".Pp\n")                :+][+:
+
+  ELSE :+][+: CASE
+    (out-push-new sec-file)
     sec-type :+][+:
+
     == ""    :+][+: (error "unnamed doc-section") :+][+:
-    *==* " " :+].Sh "[+: (. sec-type) :+]"[+:
-    *        :+].Sh [+: (. sec-type)  :+][+:
-    ESAC                              :+]
+    *==* " " :+].Sh "[+: (. sec-type)             :+]"[+:
+    *        :+].Sh [+: (. sec-type)              :+][+:
+    ESAC     :+][+:
+  ENDIF :+]
 [+:
     (shell (string-append
       "fn='" cvt-fn "'\n"
@@ -169,7 +264,7 @@ FOR doc-section                       :+][+:
       "\n_EndOfDocSection_"
     ))                                :+][+:
 
-    CASE (. sec-type)                 :+][+:
+    CASE (emit "\n") sec-type         :+][+:
     == FILES                          :+][+:
         (if home-rc-files (emit home-rc-text))
         (set! home-rc-files #f)       :+][+:
@@ -195,31 +290,35 @@ ENDDEF doc-sections
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
 
 DEFINE ao-sections              :+][+:
+  IF (. command-doc)            :+][+:
+    INVOKE cond-section  sec = "OPTIONS"       mode = "replace"       :+][+:
+    INVOKE cond-section  sec = "EXIT STATUS"   mode = "insert"        :+][+:
 
-INVOKE cond-section  sec = "OPTIONS"       mode = "replace" :+][+:
-INVOKE cond-section  sec = "SYNOPSIS"      mode = "alt"     :+][+:
-INVOKE cond-section  sec = "DESCRIPTION"   mode = "append"  :+][+:
-INVOKE cond-section  sec = "EXIT STATUS"   mode = "insert"  :+][+:
-INVOKE cond-section  sec = "AUTHORS"       mode = "alt"     :+][+:
-INVOKE cond-section  sec = "BUGS"          mode = "append"  :+][+:
-INVOKE cond-section  sec = "NOTES"         mode = "append"  :+][+:
+    IF (or home-rc-files environ-init)                                :+][+:
+      INVOKE cond-section   sec = "OPTION PRESETS" mode = "replace"   :+][+:
 
-IF (exist? "copyright")                 :+][+:
-  INVOKE cond-section   sec = "COPYRIGHT"      mode = "alt"     :+][+:
-ENDIF                                   :+][+:
+      IF (. home-rc-files)                                            :+][+:
+        INVOKE cond-section sec = "FILES"          mode = "append"    :+][+:
+      ENDIF                                                           :+][+:
 
-IF (or home-rc-files environ-init)      :+][+:
-  INVOKE cond-section   sec = "OPTION PRESETS" mode = "replace" :+][+:
+      IF (. environ-init)                                             :+][+:
+        INVOKE cond-section sec = "ENVIRONMENT"    mode = "append"    :+][+:
+      ENDIF                                                           :+][+:
+    ENDIF                                                             :+][+:
 
-  IF (. home-rc-files)                  :+][+:
-    INVOKE cond-section sec = "FILES"          mode = "append"  :+][+:
-  ENDIF                                 :+][+:
+  ELSE  section 5, not command  :+][+:
+    INVOKE cond-section sec = "FILES"          mode = "append"        :+][+:
+  ENDIF  section 5/not          :+][+:
 
-  IF (. environ-init)                   :+][+:
-    INVOKE cond-section sec = "ENVIRONMENT"    mode = "append"  :+][+:
-  ENDIF                                 :+][+:
+  INVOKE cond-section  sec = "SYNOPSIS"        mode = "alt"           :+][+:
+  INVOKE cond-section  sec = "DESCRIPTION"     mode = "append"        :+][+:
+  INVOKE cond-section  sec = "AUTHORS"         mode = "alt"           :+][+:
+  INVOKE cond-section  sec = "BUGS"            mode = "append"        :+][+:
+  INVOKE cond-section  sec = "NOTES"           mode = "append"        :+][+:
 
-ENDIF                                   :+][+:
+IF (exist? "copyright")                                               :+][+:
+  INVOKE cond-section   sec = "COPYRIGHT"      mode = "alt"           :+][+:
+ENDIF                                                                 :+][+:
 
 ENDDEF ao-sections
 
@@ -240,7 +339,7 @@ ENDDEF ao-sections
 
 DEFINE cond-section                     :+][+:
 
-  IF 
+  IF
      (set! sect-name   (string-upcase! (string-substitute
                        (get "sec") "-" " " )))
      (set! macro-name  (string-downcase! (string-substitute
@@ -250,7 +349,6 @@ DEFINE cond-section                     :+][+:
      (not (access? file-name R_OK))     :+][+:
 
      INVOKE (sect-line-fname)           :+][+:
-     (out-pop)                          :+][+:
 
   ELSE file exists                      :+][+:
 
@@ -258,46 +356,55 @@ DEFINE cond-section                     :+][+:
 
      ==  replace                        :+][+:
          INVOKE (sect-line-fname)       :+][+:
-         (out-pop)                      :+][+:
 
      ==  append                         :+][+:
          (out-push-add file-name)       :+][+:
          INVOKE (string-append "append-" macro-name) :+][+:
-         (out-pop)                      :+][+:
 
      ==  insert                         :+][+:
-         (set! tmp-str (shellf "sed '1s/.Sh .*/.Pp/' %s" file-name)) :+][+:
+         (set! fname-line (shellf
+           "sed '1s/.Sh .*/.Pp/' %1$s ; rm -f %1$s" file-name)) :+][+:
          INVOKE (sect-line-fname)       :+][+:
-         (emit tmp-str)
-         (out-pop)                      :+][+:
 
-     # * -- otherwise, do nothing       :+][+:
+     ==  alt                            :+][+:
+         (out-push-new)                 :+][+:
 
+     *                                  :+][+:
+         (error (sprintf "invalid section type: %s" (get "mode")))
+
+     :+][+:
      ESAC                               :+][+:
 
   ENDIF file existence/non-existence    :+][+:
+  (out-pop) :+][+: # All paths open out :+][+:
 ENDDEF cond-section
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  M K - D E S C R I P T I O N
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
 
-DEFINE mk-description                 :+][+:
+DEFINE mk-description                   :+][+:
 
-  (if (exist? "prog-man-descrip")
-      (stack-join "\n.Pp\n" "prog-man-descrip")
-      (if (exist? "detail")
-          (stack-join "\n.Pp\n" "detail")
-          "There is no description for this command."
-  )   )                               :+]
-[+:
-  INVOKE append-description           :+][+:
+   (out-push-new)
+   (emit
+     (if (exist? "prog-man-descrip")
+         (stack-join "\n.Pp\n" "prog-man-descrip")
+         (if (exist? "detail")
+             (stack-join "\n.Pp\n" "detail")
+             "There is no description for this command."
+   ) )   )
+   (shell "sed 's/^$/.sp/' <<\\_EODesc_\n" (out-pop #t) "\n_EODesc_")
+
+   :+][+:
+   INVOKE append-description            :+][+:
 
 ENDDEF mk-description
 
-.\" = = = = = APPEND TO IT:           :+][+:
+.\" = = = = = = = = = = = = = = = = = =
+.\"  A P P E N D - D E S C R I P T I O N
+.\" = = = = = = = = = = = = = = = = = = :+][+:
 
-DEFINE append-description             :+][+:
+DEFINE append-description               :+][+:
 
 IF (= (get "main.main-type") "for-each"):+][+:
 
@@ -322,7 +429,8 @@ The input list comments[+:
   ?% comment-char "%s" "#" :+]' character.
 [+:
 
-ENDIF - "main" exists                   :+][+:
+ENDIF - "main" is of "for-each" type    :+][+:
+
 ENDDEF append-description
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -339,11 +447,11 @@ DEFINE mk-options
 (define optname-from  "A-Z_^")
 (define optname-to    "a-z--")
 (define cvt-cmd       "")
-(define formatted-doc (exist? "option-doc-format"))
+(define formatted-doc (exist? "option-format"))
 
 (if formatted-doc (begin
     (out-push-new)
-    (set! cvt-cmd (string-append (get "option-doc-format") "2mdoc"))
+    (set! cvt-cmd (string-append (get "option-format") "2mdoc"))
 )   )
 
 (if (exist? "preserve-case")
@@ -363,11 +471,19 @@ DEFINE mk-options
 .Bl -tag[+:
 
 FOR flag                              :+][+:
+  IF (not (exist? "documentation"))   :+][+:
+    IF (exist? "aliases")             :+][+:
+      INVOKE emit-alias-opt           :+][+:
+    ELSE                              :+][+:
+      INVOKE emit-flag-text           :+][+:
+    ENDIF                             :+][+:
 
-  IF (exist? "documentation")         :+]
-.Ss "[+: (string-substitute (get "descrip") "-" "\\-") :+]"[+:
-  ELSE                                :+][+:
-    INVOKE emit-flag-text             :+][+:
+  ELSE                                :+]
+.Ss "[+: (get "descrip" "") :+]"[+:
+(set! tmp-str (get "documentation" ""))
+(if (> (string-length tmp-str) 3) (string-append
+    "\n" tmp-str "\n" ))              :+][+:
+
   ENDIF                               :+][+:
 ENDFOR flag
 
@@ -377,12 +493,13 @@ ENDFOR flag
 
 :+]
 .It [+:
+  (define tmp-val (get "help-value" "\\&?"))
+  (if (and use-flags (> (string-length tmp-val) 0))
+      (string-append "Fl " tmp-val
+            (if (exist? "long-opts") " , Fl -help" "") )
+      (string-append (if (exist? "long-opts") "Fl -" "") "help" )
+  )  \:+]
 
-  IF (. use-flags)  :+]\-[+: (get "help-value" "?") :+][+:
-     (if (exist? "long-opts") " , \" \\-\\-help\"") :+][+:
-  ELSE   :+][+:
-     (if (exist? "long-opts") "\\-\\-") :+]help[+:
-  ENDIF  :+]
 Display usage information and exit.[+:#
 
 .\" = = = = = = = = = = = = = = = = =
@@ -391,12 +508,13 @@ Display usage information and exit.[+:#
 
   IF (not (exist? "no-libopts")) :+]
 .It [+:
+  (define tmp-val (get "more-help-value" "\\&!"))
+  (if (and use-flags (> (string-length tmp-val) 0))
+      (string-append "Fl " tmp-val
+            (if (exist? "long-opts") " , Fl -more-help" "") )
+      (string-append (if (exist? "long-opts") "Fl -" "") "more-help" )
+  )       \:+]
 
-  IF (. use-flags)  :+]\-[+: ?% more-help-value "%s" "!" :+][+:
-     IF (exist? "long-opts") :+] , " \-\-more-help"[+: ENDIF :+][+:
-  ELSE   :+][+:
-     IF (exist? "long-opts") :+]\-\-[+: ENDIF :+]more-help[+:
-  ENDIF  :+]
 Pass the extended usage information through a pager.[+:
 
 ENDIF no no-libopts
@@ -408,31 +526,41 @@ ENDIF no no-libopts
 IF (exist? "homerc") :+]
 .It [+:
 
-  IF (. use-flags)  :+]\-[+: ?% save-opts-value "%s" ">"
-     :+] " [\fIrcfile\fP][+:
-     IF (exist? "long-opts") :+]," " \-\-save-opts" "[=\fIrcfile\fP][+:
-     ENDIF :+]"[+:
-  ELSE     :+][+:
-     IF (exist? "long-opts") :+]\-\-[+:
-     ENDIF :+]save-opts "[=\fIrcfile\fP]"[+:
-  ENDIF    :+]
-Save the option state to \fIrcfile\fP.  The default is the \fIlast\fP
-configuration file listed in the \fBOPTION PRESETS\fP section, below.
-.It [+:
+  IF (not (exist? "disable-save"))    :+][+:
 
-  IF (. use-flags)  :+]\-[+: ?% load-opts-value "%s" "<"
-     :+] " \fIrcfile\fP[+:
-     IF (exist? "long-opts")
-           :+]," " \-\-load-opts" "=\fIrcfile\fP," " \-\-no-load-opts[+:
-     ENDIF :+]"[+:
-  ELSE     :+][+:
-     IF (exist? "long-opts") :+]\-\-[+:
-     ENDIF :+]load-opts "=\fIrcfile\fP," " \-\-no-load-opts"[+:
-  ENDIF    :+]
-Load options from \fIrcfile\fP.
+  (define tmp-val (get "save-opts-value" ">"))
+  (if (and use-flags (> (string-length tmp-val) 0))
+      (string-append "Fl " tmp-val " Oo Ar cfgfile Oc"
+            (if (exist? "long-opts")
+                " , Fl -save-opts Oo Ns = Ns Ar cfgfile Oc" ) "")
+      (string-append (if (exist? "long-opts") "Fl -" "")
+            "save-opts Oo Ns = Ns Ar cfgfile Oc" )
+  )       \:+]
+
+Save the option state to \fIcfgfile\fP.  The default is the \fIlast\fP
+configuration file listed in the \fBOPTION PRESETS\fP section, below.
+The command will exit after updating the config file.
+.It [+:
+  ENDIF  saving not disabled          :+][+:
+
+  (define tmp-val (get "load-opts-value" "<"))
+  (define tmp-str (if (exist? "long-opts") "Fl -" ""))
+
+  (if (and use-flags (> (string-length tmp-val) 0))
+      (string-append "Fl " tmp-val " Ar cfgfile"
+         (if (exist? "long-opts")
+             (string-append " , " tmp-str "load-opts Ns = Ns Ar cfgfile"
+                            " , " tmp-str "no-load-opts" )
+             "") )
+      (string-append tmp-str "load-opts Ns = Ns Ar cfgfile , "
+                     tmp-str "no-load-opts" )
+  )       \:+]
+
+Load options from \fIcfgfile\fP.
 The \fIno-load-opts\fP form will disable the loading
-of earlier RC/INI files.  \fI\-\-no-load-opts\fP is handled early,
+of earlier config/rc/ini files.  \fI\-\-no-load-opts\fP is handled early,
 out of order.[+:
+
 ENDIF (exist? "homerc")
 
 .\" = = = = = = = = = = = = = = = = =
@@ -442,14 +570,15 @@ ENDIF (exist? "homerc")
 IF (exist? "version") :+]
 .It [+:
 
-  IF (. use-flags)  :+]\-[+: ?% version-value "%s" "v"
-     :+] " [{\fIv|c|n\fP}][+:
-     IF (exist? "long-opts") :+]," " \-\-version" "[=\fI{v|c|n}\fP][+:
-     ENDIF :+]"[+:
-  ELSE     :+][+:
-     IF (exist? "long-opts") :+]\-\-[+:
-     ENDIF :+]version "[=\fI{v|c|n}\fP]"[+:
-  ENDIF    :+]
+  (define tmp-val (get "version-value" "v"))
+  (if (and use-flags (> (string-length tmp-val) 0))
+      (string-append "Fl " tmp-val " Op Brq Ar v|c|n"
+            (if (exist? "long-opts")
+                "  Fl -version Op Brq Ar v|c|n" ) "")
+      (string-append (if (exist? "long-opts") "Fl -" "")
+            "version Op Brq Ar v|c|n" )
+  )       \:+]
+
 Output version of program and exit.  The default mode is `v', a simple
 version.  The `c' mode will print copyright information and `n' will
 print the full copyright notice.[+:
@@ -482,7 +611,7 @@ by loading values from [+:
   ENDIF                               :+][+:
   IF (. environ-init) :+]environment variables named:
 .nf
-  \fB[+: (. UP-PROG-NAME) :+]_<option-name>\fP or \fB[+: (. UP-PROG-NAME) :+]\fP
+  \fB[+:(. UP-PROG-NAME):+]_<option-name>\fP or \fB[+:(. UP-PROG-NAME):+]\fP
 .fi
 .ad[+:
     IF (. home-rc-files)              :+]
@@ -504,6 +633,9 @@ the configuration files.[+:
     ~~ '\.|\$HOME'                    :+]
 The file "\fI[+: (string-append (get "homerc") "/" rc-file)
 :+]\fP" will be used, if present.[+:
+
+    == ""                             :+][+:
+
     *                                 :+]
 The \fIhomerc\fP file is "\fI[+:homerc:+]\fP", unless that is a directory.
 In that case, the file "\fI[+: (. rc-file) :+]\fP"
@@ -529,23 +661,45 @@ DEFINE mk-exit-status                \:+]
 One of the following exit values will be returned:
 .Bl -tag
 [+:
-(ag-fprintf 0 ".It 0\n%s\n"
+(ag-fprintf 0 ".It 0 \" (EXIT_%s)\"\n%s\n"
+    (string->c-name! (string-upcase (get "exit-name[0]" "SUCCESS")))
     (get "exit-desc[0]" "Successful program execution.") )
 
-(ag-fprintf 0 ".It 1\n%s\n"
+(define need-ex-noinput  (exist? "homerc"))
+(define need-ex-software #t)
+
+(ag-fprintf 0 ".It 1 \" (EXIT_%s)\"\n%s\n"
+    (string->c-name! (string-upcase (get "exit-name[1]" "FAILURE")))
     (get "exit-desc[1]"
     "The operation failed or the command syntax was not valid.")) :+][+:
 
 FOR exit-desc (for-from 2)            :+][+:
-  (sprintf ".It %d\n%s\n"
-    (for-index) (get "exit-desc"))    :+][+:
+  (if (= (for-index) 66)
+      (set! need-ex-noinput  #f)
+      (if (= (for-index) 70)
+          (set! need-ex-software #f) ))
+
+  (set! tmp-str (get (sprintf "exit-name[%d]" (for-index)) "* unnamed *"))
+  (sprintf ".It %d \" (EXIT_%s)\"\n%s\n"
+    (for-index)
+    (string-upcase (string->c-name! tmp-str))
+    (get "exit-desc" ""))             :+][+:
 ENDFOR exit-desc                      :+][+:
-(if (> (string-length tmp-str) 1)
-    (emit tmp-str)) :+]
+(if need-ex-noinput
+    (emit ".It 66 \" (EX_NOINPUT)\"
+A specified configuration file could not be loaded.\n"))
+
+(if need-ex-software
+    (emit ".It 70 \" (EX_SOFTWARE)\"
+libopts had an internal operational error.  Please report
+it to autogen-users@lists.sourceforge.net.  Thank you.\n"))
+
+(if (> (string-length fname-line) 1)
+    (emit fname-line))                :+]
 .El
 [+:
 
-ENDDEF exit-status
+ENDDEF mk-exit-status
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  M K - A U T H O R S
@@ -570,8 +724,6 @@ ENDDEF mk-authors
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  M K - B U G S
-.\"
-.\"  This section is guaranteed to be the last section in the man page
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
 
 DEFINE mk-bugs                        :+][+:
@@ -588,7 +740,7 @@ DEFINE append-bugs                    :+][+:
 
     (set! tmp-val (get "copyright.eaddr" (get "eaddr")))
     (if (> (string-length tmp-val) 1)
-        (string-append "Please send bug reports to: " tmp-val "\n") )
+        (string-append "\n.Pp\nPlease send bug reports to: " tmp-val "\n") )
     :+][+:
 
 ENDDEF append-bugs
@@ -628,7 +780,7 @@ ENDDEF mk-notes
 
 .\" = = = = = APPEND TO IT:           :+][+:
 
-DEFINE append-notes                  \:+]
+DEFINE append-notes                   :+]
 .Pp
 This manual page was \fIAutoGen\fP-erated from the \fB[+: prog-name :+]\fP
 option definitions.[+:
@@ -645,8 +797,8 @@ ENDDEF mk-environment
 
 .\" = = = = = APPEND TO IT:           :+][+:
 
-DEFINE append-environment             :+][+:
-   (. environ-text)                   :+][+:
+DEFINE append-environment             :+]
+[+:(. environ-text)                   :+][+:
 ENDDEF append-environment
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -659,9 +811,39 @@ ENDDEF mk-files
 
 .\" = = = = = APPEND TO IT:           :+][+:
 
-DEFINE append-files                   :+][+:
-   (. home-rc-text)                   :+][+:
+DEFINE append-files                   :+]
+[+:(. home-rc-text)                   :+][+:
 ENDDEF append-files
+
+.\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+.\"  E M I T   A L I A S   O P T
+.\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = :+][+:
+
+DEFINE emit-alias-opt                   :+]
+.It [+:
+  IF (exist? "value")                   :+][+:
+    IF (exist? "long-opts")            \:+]
+ Fl [+:value:+] , Fl \-[+: name         :+][+:
+    ELSE                               \:+]
+ Fl [+:value:+][+:
+    ENDIF  (exist? "long-opts")         :+][+:
+
+  ELSE  value does not exist -- named option only  :+][+:
+
+    IF (not (exist? "long-opts"))      \:+]
+ [+: name :+][+:
+    ELSE                               \:+]
+ Fl \-[+: (get "name")                   :+][+:
+    ENDIF                               :+][+:
+  ENDIF                                 :+]
+This is an alias for the \fI--[+: aliases :+]\fR option.[+:
+  IF (exist? "deprecated")            :+]
+.sp
+.B
+NOTE: THIS OPTION IS DEPRECATED
+[+:
+  ENDIF                               :+][+:
+ENDDEF emit-alias-opt
 
 .\" = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 .\"  E M I T   F L A G   T E X T
@@ -682,17 +864,17 @@ DEFINE emit-flag-text                 :+][+:
 
   (if (not (exist? "arg-type"))
       (set! opt-arg "")
-      (set! opt-arg (string-append "\\fI"
+      (set! opt-arg (string-append "Ar "
             (fix-optname (if (exist? "arg-name")
                 (get "arg-name")
                 (string-downcase! (get "arg-type"))  ))
-            "\\fP" ))
+            ))
   )
 
 :+]
 .It [+:
-  IF (exist? "value")                 :+][+:
-    IF (exist? "long-opts")           :+][+:
+  IF (exist? "value")                   :+][+:
+    IF (exist? "long-opts")             :+][+:
 
           # * * * * * * * * * * * * * * * * * * * *
           *
@@ -700,19 +882,19 @@ DEFINE emit-flag-text                 :+][+:
           *  the program uses long options
           *
           \:+]
- \-[+:value:+][+:
-      IF (not (exist? "arg-type"))    :+] ", " -\-[+:
-      ELSE  :+] " [+:(. opt-arg):+], " \-\-[+:
-      ENDIF :+][+: (. opt-name)       :+][+:
-      IF (exist? "arg-type")          :+][+:
-              ? arg-optional " [ =" ' "=" '
-              :+][+:  (. opt-arg)     :+][+:
-              arg-optional " ]"       :+][+:
-      ENDIF :+][+:
-      IF (exist? "disable") :+], " \fB\-\-[+:(. dis-name):+]\fP"[+:
-      ENDIF :+][+:
+ Fl [+:value:+][+:
+      IF (not (exist? "arg-type"))      :+] , Fl -[+:
+      ELSE  :+] [+:(. opt-arg):+] , Fl -[+:
+      ENDIF :+][+: (. opt-name)         :+] [+:
+      IF (exist? "arg-type")            :+][+:
+              ? arg-optional Oo Ns = Ns
+              :+] [+:  (. opt-arg)      :+] [+:
+              arg-optional Oc           :+][+:
+      ENDIF                             :+][+:
+      IF (exist? "disable") :+] , Fl -[+:(. dis-name):+][+:
+      ENDIF                             :+][+:
 
-    ELSE   :+][+:
+    ELSE                                :+][+:
 
           # * * * * * * * * * * * * * * * * * * * *
           *
@@ -720,17 +902,17 @@ DEFINE emit-flag-text                 :+][+:
           *  the program does _NOT_ use long options
           *
           \:+]
- \-[+:value:+][+:
-      IF (exist? "arg-type") :+][+:
-            arg-optional "["     :+] "[+:(. opt-arg):+][+:
-            arg-optional '"]"'   :+][+:
-      ENDIF " :+][+:
-    ENDIF     :+][+:
+ Fl [+:value:+] [+:
+      IF (exist? "arg-type")            :+][+:
+            arg-optional Oo     :+] [+:(. opt-arg):+] [+:
+            arg-optional Oc     :+] [+:
+      ENDIF "                           :+][+:
+    ENDIF  (exist? "long-opts")         :+][+:
 
 
   ELSE  value does not exist -- named option only  :+][+:
 
-    IF (not (exist? "long-opts"))     :+][+:
+    IF (not (exist? "long-opts"))       :+][+:
 
           # * * * * * * * * * * * * * * * * * * * *
           *
@@ -739,40 +921,40 @@ DEFINE emit-flag-text                 :+][+:
           *  Special magic:  All arguments are named options.
           *
           \:+]
- [+: (. opt-name) :+][+:
-      IF (exist? "arg-type")          :+] [+:
-         ? arg-optional " [ =" ' "=" '
-         :+][+:(. opt-arg):+][+:
-         arg-optional "]" :+][+:
+ [+: (. opt-name) :+] [+:
+      IF (exist? "arg-type")            :+] [+:
+         ? arg-optional ' Oo = Ns' ' Ns = Ns '
+         :+] [+:(. opt-arg)              :+] [+:
+         arg-optional Oc                :+] [+:
       ENDIF:+][+:
-      IF (exist? "disable") :+], " \fB[+:(. dis-name):+]\fP"[+:
-      ENDIF                           :+][+:
+      IF (exist? "disable") :+] , Fl -[+:(. dis-name):+][+:
+      ENDIF                             :+][+:
 
 
-    ELSE                              :+][+:
+    ELSE                                :+][+:
           # * * * * * * * * * * * * * * * * * * * *
           *
           *  The option does not have a flag value (character).
           *  The program, instead, only accepts long options.
           *
           \:+]
- \-\-[+: (. opt-name) :+][+:
+ Fl -[+: (. opt-name) :+] [+:
 
-      IF (exist? "arg-type") :+] "[+: #" :+][+:
-            arg-optional "[" :+]=[+:(. opt-arg):+][+:
-            arg-optional "]" :+]"[+: #" :+][+:
-      ENDIF                           :+][+:
+      IF (exist? "arg-type") :+][+:
+            arg-optional Oo :+] Ns = Ns [+:(. opt-arg):+] [+:
+            arg-optional Oc :+][+:
+      ENDIF                             :+][+:
 
       IF (exist? "disable")
-        :+], " \fB\-\-[+:(. dis-name):+]\fP"[+:
-      ENDIF                           :+][+:
-    ENDIF                             :+][+:
-  ENDIF                               :+]
-[+: (string-substitute (get "descrip") "\\" "\\\\") :+].[+:
+        :+], " Fl \-[+:(. dis-name):+]"[+:
+      ENDIF                             :+][+:
+    ENDIF                               :+][+:
+  ENDIF                                 :+]
+[+: (get "descrip" "") :+].[+:
 
-  IF (exist? "min")                   :+]
+  IF (exist? "min")                     :+]
 This option is required to appear.[+:
-  ENDIF                               :+][+:
+  ENDIF                                 :+][+:
 
   IF (exist? "max") :+]
 This option may appear [+:
@@ -843,7 +1025,7 @@ The available keywords are:
 .in +4
 .nf
 .na
-[+: (shellf "${CLexe:-columns} --indent='' --spread=1 -W50 <<_EOF_\n%s\n_EOF_"
+[+: (shellf "${CLexe} --indent='' --spread=1 -W50 <<_EOF_\n%s\n_EOF_"
             (join "\n" (stack "keyword"))  )   :+]
 .fi
 or their numeric equivalent.
@@ -853,7 +1035,9 @@ or their numeric equivalent.
 This option takes an integer number as its argument.[+:
 
     IF  (exist? "arg-range")          :+]
-The value of [+:(. opt-arg):+] is constrained to being:
+The value of
+.[+:(. opt-arg):+]
+is constrained to being:
 .in +4
 .nf
 .na[+:FOR arg_range ", or"            :+]
@@ -890,22 +1074,116 @@ esac"
   ENDIF  arg-type key/set/num         :+][+:
 
   IF (exist? "arg-default")           :+]
-The default [+: (. opt-arg) :+] for this option is:
+The default
+.[+: (. opt-arg) :+]
+for this option is:
 .ti +4
  [+: (join " + " (stack "arg-default" )) :+][+:
   ENDIF                               :+]
 .sp
 [+:
- (if (exist? "doc")
-        (string-substitute (get "doc") "\\" "\\\\")
-        "This option has not been fully documented." ) :+][+:
+ (if (exist? "doc") (string-substitute (get "doc" "") "\n\n" "\n.sp\n")
+     "This option has not been fully documented." ) :+][+:
   IF (exist? "deprecated")            :+]
 .sp
 .B
 NOTE: THIS OPTION IS DEPRECATED
-.R[+:
+[+:
   ENDIF                               :+][+:
 
-ENDDEF emit-flag-text
+ENDDEF emit-flag-text                 :+][+:
+
+DEFINE mk-synopsis                          :+][+:
+  (out-push-new file-name)                 \:+]
+.Sh SYNOPSIS
+.Nm[+:
+
+  IF (. use-flags)                          :+][+:
+    IF (exist? "long-opts")                 :+]
+.\" Mixture of short (flag) options and long options
+.Op Fl flags
+.Op Fl flag Op Ar value
+.Op Fl \-option-name Ns Oo Oo Ns "=| " Oc Ns Ar value Oc
+[+: ELSE no long options:                   :+]
+.Op Fl flags
+.Op Fl flag Op Ar value
+[+: ENDIF
+                                            :+][+:
+  ELIF (exist? "long-opts")
+                                            :+]
+.Op Fl \-option-name
+.Op Fl \-option-name Ar value
+[+:
+
+  ELIF  (not (exist? "argument"))           :+]
+.Op Ar option\-name Ar value
+.Pp
+All arguments are named options.
+[+:
+  ENDIF                                     :+][+:
+
+  IF (exist? "argument")                    :+][+:
+    argument                                :+][+:
+
+    IF (exist? "reorder-args")              :+]
+.Pp
+Operands and options may be intermixed.  They will be reordered.
+[+: ENDIF                                   :+][+:
+
+  ELIF (or (exist? "long-opts") use-flags)
+
+:+]
+.Pp
+All arguments must be options.
+[+:
+
+  ENDIF                                     :+][+:
+
+  IF (exist? "main")                        :+][+:
+  CASE main.main-type                       :+][+:
+  == shell-process                          :+]
+.Pp
+This program will emit text that is expected to be evaluated by
+a Bourne-compatible shell, thus digesting the options for the script.[+:
+
+  == shell-parser                           :+]
+.Pp
+This program is designed to produce output suitable for inclusion
+into a shell script that will parse the options described.[+:
+
+  == for-each                               :+]
+.Pp
+The operands that this program operates on may be specified either
+on the command line or read from standard input, one per line.
+In that input, leading and trailing white space is stripped,
+blank lines are ignored[+:
+
+    IF (define comment-char (get "comment-char" "#"))
+       (> (string-length comment-char) 1)  \:+]
+ and lines beginning with the character
+.I [+: (substring comment-char 1 0):+]
+are treated as comments[+:
+    ENDIF :+].[+:
+
+    IF (exist? "interleaved")               :+]
+Options may be interleaved with operands both on the command
+line and when operands are read from standard input.[+:
+    ENDIF  interleaved
+
+:+]
+Standard input may not be a terminal.[+:
+
+  ESAC  main-type                           :+][+:
+  ENDIF  main exists                        :+]
+.Pp
+[+:
+
+FOR explain   "\n.Pp\n"                     :+][+:
+  (get "explain" "")                        :+][+:
+ENDFOR                                      :+][+:
+
+(out-pop)                                   :+][+:
+
+ENDDEF mk-synopsis
 
 .\" cmd-doc.tlib ends here \:+]

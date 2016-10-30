@@ -8,7 +8,7 @@
  *
  *  Automated Finite State Machine
  *
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@ static dp_callback_t
 typedef struct transition t_dp_transition;
 struct transition {
     te_dp_state      next_state;
-    dp_callback_t*   trans_proc;
+    dp_callback_t *  trans_proc;
 };
 
 /**
@@ -367,7 +367,7 @@ dp_run_fsm( void )
     te_dp_state dp_state = DP_ST_INIT;
     te_dp_event trans_evt;
     te_dp_state nxtSt;
-    dp_callback_t* pT;
+    dp_callback_t * pT;
 
     while (dp_state < DP_ST_INVALID) {
 
@@ -382,10 +382,10 @@ dp_run_fsm( void )
         } else
 #endif /* __COVERITY__ */
         {
-            const t_dp_transition* pTT =
+            const t_dp_transition * ttbl =
             dp_trans_table[ dp_state ] + trans_evt;
-            nxtSt = pTT->next_state;
-            pT    = pTT->trans_proc;
+            nxtSt = ttbl->next_state;
+            pT    = ttbl->trans_proc;
         }
 
         if (pT != NULL)

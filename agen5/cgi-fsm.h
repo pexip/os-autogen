@@ -8,7 +8,7 @@
  *
  *  Automated Finite State Machine
  *
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -77,9 +77,9 @@ typedef enum {
  */
 extern te_cgi_state
 cgi_run_fsm(
-    char const* pzSrc,
+    char const * pzSrc,
     int inlen,
-    char* pzOut,
+    char * pzOut,
     int outlen );
 
 #endif /* AUTOFSM_CGI_FSM_H_GUARD */

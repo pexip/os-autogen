@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:0:16 templates.
+ * Generated from AutoOpts 41:1:16 templates.
  *
  *  AutoOpts is a copyrighted work.  This header file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -19,7 +19,7 @@
  * The autogen program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1992-2014 Bruce Korb, all rights reserved.
+ *  Copyright (C) 1992-2015 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -61,7 +61,7 @@
  *  tolerable version is at least as old as what was current when the header
  *  template was released.
  */
-#define AO_TEMPLATE_VERSION 167936
+#define AO_TEMPLATE_VERSION 167937
 #if (AO_TEMPLATE_VERSION < OPTIONS_MINIMUM_VERSION) \
  || (AO_TEMPLATE_VERSION > OPTIONS_STRUCT_VERSION)
 # error option template version mismatches autoopts/options.h header
@@ -105,9 +105,9 @@ typedef enum {
 /** count of all options for autogen */
 #define OPTION_CT    35
 /** autogen version */
-#define AUTOGEN_VERSION       "5.18.4"
+#define AUTOGEN_VERSION       "5.18.12"
 /** Full autogen version text */
-#define AUTOGEN_FULL_VERSION  "autogen (GNU AutoGen) 5.18.4"
+#define AUTOGEN_FULL_VERSION  "autogen (GNU AutoGen) 5.18.12"
 
 /**
  *  Interface defines for all options.  Replace "n" with the UPPER_CASED

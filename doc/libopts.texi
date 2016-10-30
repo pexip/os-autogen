@@ -46,16 +46,16 @@ tokenize an input string
 @noindent
 Usage:
 @example
-token_list_t* res = ao_string_tokenize( string );
+token_list_t * res = ao_string_tokenize( string );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab string @tab @code{char const*}
+@item @tab string @tab @code{char const *}
 @tab string to be tokenized
-@item @tab returns @tab token_list_t*
+@item @tab returns @tab token_list_t *
 @tab pointer to a structure that lists each token
 @end multitable
 
@@ -111,16 +111,16 @@ parse a configuration file
 @noindent
 Usage:
 @example
-const tOptionValue* res = configFileLoad( fname );
+const tOptionValue * res = configFileLoad( fname );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab fname @tab @code{char const*}
+@item @tab fname @tab @code{char const *}
 @tab the file to load
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab An allocated, compound value structure
 @end multitable
 
@@ -163,10 +163,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab prog @tab @code{char const*}
+@item @tab prog @tab @code{char const *}
 @tab program name
 @item @tab returns @tab int
 @tab 0 -> SUCCESS, -1 -> FAILURE
@@ -203,25 +203,25 @@ find a hierarcicaly valued option instance
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionFindNextValue( odesc, pPrevVal, name, value );
+const tOptionValue * res = optionFindNextValue( odesc, pPrevVal, name, value );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab odesc @tab @code{const tOptDesc*}
+@item @tab odesc @tab @code{const tOptDesc *}
 @tab an option with a nested arg type
 
-@item @tab pPrevVal @tab @code{const tOptionValue*}
+@item @tab pPrevVal @tab @code{const tOptionValue *}
 @tab the last entry
 
-@item @tab name @tab @code{char const*}
+@item @tab name @tab @code{char const *}
 @tab name of value to find
 
-@item @tab value @tab @code{char const*}
+@item @tab value @tab @code{char const *}
 @tab the matching value
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -248,22 +248,22 @@ find a hierarcicaly valued option instance
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionFindValue( odesc, name, val );
+const tOptionValue * res = optionFindValue( odesc, name, val );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab odesc @tab @code{const tOptDesc*}
+@item @tab odesc @tab @code{const tOptDesc *}
 @tab an option with a nested arg type
 
-@item @tab name @tab @code{char const*}
+@item @tab name @tab @code{char const *}
 @tab name of value to find
 
-@item @tab val @tab @code{char const*}
+@item @tab val @tab @code{char const *}
 @tab the matching value
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -296,7 +296,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -316,19 +316,19 @@ get a specific value from a hierarcical list
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionGetValue( pOptValue, valueName );
+const tOptionValue * res = optionGetValue( pOptValue, valueName );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOptValue @tab @code{const tOptionValue*}
+@item @tab pOptValue @tab @code{const tOptionValue *}
 @tab a hierarchcal value
 
-@item @tab valueName @tab @code{char const*}
+@item @tab valueName @tab @code{char const *}
 @tab name of value to get
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -365,10 +365,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab line @tab @code{char const*}
+@item @tab line @tab @code{char const *}
 @tab NUL-terminated text
 @end multitable
 
@@ -399,7 +399,7 @@ Get the list of members of a bit mask set
 @noindent
 Usage:
 @example
-char* res = optionMemberList( od );
+char * res = optionMemberList( od );
 @end example
 @noindent
 Where the arguments are:
@@ -408,7 +408,7 @@ Where the arguments are:
 @item @tab ----- @tab ----- @tab -------------
 @item @tab od @tab @code{tOptDesc *}
 @tab the set membership option description
-@item @tab returns @tab char*
+@item @tab returns @tab char *
 @tab the names of the set bits
 @end multitable
 
@@ -425,19 +425,19 @@ get the next value from a hierarchical list
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionNextValue( pOptValue, pOldValue );
+const tOptionValue * res = optionNextValue( pOptValue, pOldValue );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOptValue @tab @code{const tOptionValue*}
+@item @tab pOptValue @tab @code{const tOptionValue *}
 @tab a hierarchcal list value
 
-@item @tab pOldValue @tab @code{const tOptionValue*}
+@item @tab pOldValue @tab @code{const tOptionValue *}
 @tab a value from this list
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -474,7 +474,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 
 @item @tab ex_code @tab @code{int}
@@ -502,10 +502,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab od @tab @code{tOptDesc*}
+@item @tab od @tab @code{tOptDesc *}
 @tab the descriptor for this arg
 @end multitable
 
@@ -528,10 +528,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab od @tab @code{tOptDesc*}
+@item @tab od @tab @code{tOptDesc *}
 @tab the descriptor for this arg
 @end multitable
 
@@ -557,13 +557,13 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
 @item @tab a_ct @tab @code{int}
 @tab program arg count
 
-@item @tab a_v @tab @code{char**}
+@item @tab a_v @tab @code{char **}
 @tab program arg vector
 @item @tab returns @tab int
 @tab the count of the arguments processed
@@ -607,7 +607,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -638,7 +638,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -678,7 +678,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -733,14 +733,14 @@ return the compiled AutoOpts version number
 @noindent
 Usage:
 @example
-char const* res = optionVersion();
+char const * res = optionVersion();
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab returns @tab char const*
+@item @tab returns @tab char const *
 @tab the version string in constant memory
 @end multitable
 
@@ -764,7 +764,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab ch_list @tab @code{char const*}
+@item @tab ch_list @tab @code{char const *}
 @tab characters to equivalence
 @end multitable
 
@@ -792,10 +792,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab str1 @tab @code{char const*}
+@item @tab str1 @tab @code{char const *}
 @tab first string
 
-@item @tab str2 @tab @code{char const*}
+@item @tab str2 @tab @code{char const *}
 @tab second string
 @item @tab returns @tab int
 @tab the difference between two differing characters
@@ -871,10 +871,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab str1 @tab @code{char const*}
+@item @tab str1 @tab @code{char const *}
 @tab first string
 
-@item @tab str2 @tab @code{char const*}
+@item @tab str2 @tab @code{char const *}
 @tab second string
 
 @item @tab ct @tab @code{int}
@@ -909,10 +909,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab dest @tab @code{char*}
+@item @tab dest @tab @code{char *}
 @tab output string
 
-@item @tab src @tab @code{char const*}
+@item @tab src @tab @code{char const *}
 @tab input string
 @end multitable
 

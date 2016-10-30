@@ -5,7 +5,7 @@
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -34,8 +34,6 @@ man_MANS        = $(TARG).1
 DOCFILES        = invoke-$(TARG).texi invoke-$(TARG).menu $(TARG).1
 DISTCLEANFILES  = $(DOCFILES) $(nodist_xml2ag_SOURCES) stamp-*
 AM_CPPFLAGS     = @INCLIST@ $(LIBXML2_CFLAGS)
-AGexe           = $(top_builddir)/agen5/autogen
-CLexe           = $(top_builddir)/columns/columns
 BOOTENV     = top_srcdir="$(top_srcdir)" top_builddir="$(top_builddir)" \
 	PATH=`cd ../columns;pwd`:"$$PATH" CLexe="$(CLexe)"
 

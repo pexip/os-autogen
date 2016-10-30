@@ -7,7 +7,7 @@
 #
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -88,7 +88,7 @@ cfg_vals()
   ) || eval 'local() { : ; }'
 
   vars=`set | ${SED} -n '/^\(LANG\|LC_[A-Z_]*\)=/s/=.*//p'` 2>/dev/null
-  unset AUTOOPTS_USAGE $vars
+  unset AUTOOPTS_USAGE $vars CONTENT_LENGTH REQUEST_METHOD QUERY_STRING
 }
 
 #  If only the "rm(1)" command could be relied upon....

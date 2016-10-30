@@ -11,15 +11,15 @@
  * ("autogen"), a library ("libopts") and its support templates (collectively,
  * "AutoOpts"), several support and utility programs ("columns", "getdefs" and
  * "xml2ag"), *plus* several handy embedded utility templates.  They are all
- * bundled together because they all require each other.  They each do completely
- * separate things, but they each are not useful without the other.  Thus,
- * they are bundled together.
+ * bundled together because they all require each other.
+ * They each do completely separate things, but they each are not useful
+ * without the other.  Thus, they are bundled together.
  *
  * @group autogen
  * @{
  */
 /*  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -73,7 +73,7 @@
 
 #define  LOG10_2to32  10  /* rounded up */
 
-#if defined(SHELL_ENABLED) || defined(DAEMON_ENABLED)
+#if defined(SHELL_ENABLED)
 #  ifndef HAVE_WORKING_FORK
 #    error SHELL is enabled and fork() does not work
      choke me
@@ -156,18 +156,18 @@ typedef struct tlib_mark        tlib_mark_t;
  *
  *  Procedure for loading a template function
  */
-typedef macro_t * (load_proc_t)(templ_t*, macro_t*, char const** ppzScan);
+typedef macro_t * (load_proc_t)(templ_t *, macro_t *, char const ** ppzScan);
 typedef load_proc_t * load_proc_p_t;
 
-typedef void (unload_proc_t)(macro_t*);
-typedef unload_proc_t* unload_proc_p_t;
+typedef void (unload_proc_t)(macro_t *);
+typedef unload_proc_t * unload_proc_p_t;
 
 /*
  *  Procedure for handling a template function
  *  during the text emission phase.
  */
-typedef macro_t* (hdlr_proc_t)(templ_t*, macro_t*);
-typedef hdlr_proc_t* hdlr_proc_p_t;
+typedef macro_t * (hdlr_proc_t)(templ_t *, macro_t *);
+typedef hdlr_proc_t * hdlr_proc_p_t;
 
 /*
  *  This must be included after the function prototypes
@@ -401,6 +401,7 @@ MODE char const *   curr_sfx         VALUE( NULL );
  * The time to set for the modification times of the output files.
  */
 MODE time_t         outfile_time     VALUE( 0 );
+MODE time_t         maxfile_time     VALUE( 0 );
 /**
  * The original time autogen started
  */
@@ -423,7 +424,7 @@ MODE size_t         temp_tpl_dir_len VALUE( 0 );
 /**
  * dependency file file pointer.
  */
-MODE FILE*          dep_fp           VALUE( NULL );
+MODE FILE *         dep_fp           VALUE( NULL );
 /**
  * name of target of rule
  */
@@ -468,13 +469,6 @@ MODE def_ctx_t      curr_def_ctx     VALUE( { NULL } );
 MODE def_ctx_t      root_def_ctx     VALUE( { NULL } );
 MODE templ_t *      current_tpl      VALUE( NULL );
 MODE char const *   last_scm_cmd     VALUE( NULL );
-#ifdef DAEMON_ENABLED
-/*
- *  When operating as a daemon, autogen can be told to reload
- *  its options the next time it wakes up (send it a SIGHUP).
- */
-MODE bool           redo_opts        VALUE( true );
-#endif
 
 /*
  *  Current Macro
@@ -528,8 +522,8 @@ extern int    ag_fmemioctl(FILE * fp, int req, ...);
 #endif
 
 typedef union {
-    const void*  cp;
-    void*        p;
+    const void * cp;
+    void *       p;
 } v2c_t;
 MODE v2c_t p2p VALUE( { NULL } );
 
@@ -596,7 +590,7 @@ static inline SCM ag_eval(char const * str)
     scm_boot_guile((_ac), (_av), (_im), NULL)
 
 #define AG_SCM_APPLY2(_op, _f, _tst) \
-    scm_apply(_op, _f, scm_cons(_tst, AG_SCM_LISTOFNULL()))
+    scm_apply(_op, _f, scm_cons(_tst, scm_list_1(SCM_EOL)))
 
 #define AG_SCM_CHAR_P(_c)            SCM_CHARP(_c)
 

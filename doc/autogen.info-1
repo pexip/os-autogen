@@ -1,9 +1,9 @@
 This is autogen.info, produced by makeinfo version 4.13 from
 /u/bkorb/ag/ag/doc//agdoc.texi.
 
-This manual is for GNU AutoGen version 5.18, updated August 2014.
+This manual is for GNU AutoGen version 5.18, updated August 2016.
 
-   Copyright (C) 1992-2014 by Bruce Korb.
+   Copyright (C) 1992-2015 by Bruce Korb.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -18,8 +18,8 @@ END-INFO-DIR-ENTRY
 
    This file documents GNU AutoGen Version 5.18.
 
-   AutoGen copyright (C) 1992-2014 Bruce Korb AutoOpts copyright (C)
-1992-2014 Bruce Korb snprintfv copyright (C) 1999-2000 Gary V. Vaughan
+   AutoGen copyright (C) 1992-2015 Bruce Korb AutoOpts copyright (C)
+1992-2015 Bruce Korb snprintfv copyright (C) 1999-2000 Gary V. Vaughan
 
    AutoGen is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -52,7 +52,7 @@ includes stand-alone support for configuration file parsing, *Note
 Features::.  *Note Add-on packages for AutoGen: Add-Ons, section for
 additional programs and libraries associated with AutoGen.
 
-   This edition documents version 5.18, August 2014.
+   This edition documents version 5.18, August 2016.
 
 * Menu:
 
@@ -1678,6 +1678,7 @@ but they cannot be invoked.
 * SCM make-header-guard::  `make-header-guard' - make self-inclusion guard
 * SCM make-tmp-dir::       `make-tmp-dir' - create a temporary directory
 * SCM match-value?::       `match-value?' - test for matching value
+* SCM max-file-time::      `max-file-time' - get the maximum input file modification time
 * SCM mk-gettextable::     `mk-gettextable' - print a string in a gettext-able format
 * SCM out-delete::         `out-delete' - delete current output file
 * SCM out-depth::          `out-depth' - output file stack depth
@@ -1701,7 +1702,7 @@ but they cannot be invoked.
 * SCM tpl-file-line::      `tpl-file-line' - get the template file+line number
 * SCM tpl-file-next-line:: `tpl-file-next-line' - get the template file plus next line number
 * SCM warn::               `warn' - display warning message and continue
-* SCM autogen-version::     `autogen-version' - ``5.18.4''
+* SCM autogen-version::     `autogen-version' - ``5.18.12''
 * SCM c-file-line-fmt::     format file info as, ```#line nn "file"'''
 
 
@@ -2249,7 +2250,7 @@ Create a directory that will be cleaned up upon exit.
    This Scheme function takes no arguments.
 
 
-File: autogen.info,  Node: SCM match-value?,  Next: SCM mk-gettextable,  Prev: SCM make-tmp-dir,  Up: AutoGen Functions
+File: autogen.info,  Node: SCM match-value?,  Next: SCM max-file-time,  Prev: SCM make-tmp-dir,  Up: AutoGen Functions
 
 3.4.33 `match-value?' - test for matching value
 -----------------------------------------------
@@ -2271,9 +2272,22 @@ ag-name - name of AutoGen value
 test-str - string to test against
 
 
-File: autogen.info,  Node: SCM mk-gettextable,  Next: SCM out-delete,  Prev: SCM match-value?,  Up: AutoGen Functions
+File: autogen.info,  Node: SCM max-file-time,  Next: SCM mk-gettextable,  Prev: SCM match-value?,  Up: AutoGen Functions
 
-3.4.34 `mk-gettextable' - print a string in a gettext-able format
+3.4.34 `max-file-time' - get the maximum input file modification time
+---------------------------------------------------------------------
+
+Usage:  (max-file-time)
+returns the time stamp of the most recently modified sourc file as the
+number of seconds since the epoch.  If any input is dynamic (a shell
+command), then it will be the current time.
+
+   This Scheme function takes no arguments.
+
+
+File: autogen.info,  Node: SCM mk-gettextable,  Next: SCM out-delete,  Prev: SCM max-file-time,  Up: AutoGen Functions
+
+3.4.35 `mk-gettextable' - print a string in a gettext-able format
 -----------------------------------------------------------------
 
 Usage:  (mk-gettextable string)
@@ -2286,7 +2300,7 @@ string - a multi-paragraph string
 
 File: autogen.info,  Node: SCM out-delete,  Next: SCM out-depth,  Prev: SCM mk-gettextable,  Up: AutoGen Functions
 
-3.4.35 `out-delete' - delete current output file
+3.4.36 `out-delete' - delete current output file
 ------------------------------------------------
 
 Usage:  (out-delete)
@@ -2299,7 +2313,7 @@ Use the `(error "0")' scheme function instead.  *Note output controls::.
 
 File: autogen.info,  Node: SCM out-depth,  Next: SCM out-emit-suspended,  Prev: SCM out-delete,  Up: AutoGen Functions
 
-3.4.36 `out-depth' - output file stack depth
+3.4.37 `out-depth' - output file stack depth
 --------------------------------------------
 
 Usage:  (out-depth)
@@ -2310,7 +2324,7 @@ Returns the depth of the output file stack.  *Note output controls::.
 
 File: autogen.info,  Node: SCM out-emit-suspended,  Next: SCM out-line,  Prev: SCM out-depth,  Up: AutoGen Functions
 
-3.4.37 `out-emit-suspended' - emit the text of suspended output
+3.4.38 `out-emit-suspended' - emit the text of suspended output
 ---------------------------------------------------------------
 
 Usage:  (out-emit-suspended susp_nm)
@@ -2323,7 +2337,7 @@ susp_nm - A name tag of suspended output
 
 File: autogen.info,  Node: SCM out-line,  Next: SCM out-move,  Prev: SCM out-emit-suspended,  Up: AutoGen Functions
 
-3.4.38 `out-line' - output file line number
+3.4.39 `out-line' - output file line number
 -------------------------------------------
 
 Usage:  (out-line)
@@ -2335,7 +2349,7 @@ reads the file to count newlines.
 
 File: autogen.info,  Node: SCM out-move,  Next: SCM out-name,  Prev: SCM out-line,  Up: AutoGen Functions
 
-3.4.39 `out-move' - change name of output file
+3.4.40 `out-move' - change name of output file
 ----------------------------------------------
 
 Usage:  (out-move new-name)
@@ -2349,7 +2363,7 @@ new-name - new name for the current output file
 
 File: autogen.info,  Node: SCM out-name,  Next: SCM out-pop,  Prev: SCM out-move,  Up: AutoGen Functions
 
-3.4.40 `out-name' - current output file name
+3.4.41 `out-name' - current output file name
 --------------------------------------------
 
 Usage:  (out-name)
@@ -2362,7 +2376,7 @@ output file name is found.  *Note output controls::.
 
 File: autogen.info,  Node: SCM out-pop,  Next: SCM out-push-add,  Prev: SCM out-name,  Up: AutoGen Functions
 
-3.4.41 `out-pop' - close current output file
+3.4.42 `out-pop' - close current output file
 --------------------------------------------
 
 Usage:  (out-pop [ disp ])
@@ -2380,7 +2394,7 @@ disp - Optional - return contents of the file
 
 File: autogen.info,  Node: SCM out-push-add,  Next: SCM out-push-new,  Prev: SCM out-pop,  Up: AutoGen Functions
 
-3.4.42 `out-push-add' - append output to file
+3.4.43 `out-push-add' - append output to file
 ---------------------------------------------
 
 Usage:  (out-push-add file-name)
@@ -2393,7 +2407,7 @@ file-name - name of the file to append text to
 
 File: autogen.info,  Node: SCM out-push-new,  Next: SCM out-resume,  Prev: SCM out-push-add,  Up: AutoGen Functions
 
-3.4.43 `out-push-new' - purge and create output file
+3.4.44 `out-push-new' - purge and create output file
 ----------------------------------------------------
 
 Usage:  (out-push-new [ file-name ])
@@ -2409,7 +2423,7 @@ file-name - Optional - name of the file to create
 
 File: autogen.info,  Node: SCM out-resume,  Next: SCM out-suspend,  Prev: SCM out-push-new,  Up: AutoGen Functions
 
-3.4.44 `out-resume' - resume suspended output file
+3.4.45 `out-resume' - resume suspended output file
 --------------------------------------------------
 
 Usage:  (out-resume susp_nm)
@@ -2423,7 +2437,7 @@ susp_nm - A name tag for reactivating
 
 File: autogen.info,  Node: SCM out-suspend,  Next: SCM out-switch,  Prev: SCM out-resume,  Up: AutoGen Functions
 
-3.4.45 `out-suspend' - suspend current output file
+3.4.46 `out-suspend' - suspend current output file
 --------------------------------------------------
 
 Usage:  (out-suspend suspName)
@@ -2440,7 +2454,7 @@ suspName - A name tag for reactivating
 
 File: autogen.info,  Node: SCM out-switch,  Next: SCM output-file-next-line,  Prev: SCM out-suspend,  Up: AutoGen Functions
 
-3.4.46 `out-switch' - close and create new output
+3.4.47 `out-switch' - close and create new output
 -------------------------------------------------
 
 Usage:  (out-switch file-name)
@@ -2455,7 +2469,7 @@ file-name - name of the file to create
 
 File: autogen.info,  Node: SCM output-file-next-line,  Next: SCM set-option,  Prev: SCM out-switch,  Up: AutoGen Functions
 
-3.4.47 `output-file-next-line' - print the file name and next line number
+3.4.48 `output-file-next-line' - print the file name and next line number
 -------------------------------------------------------------------------
 
 Usage:  (output-file-next-line [ line_off ] [ alt_fmt ])
@@ -2476,7 +2490,7 @@ alt_fmt - Optional - alternate format string
 
 File: autogen.info,  Node: SCM set-option,  Next: SCM set-writable,  Prev: SCM output-file-next-line,  Up: AutoGen Functions
 
-3.4.48 `set-option' - Set a command line option
+3.4.49 `set-option' - Set a command line option
 -----------------------------------------------
 
 Usage:  (set-option opt)
@@ -2489,7 +2503,7 @@ opt - AutoGen option name + its argument
 
 File: autogen.info,  Node: SCM set-writable,  Next: SCM stack,  Prev: SCM set-option,  Up: AutoGen Functions
 
-3.4.49 `set-writable' - Make the output file be writable
+3.4.50 `set-writable' - Make the output file be writable
 --------------------------------------------------------
 
 Usage:  (set-writable [ set? ])
@@ -2504,7 +2518,7 @@ set? - Optional - boolean arg, false to make output non-writable
 
 File: autogen.info,  Node: SCM stack,  Next: SCM stack-join,  Prev: SCM set-writable,  Up: AutoGen Functions
 
-3.4.50 `stack' - make list of AutoGen values
+3.4.51 `stack' - make list of AutoGen values
 --------------------------------------------
 
 Usage:  (stack ag-name)
@@ -2517,7 +2531,7 @@ ag-name - AutoGen value name
 
 File: autogen.info,  Node: SCM stack-join,  Next: SCM suffix,  Prev: SCM stack,  Up: AutoGen Functions
 
-3.4.51 `stack-join' - stack values then join them
+3.4.52 `stack-join' - stack values then join them
 -------------------------------------------------
 
 Usage:  (stack-join join ag-name)
@@ -2532,7 +2546,7 @@ ag-name - name of autogen values to stack
 
 File: autogen.info,  Node: SCM suffix,  Next: SCM tpl-file,  Prev: SCM stack-join,  Up: AutoGen Functions
 
-3.4.52 `suffix' - get the current suffix
+3.4.53 `suffix' - get the current suffix
 ----------------------------------------
 
 Usage:  (suffix)
@@ -2543,7 +2557,7 @@ Returns the current active suffix (*note pseudo macro::).
 
 File: autogen.info,  Node: SCM tpl-file,  Next: SCM tpl-file-line,  Prev: SCM suffix,  Up: AutoGen Functions
 
-3.4.53 `tpl-file' - get the template file name
+3.4.54 `tpl-file' - get the template file name
 ----------------------------------------------
 
 Usage:  (tpl-file [ full_path ])
@@ -2557,7 +2571,7 @@ full_path - Optional - include full path to file
 
 File: autogen.info,  Node: SCM tpl-file-line,  Next: SCM tpl-file-next-line,  Prev: SCM tpl-file,  Up: AutoGen Functions
 
-3.4.54 `tpl-file-line' - get the template file+line number
+3.4.55 `tpl-file-line' - get the template file+line number
 ----------------------------------------------------------
 
 Usage:  (tpl-file-line [ msg-fmt ])
@@ -2580,7 +2594,7 @@ msg-fmt - Optional - formatting for line message
 
 File: autogen.info,  Node: SCM tpl-file-next-line,  Next: SCM warn,  Prev: SCM tpl-file-line,  Up: AutoGen Functions
 
-3.4.55 `tpl-file-next-line' - get the template file plus next line number
+3.4.56 `tpl-file-next-line' - get the template file plus next line number
 -------------------------------------------------------------------------
 
 Usage:  (tpl-file-next-line [ msg-fmt ])
@@ -2594,7 +2608,7 @@ msg-fmt - Optional - formatting for line message
 
 File: autogen.info,  Node: SCM warn,  Next: SCM autogen-version,  Prev: SCM tpl-file-next-line,  Up: AutoGen Functions
 
-3.4.56 `warn' - display warning message and continue
+3.4.57 `warn' - display warning message and continue
 ----------------------------------------------------
 
 Usage:  (warn message)
@@ -2611,16 +2625,16 @@ message - message to display
 
 File: autogen.info,  Node: SCM autogen-version,  Next: SCM c-file-line-fmt,  Prev: SCM warn,  Up: AutoGen Functions
 
-3.4.57 `autogen-version' - autogen version number
+3.4.58 `autogen-version' - autogen version number
 -------------------------------------------------
 
 This is a symbol defining the current AutoGen version number string.
-It was first defined in AutoGen-5.2.14.  It is currently "5.18.4".
+It was first defined in AutoGen-5.2.14.  It is currently "5.18.12".
 
 
 File: autogen.info,  Node: SCM c-file-line-fmt,  Prev: SCM autogen-version,  Up: AutoGen Functions
 
-3.4.58 format file info as, "`#line nn "file"'"
+3.4.59 format file info as, "`#line nn "file"'"
 -----------------------------------------------
 
 This is a symbol that can easily be used with the functions *Note SCM
@@ -3104,7 +3118,8 @@ substitutions.
 
    All of these depend upon the existence of a license file named after
 the `license' argument with a `.lic' suffix.  That file should contain
-three blocks of text, each separated by two or more newline characters.
+three blocks of text, each separated by two or more consecutive newline
+characters (at least one completely blank line).
 
    The first section describes copyright attribution and the name of
 the usage licence.  For GNU software, this should be the text that is
@@ -3113,14 +3128,14 @@ replaced: <PFX>, <program>, <years> and <owner>.
 
    The second section is a short description of the terms of the
 license.  This is typically the kind of text that gets displayed in the
-header of source files.  The third section is strictly the name of the
-license without any substitution markers.  Only the <PFX>, <owner> and
-<program> markers are substituted.
+header of source files.  Only the <PFX>, <owner> and <program> markers
+are substituted.
 
    The third section is strictly the name of the license.  No marker
 substitutions are performed.
 
      <PFX>Copyright (C) <years> <owner>, all rights reserved.
+     <PFX>
      <PFX>This is free software. It is licensed for use,
      <PFX>modification and redistribution under the terms
      <PFX>of the GNU General Public License, version 3 or later
@@ -4868,7 +4883,7 @@ print the usage text by passing it through a pager program.
 function.  The `PAGER' environment variable is used to select the
 program, defaulting to `more'.  Both will exit with a status code of 0.
 
-autogen (GNU AutoGen) - The Automated Program Generator - Ver. 5.18.4
+autogen (GNU AutoGen) - The Automated Program Generator - Ver. 5.18.11
 Usage:  autogen [ -<flag> [<val>] | --<name>[{=| }<val>] ]... [ <def-file> ]
 
 The following options select definitions, templates and scheme functions
@@ -4967,7 +4982,7 @@ The valid "trace" option keywords are:
   or an integer from 0 through 6
 AutoGen is a tool designed for generating program files that contain
 repetitive text with varied substitutions.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-05-27)
 Report autogen bugs to bkorb@gnu.org
 
 
@@ -5525,8 +5540,8 @@ version (-v)
 Print the program version to standard out, optionally with licensing
 information, then exit 0.  The optional argument specifies how much
 licensing detail to provide.  The default is to print just the version.
-The licensing infomation may be selected with an option argument.  Only
-the first letter of the argument is examined:
+The licensing information may be selected with an option argument.
+Only the first letter of the argument is examined:
 
 `version'
      Only print the version.  This is the default.
@@ -5855,7 +5870,7 @@ File: autogen.info,  Node: AutoOpts,  Next: Add-Ons,  Prev: Installation,  Up: T
 7 Automated Option Processing
 *****************************
 
-AutoOpts 41.0 is bundled with AutoGen.  It is a tool that virtually
+AutoOpts 41.1 is bundled with AutoGen.  It is a tool that virtually
 eliminates the hassle of processing options and keeping man pages, info
 docs and usage text up to date.  This package allows you to specify
 several program attributes, thousands of option types and many option
@@ -6963,7 +6978,7 @@ displayed to the user of the program.
 
      An example of this might be:
          copyright = {
-             date  = "1992-2012";
+             date  = "1992-2015";
              owner = "Bruce Korb";
              eaddr = 'bkorb@gnu.org';
              type  = GPL;
@@ -7054,6 +7069,9 @@ value it must have: `main-type'.
 * main main::               main: user supplied main procedure
 * main include::            include: code emitted from included template
 * main invoke::             invoke: code emitted from AutoGen macro
+
+The `for-each' main  procedure has a number of attributes that
+must be specified:
 
 * main for-each::           for-each: perform function on each operand
 * main-for-each-proc::          procedure to handle each argument
@@ -7234,10 +7252,10 @@ File: autogen.info,  Node: main-for-each-proc,  Next: main-for-each-type,  Prev:
 procedure to handle each argument
 .................................
 
-This attribute is required.  It is used to name the procedure to call.
-That procedure is presumed to be external, but if you provide the code
-for it, then the procedure is emitted as a static procedure in the
-generated code.
+The `handler-proc' attribute is required.  It is used to name the
+procedure to call.  That procedure is presumed to be external, but if
+you provide the code for it, then the procedure is emitted as a static
+procedure in the generated code.
 
    This procedure should return 0 on success, a cumulative error code
 on warning and exit without returning on an unrecoverable error.  As
@@ -7264,8 +7282,9 @@ File: autogen.info,  Node: main-for-each-type,  Next: main-for-each-code,  Prev:
 handler procedure type
 ......................
 
-If you do not supply this attribute, your handler procedure must be the
-default type.  The profile of the procedure must be:
+If you do not supply the `handler-type' attribute, your handler
+procedure must be the default type.  The profile of the procedure must
+be:
 
     int MY_HANDLER(char const * pz_entry);
 
@@ -7313,7 +7332,7 @@ of four alternate flavors:
      procedure must be:
 
          program_exit_code_t
-         MY_HANDLER(char const* pz_fname, char* file_text,
+         MY_HANDLER(char const * fname, char * file_text,
                     size_t text_size);
 
      Note that though the `file_text' is not `const', any changes made
@@ -7322,6 +7341,9 @@ of four alternate flavors:
      hold the text is `text_size + 1' bytes long and the final byte is
      always `NUL'.  The file contents need not be text, as the data are
      read with the `read(2)' system call.
+
+     `file_text' is automatically freed, unless you specify a `handler-frees'
+     attribute.  Then your code must `free(3)' the text.
 
    If you select one of these file type handlers, then on access or
 usage errors the `PROGRAM_EXIT_FAILURE' exit code will, by default, be
@@ -7337,14 +7359,17 @@ File: autogen.info,  Node: main-for-each-code,  Next: main-for-each-opts,  Prev:
 code for handler procedure
 ..........................
 
-With this attribute, you provide the code for your handler procedure in
-the option definition file.  In this case, your `main()' procedure
-specification might look something like this:
+With the `MYHANDLER-code' attribute, you provide the code for your
+handler procedure in the option definition file.  Note that the
+spelling of this attribute depends on the name provided with the
+`handler-proc' attribute, so we represent it here with `MYHANDLER' as a
+place holder.  As an example, your `main()' procedure specification
+might look something like this:
 
     main = {
       main-type    = for-each;
-      handler-proc = MY_HANDLER;
-      MY_HANDLER-code = <<- EndOfMyCode
+      handler-proc = MYHANDLER;
+      MYHANDLER-code = <<- EndOfMyCode
     	/* whatever you want to do */
     	EndOfMyCode;
     };
@@ -7353,10 +7378,10 @@ and instead of an emitted external reference, a procedure will be
 emitted that looks like this:
 
     static int
-    MY_HANDLER( char const* pz_entry )
+    MYHANDLER( char const* pz_entry )
     {
         int res = 0;
-        <<MY_HANDLER-code goes here>>
+        <<MYHANDLER-code goes here>>
         return res;
     }
 
@@ -7421,50 +7446,4 @@ These option attributes do not fit well with the above categories.
 * opt-attr default option::     Default Option
 * opt-attr documentation::      Option Sectioning Comment
 * opt-attr translators::        Translator Notes
-
-
-File: autogen.info,  Node: Required Attributes,  Next: Common Attributes,  Up: option attributes
-
-7.5.5.1 Required Attributes
-...........................
-
-Every option must have exactly one copy of both of these attributes.
-
-`name'
-     Long name for the option.  Even if you are not accepting long
-     options and are only accepting flags, it must be provided.
-     AutoOpts generates private, named storage that requires this name.
-     This name also causes a `#define'-d name to be emitted.  It must
-     not conflict with any other names you may be using in your program.
-
-     For example, if your option name is, `debug' or `munged-up', you
-     must not use the `#define' names `DEBUG' (or `MUNGED_UP') in your
-     program for non-AutoOpts related purposes.  They are now used by
-     AutoOpts.
-
-     Sometimes (most especially under Windows), you may get a surprise.
-     For example, `INTERFACE' is apparently a user space name that one
-     should be free to use.  Windows usurps this name.  To solve this,
-     you must do one of the following:
-
-       1. Change the name of your option
-
-       2. add the program attribute (*note program attributes::):
-
-              export = '#undef INTERFACE';
-
-       3. add the program attribute:
-
-              guard-option-names;
-
-`descrip'
-     Except for documentation options, a *very* brief description of the
-     option.  About 40 characters on one line, maximum, not counting
-     any texinfo markups.  Texinfo markups are stripped before printing
-     in the usage text.  It appears on the `usage()' output next to the
-     option name.
-
-     If, however, the option is a documentation option, it will appear
-     on one or more lines by itself.  It is thus used to visually
-     separate and comment upon groups of options in the usage text.
 

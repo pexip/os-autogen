@@ -6,7 +6,7 @@
  *  From the definitions    strsignal.def
  *  and the template file   strsignal
  *
- *  Generated for a 3.2.0-4-amd64 Linux platform
+ *  Generated for a 4.1.27-27-default Linux platform
  *
  *  strsignal Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
@@ -94,7 +94,7 @@ extern char * strsignal( int signo );
 #include <stdio.h>
 
 int
-main( int argc, char** argv )
+main(int argc, char ** argv)
 {
     int sig = 0;
     fputs( "Sig  Sig-Name    Description\n"

@@ -3,7 +3,7 @@
 h
 
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -110,7 +110,7 @@ extern char * strsignal( int signo );
 #include <stdio.h>
 
 int
-main( int argc, char** argv )
+main(int argc, char ** argv)
 {
     int sig = 0;
     fputs( "Sig  Sig-Name    Description\n"

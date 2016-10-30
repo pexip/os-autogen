@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2014 Free Software Foundation, Inc.
+# Copyright (C) 2002-2016 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,15 +37,19 @@ AC_DEFUN([gl_EARLY],
   m4_pattern_allow([^gl_ES$])dnl a valid locale name
   m4_pattern_allow([^gl_LIBOBJS$])dnl a variable
   m4_pattern_allow([^gl_LTLIBOBJS$])dnl a variable
-  AC_REQUIRE([gl_PROG_AR_RANLIB])
-  # Code from module extensions:
+
+  # Pre-early section.
   AC_REQUIRE([gl_USE_SYSTEM_EXTENSIONS])
+  AC_REQUIRE([gl_PROG_AR_RANLIB])
+
+  # Code from module extensions:
   # Code from module gendocs:
   # Code from module gettext-h:
   # Code from module intprops:
   # Code from module parse-duration:
   # Code from module snippet/_Noreturn:
   # Code from module stdnoreturn:
+  # Code from module verify:
 ])
 
 # This macro should be invoked from ./configure.ac, in the section
@@ -204,11 +208,13 @@ AC_DEFUN([gl_FILE_LIST], [
   build-aux/gendocs.sh
   build-aux/snippet/_Noreturn.h
   doc/gendocs_template
+  doc/gendocs_template_min
   lib/gettext.h
   lib/intprops.h
   lib/parse-duration.c
   lib/parse-duration.h
   lib/stdnoreturn.in.h
+  lib/verify.h
   m4/00gnulib.m4
   m4/extensions.m4
   m4/gnulib-common.m4

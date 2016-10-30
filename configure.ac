@@ -1,10 +1,10 @@
-dnl --------------------------------------------------------------------
+dnl -*- Mode: autoconf -*-
 dnl configure.ac --- GNU autoconf source for toplevel directory.
 dnl
 dnl Author:           Bruce Korb <bkorb@gnu.org>
 dnl
 dnl  This file is part of AutoGen.
-dnl  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+dnl  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 dnl
 dnl AutoGen is free software: you can redistribute it and/or modify it
 dnl under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@ dnl
 dnl You should have received a copy of the GNU General Public License along
 dnl with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl
-AC_INIT([GNU AutoGen],[5.18.4],[autogen-users@lists.sourceforge.net])
+AC_INIT([GNU AutoGen],[5.18.12],[autogen-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR([agen5/autogen.c])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
@@ -167,22 +167,32 @@ test -f ./snprintfv/snprintfv/snprintfv.h \
 AGnam=autogen${ac_exeext}
 GDnam=getdefs${ac_exeext}
 CLnam=columns${ac_exeext}
-AGexe=${ag_top_builddir}/agen5/${AGnam}
-GDexe=${ag_top_builddir}/getdefs/${GDnam}
-CLexe=${ag_top_builddir}/columns/${CLnam}
+if test "X$cross_compiling" = Xyes
+then
+  AGexe=`which ${AGnam}`
+  GDexe=`which ${GDnam}`
+  CLexe=`which ${CLnam}`
+else
+  AGexe=${ag_top_builddir}/agen5/${AGnam}
+  GDexe=${ag_top_builddir}/getdefs/${GDnam}
+  CLexe=${ag_top_builddir}/columns/${CLnam}
+fi
 M4_SRC=`cd $srcdir/config ; echo [a-z]*.m4`
 ENABLE_STATIC=${enable_static}
 config_end_time=`date +%s 2>/dev/null`
 time_delta=`expr ${config_end_time} - ${config_start_time} 2>/dev/null`
 
-if test -z "${time_delta}"
-then time_delta=10
-elif test ${time_delta} -lt 5
-then time_delta=5 ; fi
+if test -z "${AG_TIMEOUT}"
+then
+  if test -z "${time_delta}"
+  then time_delta=10
+  elif test ${time_delta} -lt 5
+  then time_delta=5 ; fi
 
-AG_TIMEOUT=${time_delta}
+  AG_TIMEOUT=${time_delta}
+fi
 ]
-AC_DEFINE_UNQUOTED(AG_DEFAULT_TIMEOUT, ${time_delta},
+AC_DEFINE_UNQUOTED(AG_DEFAULT_TIMEOUT, ${AG_TIMEOUT},
                    [define to suitable timeout limit for shell command])
 AC_SUBST(M4_SRC)
 AC_SUBST(AGnam)
@@ -205,13 +215,13 @@ else
  INCLIST="${INCLIST} -I\${top_builddir}/autoopts -I\${top_srcdir}/autoopts"
 fi
 ]AC_SUBST(INCLIST)[
-test ${GUILE_VERSION} -ge 108000 \
+test ${ag_gv} -ge 108000 \
   -a "X${WERROR}" = Xyes \
   -a "X${GCC}" = Xyes && \
     CFLAGS=`echo $CFLAGS -Wall -Werror -Wcast-align -Wmissing-prototypes \
 	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
 	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=3 \
-	-Wextra
+	-Wextra -Wno-cast-qual
 `
 ]dnl -Wconversion -Wsign-conversion -Wstrict-overflow
 AC_CONFIG_HEADER(config.h:config-h.in)

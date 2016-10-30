@@ -5,7 +5,7 @@
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -32,20 +32,14 @@
 
 readonly stamp_list=$(echo "stamp-opts${nl}stamp-proto"
     sed -n '/^make_[a-z_]*[(]/{;s/^make_/stamp-/;s/[()].*//;p;}' \
-        ${srcdir}/mk-stamps.sh)
+        ${top_srcdir}/agen5/mk-stamps.sh)
 
 set_defaults()
 {
     builddir=$(pwd)
-    srcdir=${srcdir:-$builddir}
-    AGexe=$(command -v autogen)
-    CLexe=$(command -v columns)
-    GDexe=$(command -v getdefs)
+    srcdir=${top_srcdir}/agen5
 
-    test -x "${AGexe}" -a -x "${GDexe}" -a -x "${CLexe}" || \
-        die "autogen is required"
-
-    export builddir srcdir AGexe CLexe GDexe
+    export builddir srcdir
 
     #  Make sure we have a default for top build and source.
     #  Some of the templates need this information.
@@ -65,7 +59,7 @@ set_defaults()
 
 assemble_Makefile() {
     {
-        sed '/# *start-generated-text/q' ${srcdir}/Makefile.am
+        sed '/# *start-generated-text/q' ${srcdir}/Makefile.am.pre
         echo
 
         echo list_stamps = '\'
@@ -93,46 +87,23 @@ assemble_Makefile() {
         printf '.PHONY: stamps\nstamps: $(list_stamps)\n%s' \
             $'\n# end-generated-text\n# end of Makefile.am\n'
 
-    } > Makefile.XX
-
-    if  cmp -s Makefile.XX Makefile.am
-    then rm -f Makefile.XX
-    else mv -f Makefile.XX Makefile.am
-    fi
-}
-
-assemble_fmemopen() {
-    # The original source lives in a private library.
-    # If not available, leave everything alone.
-    #
-    fmemdir=~bkorb/tools/mine/lib/fmemopen
-    test -f ${fmemdir}/fmemopen.c || return
-
-    test -f agen5/fmemopen.c && rm -f agen5/fmemopen.c
-    {
-        echo '#if defined(ENABLE_FMEMOPEN)'
-        echo '#include <sys/ioctl.h>'
-        echo
-        sed -n '/^typedef enum/,/_IOWR(/p' ${fmemdir}/libfmem.h
-        sed -e '/^#if defined(HAVE_FOPENCOOKIE)/p' \
-            -e '/=--subblock/,/^#if defined(HAVE_FOPENCOOKIE)/d' \
-            -e "s% @file .*% @file fmemopen.c%" \
-            ${fmemdir}/fmemopen.c
-        echo '#endif /* ENABLE_FMEMOPEN */'
-    } > fmemopen.c
+    } > Makefile.am
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 #  M A I N
 #
-PS4='>bsag-${FUNCNAME}> '
 set_defaults ${1+"$@"}
 DEPDIR=
 
-. ${srcdir}/mk-stamps.sh $stamp_list
-assemble_fmemopen
-assemble_Makefile
+if ${skip_gen:-false}
+then
+    untar_touch agen5.tgz
+else
+    . ${srcdir}/mk-stamps.sh $stamp_list
+    assemble_Makefile
+fi
 
 #  IF we symlinked in columns or getdefs,
 #  THEN it is time to unlink them

@@ -2,7 +2,7 @@
 
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -228,11 +228,11 @@ agrelay_scm_[= (get "name")     =]([=
 [= ENDFOR  gfunc                =]
 #if GUILE_VERSION >= 108000
 #define NEW_PROC(_As, _Ar, _Ao, _Ax, _An)   \
-  scm_c_define_gsubr((char*)(_As),          \
-                   _Ar, _Ao, _Ax, (scm_callback_t)(void*)agrelay_scm_ ## _An)
+  scm_c_define_gsubr((char *)(_As),          \
+                   _Ar, _Ao, _Ax, (scm_callback_t)VOIDP(agrelay_scm_ ## _An))
 #else
 #define NEW_PROC(_As, _Ar, _Ao, _Ax, _An)                                    \
-  gh_new_procedure((char*)(_As), (scm_callback_t)(void*)agrelay_scm_ ## _An, \
+  gh_new_procedure((char *)(_As), (scm_callback_t)VOIDP(agrelay_scm_ ## _An), \
                    _Ar, _Ao, _Ax)
 #endif
 
@@ -243,11 +243,11 @@ ENDIF debug-enabled exists
 =]
 #if GUILE_VERSION >= 108000
 #define NEW_PROC(_As, _Ar, _Ao, _Ax, _An)   \
-  scm_c_define_gsubr((char*)(_As),          \
-                   _Ar, _Ao, _Ax, (scm_callback_t)(void*)ag_scm_ ## _An)
+  scm_c_define_gsubr((char *)(_As),          \
+                   _Ar, _Ao, _Ax, (scm_callback_t)VOIDP(ag_scm_ ## _An))
 #else
 #define NEW_PROC(_As, _Ar, _Ao, _Ax, _An)                                   \
-  gh_new_procedure((char*)(_As), (scm_callback_t)(void*)ag_scm_ ## _An,     \
+  gh_new_procedure((char *)(_As), (scm_callback_t)VOIDP(ag_scm_ ## _An),     \
                    _Ar, _Ao, _Ax)
 #endif
 [= (if (exist? "debug-enabled") "#endif /* DEBUG_ENABLED */\n") =]

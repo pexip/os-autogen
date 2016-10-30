@@ -1,6 +1,23 @@
 /* -*- Mode: conf -*-
 #  ag-text.def: autogen text strings */
 
+/*  This file is part of AutoGen.
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *
+ * AutoGen is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * AutoGen is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 AutoGen Definitions strings;
 
 file-name-string;
@@ -113,7 +130,6 @@ string = { nm = DEF_TYPE_INVALID;       str = "INVALID"; };
 string = { nm = DEF_TYPE_TEXT;          str = "text"; };
 string = { nm = DEF_TYPE_UNKNOWN;       str = "unknown"; };
 string = { nm = DEP_FILE_SPLICE_STR;    str = " \\\n"; };
-string = { nm = DEP_FILE_TARG_FMT;      str = "%s_%s"; };
 
 string = { nm = DEP_FILE_CLEAN_FMT;
    str = <<- _EOF_
@@ -328,8 +344,7 @@ string = { nm = GUILE_WARN_NO_ENV;      str = "GUILE_WARN_DEPRECATED=no"; };
 string = { nm = HANDLE_EOL__ELS;        str = els; };
 string = { nm = HANDLE_EOL__THE;        str = the; };
 string = { nm = HANDLE_HASH_BAD_TPL;    str = "Invalid template file"; };
-string = { nm = HANDLE_HASH_ENV_FMT;    str = "%s=%s"; };
-string = { nm = HANDLE_HASH_SHELL;      str = "SHELL"; };
+string = { nm = HANDLE_HASH_SHELL;      str = "SHELL="; };
 string = { nm = HANDLE_SED_ELSE;        str = "lse"; };
 string = { nm = HANDLE_SED_ENDIF;       str = "ndif"; };
 string = { nm = HANDLE_SED_IFDEF;       str = "fdef "; };
@@ -462,8 +477,8 @@ string = { nm = MK_GPERF_SCRIPT;
 
 	  cat << \_EOF_
 		%%%%
-		int main(int argc, char** argv) {
-		    char*    pz = argv[1];
+		int main(int argc, char ** argv) {
+		    char * pz = argv[1];
 		    struct %2$s_index const * pI = %2$s_find( pz, strlen( pz ));
 		    if (pI == NULL)
 		        return 1;
@@ -479,7 +494,7 @@ string = { nm = MK_GPERF_SCRIPT;
 	   die "gperf failed on ${gpdir}/%2$s.gperf
 	      `cat %2$s.log`"
 	egrep -v '^[^#].*_inline' %2$s-temp.c > %2$s.c
-	export CFLAGS=-g
+	export CFLAGS="$CFLAGS -g"
 	%1$s %2$s 1>&2
 	test $? -eq 0 -a -x ${gperf_%2$s} || \
 	  die "could not '%1$s %2$s' gperf program
@@ -522,7 +537,7 @@ string = { nm = OPEN_OUTPUT_NULL;       str = "null"; };
 string = { nm = OUTPUT_NO_OPEN;         str = "open for output"; };
 string = { nm = OUTPUT_NO_UNLINK;       str = "unlink"; };
 string = { nm = OUTPUT_TEMP_FILE;       str = "* temp file *"; };
-string = { nm = NAMED_VALUES_WHERE;     str = "On macro argument # %d:\n%s\n";};
+string = { nm = NAMED_VALUES_WHERE;   str = "On macro argument # %d:\n%s\n";};
 
 string = { nm = OPEN_OUTPUT_BAD_FMT;
    str = "Cannot format file name:  \"%s\", %s, %s"; };
@@ -898,7 +913,7 @@ string = { nm = TRACE_RM_TARG_FILE_FMT; str = "remove target dep:  %s\n"; };
 string = { nm = TRACE_SHELL_FIRST_START; str = "\nServer First Start\n"; };
 string = { nm = TRACE_SHELL_PID_FMT;    str = "Server shell is pid %u\n"; };
 string = { nm = TRACE_SHELL_STARTS_FMT; str = "Server shell %s starts\n"; };
-string = { nm = TRACE_START_FMT;        str = "\n\n===AutoGen starts - %u:  %s"; };
+string = { nm = TRACE_START_FMT;      str = "\n\n===AutoGen starts - %u:  %s"; };
 string = { nm = TRACE_SUSPEND;          str = "%s %s as '%s'\n"; };
 string = { nm = TRACE_TRAP_STATE_FMT;   str = "Trap state:\n%s\n"; };
 string = { nm = TRACE_UNKNOWN_FMT;      str = "\tcode %lX -- %s\n"; };

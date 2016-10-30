@@ -7,7 +7,7 @@
 #
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -346,7 +346,7 @@ process_test_getopt_opts (int argc, char** argv)
      * This violates the const-ness of the pzProgName field.
      * The const-ness is to prevent accidents.  This is not accidental.
      */
-    char ** pp = (char **)(void *)&(test_getoptOptions.pzProgName);
+    char ** pp = VOIDP(&(test_getoptOptions.pzProgName));
 
     if (pz_prog != NULL)
       pz_prog++;
@@ -580,7 +580,7 @@ process_test_getopt_opts (int argc, char** argv)
      * This violates the const-ness of the pzProgName field.
      * The const-ness is to prevent accidents.  This is not accidental.
      */
-    char ** pp = (char **)(void *)&(test_getoptOptions.pzProgName);
+    char ** pp = VOIDP(&(test_getoptOptions.pzProgName));
 
     if (pz_prog != NULL)
       pz_prog++;

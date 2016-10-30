@@ -4,7 +4,7 @@
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -55,76 +55,118 @@ locate_exe()
     return 1
 }
 
-config_configurables()
-{
-    local tops=$(ls -d [a-rt-z]* snprintfv/Makefile.am Makefile.am)
-    local inf=$(find ${tops} -type f -name '*.in')
-    local in_list
-
-    {
-        for f in $inf
-        do
-            case "$f" in
-            *-tpl.in )  g=${f%-tpl.in}.tpl ;;
-            *-tlib.in ) g=${f%-tlib.in}.tlib ;;
-            *.in )      in_list=${in_list}${f%.in}$'\n' ; continue ;;
-            esac
-            printf 'AC_CONFIG_FILES([%s:%s])\n' $g $f
-        done
-        {
-            echo "$in_list"
-            find ${tops} -name 'Makefile.am' | sed 's/\.am$//'
-        } | columns --first='AC_CONFIG_FILES([' --end='])' -I4
-    } > configure.files
-
-    sedcmd="
-	s/^AC_INIT(.*/AC_INIT([${PACKAGE}],[${AG_VERSION}],[${EADDR}])/
-	/dnl Local Variables:/,\$d
-	/==ADD_CONFIG_FILES==/{
-	    s/.*//
-	    r configure.files
-	}"
-
-    sed "$sedcmd" ${config_file} > configure.tmp
-    mv  -f configure.tmp ${config_file}
-    rm  -f configure.files
+install_m4() {
+    local d= m4=$1 ; shift
+    set -- ${1+"$@"} /usr/local/share /usr/share
+    for d
+    do
+        test -f "$d/aclocal/$m4" || continue
+        echo "Installing $m4"
+        cp "$d/aclocal/$m4" config/.
+        return 0
+    done
+    return 1
 }
 
-config_versions()
-{
-    set -a
-    eval "$(egrep '^[A-Z][A-Z0-9_]+=' VERSION)"
-    set +a
+one_year_limit() {
+    (
+        set +x
+        limit=$(date --date=@$(( $(date +%s) - (60 * 60 * 24 * 365) )) +%Y-%M-%d)
+        while IFS= read -r line
+        do
+            if [[ "$line" =~ ^[12].* ]]
+            then
+                set -- $line
+                [[ "$1" < "$limit" ]] && exit 0
+            fi
+
+            echo "$line"
+        done
+    )
+}
+
+find_gnulib() {
+    test -z "$GNULIBDIR" && {
+        for d in ~gnu/proj/gnulib /usr/share/gnulib $(dirname $(command -v gnulib-tool) )
+        do
+            test -d "$d" && GNULIBDIR=$d && break
+        done
+        test -z "$GNULIBDIR" && die "cannot find GNULIBDIR"
+    }
+    unset LANG || LANG=''
+    for f in gnulib-tool m4/lib-link.m4 build-aux/config.rpath build-aux/git-version-gen
+    do test -s ${GNULIBDIR}/$f || die "not found: ${GNULIBDIR}/$f"
+        g=${f##*/} ; g=${g%%.*} ; g=${g//-/_}
+        eval export GL_${g^^}=${GNULIBDIR}/$f
+    done
+}
+
+set_ag_ver() {
+    declare ver=$(${GL_GIT_VERSION_GEN} ZZJUNK) cmt=
+
+    export AG_MAJOR_VERSION=${ver%%.*}
+    ver=${ver#${AG_MAJOR_VERSION}.}
+    declare scmd="s/^AG_MAJOR_VERSION=.*/AG_MAJOR_VERSION=${AG_MAJOR_VERSION}/"
+
+    export AG_MINOR_VERSION=${ver%%.*}
+    ver=${ver#${AG_MINOR_VERSION}}
+    declare scmd+=";s/^AG_MINOR_VERSION=.*/AG_MINOR_VERSION=${AG_MINOR_VERSION}/"
+
+    ver=${ver#.}
+    export AG_PATCHLEVEL=
+    if test ${#ver} -eq 0
+    then
+        export AG_PATCHLEVEL=
+    else
+        export AG_PATCHLEVEL=.${ver%%.*}
+        ver=${ver#${AG_PATCHLEVEL#.}}
+        test ${#ver} -gt 0 && {
+            ver=${ver#.}
+            AG_PATCHLEVEL+=.$(printf %03u ${ver%%-*})
+        }
+    fi
+    declare scmd+=";s/^AG_PATCHLEVEL=.*/AG_PATCHLEVEL=${AG_PATCHLEVEL}/"
+    sed "$scmd" VERSION.pre > VERSION
+    eval "$(egrep '^[A-Z][A-Z0-9_]+=' VERSION | sed 's/^/export /')"
+}
+
+config_versions() {
+    find_gnulib
+    set_ag_ver
     unset LANG || LANG=''
 
-    grep '==ADD_CONFIG_FILES==' ${config_file} >/dev/null 2>&1
-    test $? -eq 0 && config_configurables
+    sedcmd="s/^AC_INIT(.*/AC_INIT([${PACKAGE}],[${AG_VERSION}],[${EADDR}])/"
 
+    sed "$sedcmd" ${config_file}.pre > ${config_file}
+    sedcmd="/eaddr  *=/s/= .*/= '${EADDR}';/"
     for f in $(egrep -l 'eaddr +=' */*opts.def)
-    do sed "/eaddr  *=/s/= .*/= '${EADDR}';/" $f > X ; mv -f X $f
+    do sed "$sedcmd" $f > X ; mv -f X $f
     done
 
-    if grep '__CURRENT_VERSION__' NEWS > /dev/null
+    sed "1s/__CURRENT_VERSION__.*/${AG_VERSION} - $(date '+%B %Y')/" NEWS.pre > NEWS
+
+    cd ${top_srcdir}/config
+    if ${omit_ag}
     then
-      sed "1s/__CURRENT_VERSION__.*/${AG_VERSION} - $(date '+%B %Y')/" NEWS > X
-      mv -f X NEWS
-    fi
+        untar_touch m4.tgz
 
-    cd ${srcdir}/config
-    ${AGexe} -L. libopts.def || exit 1
-    ${AGexe} -L. misc.def    || exit 1
+    else
+        ${AGexe} -L. libopts.def || exit 1
+        ${AGexe} -L. misc.def    || exit 1
+    fi
     cd ..
+
     cp snprintfv/snprintfv.m4 config/.
-    for f in /usr/local/share/aclocal/guile.m4 /usr/share/aclocal/guile.m4
-    do  test -f "$f" || continue
-        cp $f config/.
-        break
-    done
+    f=$(exec 2>/dev/null ; commandd -v guile)
+    test ${#f} -gt 0 && f=${f%/guile} && f=${f%/bin}
+    install_m4 guile.m4 $f
+    install_m4 pkg.m4
 
     marker='=== Component Todo:'
+    sedcmd="/${marker}/,\$d"
     rm -f TODO
     {
-        sed "/${marker}/,\$d" TODO-top
+        sed "$sedcmd" TODO-top
         for f in */TODO
         do
             test -s $f || continue
@@ -132,7 +174,7 @@ config_versions()
             cat ${f}
         done
     } > TODO
-    cd ${srcdir}
+    cd ${top_srcdir}
 
     glopts='--local-dir=tmp --source-base=autoopts --lib=do_not_make_me
 	--import
@@ -143,34 +185,21 @@ config_versions()
 	--m4-base=config
         --lgpl=2'
     glmods='parse-duration gendocs gettext-h extensions stdnoreturn'
-    GNULIBDIR=${GNULIBDIR:-~gnu/proj/gnulib}
-    GNULIBTOOL=${GNULIBDIR}/gnulib-tool
-    for f in gnulib-tool m4/lib-link.m4 build-aux/config.rpath
-    do test -s ${GNULIBDIR}/$f || die "not found: ${GNULIBDIR}/$f"
-    done
-    cmd=$(echo ${GNULIBTOOL} $glopts $glmods)
+    cmd=$(echo ${GL_GNULIB_TOOL} $glopts $glmods)
     echo GNULIB-TOOL: $cmd
     ${cmd}
     sed -i 's/do_not_make_me_.*_SOURCES/EXTRA_DIST/;/do_not_make_me/d' \
         autoopts/gnulib.mk
-    f='s@/config/snippet/@/compat/@'
-    f="${f}${nl}"'\@begin .*snippet/_Noreturn@,\@end .*snippet/_Noreturn@ p'
-    f="${f}${nl}"'\@begin .* module stdnoreturn@,\@end .* module stdnoreturn@ p'
-    sed -n "$f" autoopts/gnulib.mk | \
+    sedcmd='s@/config/snippet/@/compat/@'
+    sedcmd="${sedcmd}${nl}"'\@begin .*snippet/_Noreturn@,\@end .*snippet/_Noreturn@ p'
+    sedcmd="${sedcmd}${nl}"'\@begin .* module stdnoreturn@,\@end .* module stdnoreturn@ p'
+    sed -n "$sedcmd" autoopts/gnulib.mk | \
         grep -v '^##' > pkg/libopts/stdnoreturn.mk
     cp ${GNULIBDIR}/build-aux/config.rpath ${GNULIBDIR}/m4/lib-link.m4 config/.
-    echo GNULIB-TOOL-DONE
-}
 
-check_tools()
-{
-    local t e
-    for t in AG GD CL
-    do
-        eval e=\${${t}exe}
-        test -x "$e" || die "Not executable: \$${t}exe == '$e'"
-        $e --version || die "$e does not work"
-    done
+    ${GNULIBDIR}/build-aux/gitlog-to-changelog | \
+        one_year_limit > ${top_srcdir}/ChangeLog
+    echo GNULIB-TOOL-DONE
 }
 
 tweak_Makefile_am()
@@ -178,57 +207,37 @@ tweak_Makefile_am()
     #  IF the source dir is not known,
     #  THEN it is the directory above the directory of this file.
     #
-    test -z "${srcdir}" && \
-        srcdir=$({ \cd $(dirname $0) ; \cd .. ; } >/dev/null ; pwd)
-    cd ${srcdir}
-
-    {
-        sed '/^EXTRA_DIST /{
-            s/.*/misc_extra     = \\/
-            q
-        }' Makefile.am
-        {
-            find VERSION \
-                config/bootstrap* config/*.m4 config/config.rpath config/*.sh \
-                autoopts/parse-duration.[ch] autoopts/gettext.h doc/gendocs* \
-                -type f
-            echo config/gnulib-cache.m4
-        } | sort | \
-            columns --spread=1 -I4 --line=' \'
-
-        sed -n '/^EXTRA_DIST /,$p' Makefile.am
-    } > XXX$$ 2>/dev/null
-    mv -f XXX$$ Makefile.am
-
-    cd pkg
+    test -z "${top_srcdir}" && \
+        top_srcdir=$({ \cd $(dirname $0) ; \cd .. ; } >/dev/null ; pwd)
+    cd ${top_srcdir}/pkg
     {
         sed '/^LIBOPTS_FILES  *=/{
             s/=.*/= \\/
             q
-        }' Makefile.am
+        }' Makefile.am.pre
 
         find libopts -type f -name '[a-zA-Z]*' | \
             columns --spread=1 -I4 --line=' \'
         echo
 
-        sed '1,/LIBOPTS_FILES *=/d' Makefile.am
-    } > XXX$$
-    mv -f XXX$$ Makefile.am
-    cd ${srcdir}
+        sed '1,/LIBOPTS_FILES *=/d' Makefile.am.pre
+    } > Makefile.am
+    cd ${top_srcdir}
+    cp agen5/Makefile.am.pre agen5/Makefile.am
 }
 
-case "${BOOTSTRAP}" in
+cd ${top_srcdir}
+
+case "${1}" in
 ( pre )
-    dummy_texi=${srcdir}/doc/autogen.texi
-    echo '@setfilename autogen.info' > ${dummy_texi}
-    test -f ${srcdir}/configure && rm -f ${srcdir}/configure
-    check_tools >/dev/null
+    echo '@setfilename autogen.info' > doc/autogen.texi
+    test -f ${top_srcdir}/configure && rm -f ${top_srcdir}/configure
     config_versions
     tweak_Makefile_am
     ;;
 
 ( post )
-    test ${#dummy_texi} -gt 0 && rm -f ${dummy_texi}
+    rm -f doc/autogen.texi
     ;;
 esac
 

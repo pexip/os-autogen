@@ -3,9 +3,9 @@
 @syncodeindex pg cp
 @c %**end of header
 @copying
-This manual is for GNU AutoGen version 5.18, updated August 2014.
+This manual is for GNU AutoGen version 5.18, updated August 2016.
 
-Copyright @copyright{} 1992-2014 by Bruce Korb.
+Copyright @copyright{} 1992-2015 by Bruce Korb.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -19,7 +19,7 @@ Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 EDIT THIS FILE WITH CAUTION  (agdoc.texi)
 
 It has been AutoGen-ed
-From the definitions    /u/bkorb/ag/ag/doc/ag-texi-14536.d/agdoc.def
+From the definitions    /u/bkorb/ag/ag/doc/ag-texi-14514.d/agdoc.def
 and the template file   auto_gen.tpl
 
 Plus bits and pieces gathered from all over the source/build
@@ -67,8 +67,8 @@ directories:
 @ifnothtml
 This file documents GNU AutoGen Version 5.18.
 
-AutoGen copyright @copyright{} 1992-2014 Bruce Korb
-AutoOpts copyright @copyright{} 1992-2014 Bruce Korb
+AutoGen copyright @copyright{} 1992-2015 Bruce Korb
+AutoOpts copyright @copyright{} 1992-2015 Bruce Korb
 snprintfv copyright @copyright{} 1999-2000 Gary V. Vaughan
 
 AutoGen is free software: you can redistribute it and/or modify it
@@ -95,13 +95,13 @@ notice identical to this one except for the removal of this paragraph.
 @finalout
 @titlepage
 @title AutoGen - The Automated Program Generator
-@subtitle For version 5.18, August 2014
+@subtitle For version 5.18, August 2016
 @author Bruce Korb
 @author @email{bkorb@@gnu.org}
 
 @page
 @vskip 0pt plus 1filll
-AutoGen copyright @copyright{} 1992-2014 Bruce Korb
+AutoGen copyright @copyright{} 1992-2015 Bruce Korb
 @sp 2
 This is the second edition of the GNU AutoGen documentation,
 @sp 2
@@ -139,13 +139,13 @@ includes stand-alone support for configuration file parsing, @xref{Features}.
 @xref{Add-Ons, Add-on packages for AutoGen}, section for additional
 programs and libraries associated with AutoGen.
 
-This edition documents version 5.18, August 2014.
+This edition documents version 5.18, August 2016.
 
 @ignore
 
 This file is part of AutoGen.
 AutoGen is free software.
-AutoGen is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+AutoGen is Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 
 AutoGen is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -1993,6 +1993,7 @@ but they cannot be invoked.
 * SCM make-header-guard::  @file{make-header-guard} - make self-inclusion guard
 * SCM make-tmp-dir::       @file{make-tmp-dir} - create a temporary directory
 * SCM match-value?::       @file{match-value?} - test for matching value
+* SCM max-file-time::      @file{max-file-time} - get the maximum input file modification time
 * SCM mk-gettextable::     @file{mk-gettextable} - print a string in a gettext-able format
 * SCM out-delete::         @file{out-delete} - delete current output file
 * SCM out-depth::          @file{out-depth} - output file stack depth
@@ -2016,7 +2017,7 @@ but they cannot be invoked.
 * SCM tpl-file-line::      @file{tpl-file-line} - get the template file+line number
 * SCM tpl-file-next-line:: @file{tpl-file-next-line} - get the template file plus next line number
 * SCM warn::               @file{warn} - display warning message and continue
-* SCM autogen-version::     @file{autogen-version} - ``5.18.4''
+* SCM autogen-version::     @file{autogen-version} - ``5.18.12''
 * SCM c-file-line-fmt::     format file info as, ``@code{#line nn "file"}''
 @end menu
 
@@ -2055,7 +2056,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 381.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 378.
 @end ignore
 
 Usage:  (ag-function? ag-name)
@@ -2130,7 +2131,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 331.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 330.
 @end ignore
 
 Usage:  (def-file)
@@ -2147,7 +2148,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 763.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 762.
 @end ignore
 
 Usage:  (def-file-line ag-name [ msg-fmt ])
@@ -2232,7 +2233,7 @@ optpfx - Optional - shifted prefix
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 327.
+Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 355.
 @end ignore
 
 Usage:  (emit alist ...)
@@ -2303,7 +2304,7 @@ message - message to display before exiting
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 346.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 344.
 @end ignore
 
 Usage:  (exist? ag-name)
@@ -2333,7 +2334,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 327.
+Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 329.
 @end ignore
 
 Usage:  (find-file file-name [ suffix ])
@@ -2354,7 +2355,7 @@ suffix - Optional - file suffix to try, too
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 84.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 87.
 @end ignore
 
 Usage:  (first-for? [ for_var ])
@@ -2373,7 +2374,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 211.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 214.
 @end ignore
 
 Usage:  (for-by by)
@@ -2393,7 +2394,7 @@ by - the iteration increment for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 169.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 172.
 @end ignore
 
 Usage:  (for-from from)
@@ -2413,7 +2414,7 @@ from - the initial index for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 148.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 151.
 @end ignore
 
 Usage:  (for-index [ for_var ])
@@ -2432,7 +2433,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 231.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 234.
 @end ignore
 
 Usage:  (for-sep separator)
@@ -2453,7 +2454,7 @@ each FOR iteration
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 190.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 193.
 @end ignore
 
 Usage:  (for-to to)
@@ -2473,7 +2474,7 @@ to - the final index for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 128.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 131.
 @end ignore
 
 Usage:  (found-for? [ for_var ])
@@ -2492,7 +2493,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 436.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 431.
 @end ignore
 
 Usage:  (get ag-name [ alt-val ])
@@ -2514,7 +2515,7 @@ alt-val - Optional - value if not present
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 474.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 468.
 @end ignore
 
 Usage:  (get-c-name ag-name)
@@ -2534,7 +2535,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 515.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 506.
 @end ignore
 
 Usage:  (get-down-name ag-name)
@@ -2554,7 +2555,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 495.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 487.
 @end ignore
 
 Usage:  (get-up-name ag-name)
@@ -2574,7 +2575,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 535.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 525.
 @end ignore
 
 Usage:  (high-lim ag-name)
@@ -2601,7 +2602,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 429.
+Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 457.
 @end ignore
 
 Usage:  (insert-file alist ...)
@@ -2636,7 +2637,7 @@ susp-name - the name of the suspended output
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 108.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 111.
 @end ignore
 
 Usage:  (last-for? [ for_var ])
@@ -2656,7 +2657,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 581.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 570.
 @end ignore
 
 Usage:  (len ag-name)
@@ -2677,7 +2678,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 602.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 590.
 @end ignore
 
 Usage:  (low-lim ag-name)
@@ -2694,7 +2695,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 801.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 803.
 @end ignore
 
 Usage:  (make-header-guard name)
@@ -2774,7 +2775,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 403.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 399.
 @end ignore
 
 Usage:  (match-value? op ag-name test-str)
@@ -2798,13 +2799,30 @@ ag-name - name of AutoGen value
 @*
 test-str - string to test against
 
+@node SCM max-file-time
+@subsection @file{max-file-time} - get the maximum input file modification time
+@findex max-file-time
+
+@ignore
+Generated from auto_gen.tpl line 580.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 748.
+@end ignore
+
+Usage:  (max-file-time)
+@*
+returns the time stamp of the most recently modified sourc file as the
+number of seconds since the epoch.  If any input is dynamic
+(a shell command), then it will be the current time.
+
+This Scheme function takes no arguments.
+
 @node SCM mk-gettextable
 @subsection @file{mk-gettextable} - print a string in a gettext-able format
 @findex mk-gettextable
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 270.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 273.
 @end ignore
 
 Usage:  (mk-gettextable string)
@@ -2840,7 +2858,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 736.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 738.
 @end ignore
 
 Usage:  (out-depth)
@@ -2874,7 +2892,7 @@ susp_nm - A name tag of suspended output
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 766.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 768.
 @end ignore
 
 Usage:  (out-line)
@@ -2909,7 +2927,7 @@ new-name - new name for the current output file
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 749.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 751.
 @end ignore
 
 Usage:  (out-name)
@@ -2968,7 +2986,7 @@ file-name - name of the file to append text to
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 590.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 592.
 @end ignore
 
 Usage:  (out-push-new [ file-name ])
@@ -3031,7 +3049,7 @@ suspName - A name tag for reactivating
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 674.
+Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 676.
 @end ignore
 
 Usage:  (out-switch file-name)
@@ -3079,7 +3097,7 @@ alt_fmt - Optional - alternate format string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 630.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 617.
 @end ignore
 
 Usage:  (set-option opt)
@@ -3117,7 +3135,7 @@ set? - Optional - boolean arg, false to make output non-writable
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 724.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 727.
 @end ignore
 
 Usage:  (stack ag-name)
@@ -3157,7 +3175,7 @@ ag-name - name of autogen values to stack
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 647.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 633.
 @end ignore
 
 Usage:  (suffix)
@@ -3172,7 +3190,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 661.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 646.
 @end ignore
 
 Usage:  (tpl-file [ full_path ])
@@ -3192,7 +3210,7 @@ full_path - Optional - include full path to file
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 710.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 695.
 @end ignore
 
 Usage:  (tpl-file-line [ msg-fmt ])
@@ -3222,7 +3240,7 @@ msg-fmt - Optional - formatting for line message
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 742.
+Extracted from /u/bkorb/ag/ag/agen5/expState.c line 727.
 @end ignore
 
 Usage:  (tpl-file-next-line [ msg-fmt ])
@@ -3269,7 +3287,7 @@ Generated from auto_gen.tpl line 291.
 
 This is a symbol defining the current AutoGen version number string.
 It was first defined in AutoGen-5.2.14.
-It is currently ``5.18.4''.
+It is currently ``5.18.12''.
 
 @node SCM c-file-line-fmt
 @subsection format file info as, ``@code{#line nn "file"}''
@@ -3373,7 +3391,7 @@ of spelling that is, ``(not (= ...))''.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 771.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 775.
 @end ignore
 
 Usage:  (agpl prog-name prefix)
@@ -3393,7 +3411,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 818.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 824.
 @end ignore
 
 Usage:  (bsd prog_name owner prefix)
@@ -3415,7 +3433,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 792.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 795.
 @end ignore
 
 Usage:  (c-string string)
@@ -3440,7 +3458,7 @@ string - string to reformat
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 308.
+Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 336.
 @end ignore
 
 Usage:  (error-source-line)
@@ -3458,7 +3476,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 200.
+Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 202.
 @end ignore
 
 Usage:  (extract file-name marker-fmt [ caveat ] [ default ])
@@ -3558,7 +3576,7 @@ default - Optional - default initial text
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 297.
+Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 298.
 @end ignore
 
 Usage:  (format-arg-count format)
@@ -3597,7 +3615,7 @@ format - formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 233.
+Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 231.
 @end ignore
 
 Usage:  (fprintf port format [ format-arg ... ])
@@ -3690,7 +3708,7 @@ st-name - the name of the gperf hash list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 748.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 751.
 @end ignore
 
 Usage:  (gpl prog-name prefix)
@@ -3710,7 +3728,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 257.
+Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 254.
 @end ignore
 
 Usage:  (hide-email display eaddr)
@@ -3751,7 +3769,7 @@ str - string to make substitutions in
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 288.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 291.
 @end ignore
 
 Usage:  (in? test-string string-list ...)
@@ -3771,7 +3789,7 @@ string-list - list of strings to check
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 355.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 358.
 @end ignore
 
 Usage:  (join separator list ...)
@@ -3793,7 +3811,7 @@ list - list of strings to join
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 766.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 769.
 @end ignore
 
 Usage:  (kr-string string)
@@ -3814,7 +3832,7 @@ string - string to reformat
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 794.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 799.
 @end ignore
 
 Usage:  (lgpl prog_name owner prefix)
@@ -3836,7 +3854,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 843.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 850.
 @end ignore
 
 Usage:  (license lic_name prog_name owner prefix)
@@ -3860,7 +3878,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 670.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 673.
 @end ignore
 
 Usage:  (license-description license prog-name prefix [ owner ])
@@ -3886,7 +3904,7 @@ owner - Optional - owner of the program
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 613.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 616.
 @end ignore
 
 Usage:  (license-full license prog-name prefix [ owner ] [ years ])
@@ -3898,8 +3916,8 @@ with all the same substitutions.
 
 All of these depend upon the existence of a license file named after the
 @code{license} argument with a @code{.lic} suffix.  That file should
-contain three blocks of text, each separated by two or more newline
-characters.
+contain three blocks of text, each separated by two or more consecutive
+newline characters (at least one completely blank line).
 
 The first section describes copyright attribution and the name of the usage
 licence.  For GNU software, this should be the text that is to be displayed
@@ -3908,15 +3926,15 @@ with the program version.  Four text markers can be replaced: <PFX>,
 
 The second section is a short description of the terms of the license.
 This is typically the kind of text that gets displayed in the header of
-source files.  The third section is strictly the name of the license
-without any substitution markers.  Only the <PFX>, <owner> and <program>
-markers are substituted.
+source files.  Only the <PFX>, <owner> and <program> markers are
+substituted.
 
 The third section is strictly the name of the license.
 No marker substitutions are performed.
 
 @example
 <PFX>Copyright (C) <years> <owner>, all rights reserved.
+<PFX>
 <PFX>This is free software. It is licensed for use,
 <PFX>modification and redistribution under the terms
 <PFX>of the GNU General Public License, version 3 or later
@@ -3947,7 +3965,7 @@ years - Optional - copyright years
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 694.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 697.
 @end ignore
 
 Usage:  (license-info license prog-name prefix [ owner ] [ years ])
@@ -3977,7 +3995,7 @@ years - Optional - copyright years
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 721.
+Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 724.
 @end ignore
 
 Usage:  (license-name license)
@@ -4116,7 +4134,7 @@ text - the text of the script
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 142.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 127.
 @end ignore
 
 Usage:  (max list ...)
@@ -4133,7 +4151,7 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 201.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 186.
 @end ignore
 
 Usage:  (min list ...)
@@ -4150,7 +4168,7 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 453.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 456.
 @end ignore
 
 Usage:  (prefix prefix text)
@@ -4188,7 +4206,7 @@ text - multi-line block of text
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 209.
+Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 208.
 @end ignore
 
 Usage:  (printf format [ format-arg ... ])
@@ -4210,7 +4228,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 538.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 541.
 @end ignore
 
 Usage:  (raw-shell-str string)
@@ -4265,7 +4283,7 @@ command - shell command - the result is from stdout
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 635.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 638.
 @end ignore
 
 Usage:  (shell-str string)
@@ -4374,7 +4392,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 437.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 426.
 @end ignore
 
 Usage:  (string-capitalize str)
@@ -4393,7 +4411,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 394.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 383.
 @end ignore
 
 Usage:  (string-capitalize! str)
@@ -4454,7 +4472,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 492.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 482.
 @end ignore
 
 Usage:  (string-downcase str)
@@ -4472,7 +4490,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 461.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 451.
 @end ignore
 
 Usage:  (string-downcase! str)
@@ -4787,7 +4805,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 914.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 937.
 @end ignore
 
 Usage:  (string-substitute source match repl)
@@ -4973,7 +4991,7 @@ st-name - the name of the array of characters
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 302.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 287.
 @end ignore
 
 Usage:  (string->c-name! str)
@@ -4992,7 +5010,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 515.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 506.
 @end ignore
 
 Usage:  (string->camelcase str)
@@ -5011,7 +5029,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 894.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 917.
 @end ignore
 
 Usage:  (string-tr source match translation)
@@ -5033,7 +5051,7 @@ translation - conversion list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 823.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 843.
 @end ignore
 
 Usage:  (string-tr! source match translation)
@@ -5060,7 +5078,7 @@ translation - conversion list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 371.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 359.
 @end ignore
 
 Usage:  (string-upcase str)
@@ -5078,7 +5096,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 340.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 328.
 @end ignore
 
 Usage:  (string-upcase! str)
@@ -5095,7 +5113,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 705.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 708.
 @end ignore
 
 Usage:  (sub-shell-str string)
@@ -5114,7 +5132,7 @@ string - string to transform
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 260.
+Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 245.
 @end ignore
 
 Usage:  (sum list ...)
@@ -5131,7 +5149,7 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 956.
+Extracted from /u/bkorb/ag/ag/agen5/expString.c line 979.
 @end ignore
 
 Usage:  (time-string->number time_spec)
@@ -5583,7 +5601,7 @@ For a complete description @xref{DEFINE}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 717.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 725.
 @end ignore
 
 @findex ENDFOR
@@ -5635,7 +5653,7 @@ For a complete description, @xref{CASE}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 552.
+Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 580.
 @end ignore
 
 @findex EXPR
@@ -5651,7 +5669,7 @@ macro is inferred.  The result of the expression evaluation
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 637.
+Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 645.
 @end ignore
 
 @findex FOR
@@ -6398,7 +6416,7 @@ Extraction from autogen.texi
 @chapter Automated Option Processing
 @cindex autoopts
 
-AutoOpts 41.0 is bundled with AutoGen.  It is a tool that virtually eliminates the
+AutoOpts 41.1 is bundled with AutoGen.  It is a tool that virtually eliminates the
 hassle of processing options and keeping man pages, info docs and usage text
 up to date.  This package allows you to specify several program attributes,
 thousands of option types and many option attributes.  From this, it then
@@ -7621,7 +7639,7 @@ Typically that of the author or copyright holder.
 An example of this might be:
 @example
 copyright = @{
-    date  = "1992-2012";
+    date  = "1992-2015";
     owner = "Bruce Korb";
     eaddr = 'bkorb@@gnu.org';
     type  = GPL;
@@ -7720,6 +7738,9 @@ The recognized values for @code{main-type} are @code{guile},
 * main main::               main: user supplied main procedure
 * main include::            include: code emitted from included template
 * main invoke::             invoke: code emitted from AutoGen macro
+
+The @code{for-each} main  procedure has a number of attributes that
+must be specified:
 
 * main for-each::           for-each: perform function on each operand
 * main-for-each-proc::          procedure to handle each argument
@@ -7904,10 +7925,10 @@ make verbose TESTS=main.test
 @unnumberedsubsubsec procedure to handle each argument
 
 @vindex handler-proc
-This attribute is required.  It is used to name the procedure to call.
-That procedure is presumed to be external, but if you provide the code
-for it, then the procedure is emitted as a static procedure in the
-generated code.
+The @code{handler-proc} attribute is required.  It is used to name the
+procedure to call.  That procedure is presumed to be external, but if
+you provide the code for it, then the procedure is emitted as a static
+procedure in the generated code.
 
 This procedure should return 0 on success, a cumulative error code on warning
 and exit without returning on an unrecoverable error.  As the cumulative
@@ -7933,8 +7954,8 @@ here is part of the emitted code:
 @unnumberedsubsubsec handler procedure type
 
 @vindex handler-type
-If you do not supply this attribute, your handler procedure must be
-the default type.  The profile of the procedure must be:
+If you do not supply the @code{handler-type} attribute, your handler
+procedure must be the default type.  The profile of the procedure must be:
 
 @example
 int @var{my_handler}(char const * pz_entry);
@@ -7988,7 +8009,7 @@ In this case, the profile for your procedure must be:
 
 @example
 program_exit_code_t
-@var{my_handler}(char const* pz_fname, char* file_text,
+@var{my_handler}(char const * fname, char * file_text,
            size_t text_size);
 @end example
 
@@ -7999,6 +8020,10 @@ the file contents.  Also, the memory allocated to hold the text is
 @code{text_size + 1} bytes long and the final byte is always @code{NUL}.  The
 file contents need not be text, as the data are read with the @code{read(2)}
 system call.
+
+@code{file_text} is automatically freed, unless you specify a
+@vindex handler-frees
+@code{handler-frees} attribute.  Then your code must @code{free(3)} the text.
 @end table
 
 If you select one of these file type handlers, then on access or usage errors
@@ -8013,15 +8038,18 @@ message will not be printed.
 @unnumberedsubsubsec code for handler procedure
 
 @vindex MYHANDLER-code
-With this attribute, you provide the code for your handler procedure
-in the option definition file.  In this case, your @code{main()}
+With the @code{MYHANDLER-code} attribute, you provide the code for
+your handler procedure in the option definition file.  Note that the
+spelling of this attribute depends on the name provided with the
+@code{handler-proc} attribute, so we represent it here with
+@code{MYHANDLER} as a place holder.  As an example, your @code{main()}
 procedure specification might look something like this:
 
 @example
 main = @{
   main-type    = for-each;
-  handler-proc = @var{my_handler};
-  @var{my_handler}-code = <<- EndOfMyCode
+  handler-proc = @var{MYHANDLER};
+  @var{MYHANDLER}-code = <<- EndOfMyCode
 	/* whatever you want to do */
 	EndOfMyCode;
 @};
@@ -8033,10 +8061,10 @@ that looks like this:
 
 @example
 static int
-@var{my_handler}( char const* pz_entry )
+@var{MYHANDLER}( char const* pz_entry )
 @{
     int res = 0;
-    <<@var{my_handler}-code goes here>>
+    <<@var{MYHANDLER}-code goes here>>
     return res;
 @}
 @end example
@@ -8049,6 +8077,7 @@ each argument or input line.
 
 @table @samp
 @item interleaved
+@vindex interleaved
 If this attribute is specified, then options and operands may be
 interleaved.  Arguments or input lines beginning with a hyphen will
 cause it to be passed through to an option processing function and
@@ -10181,16 +10210,16 @@ tokenize an input string
 @noindent
 Usage:
 @example
-token_list_t* res = ao_string_tokenize( string );
+token_list_t * res = ao_string_tokenize( string );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab string @tab @code{char const*}
+@item @tab string @tab @code{char const *}
 @tab string to be tokenized
-@item @tab returns @tab token_list_t*
+@item @tab returns @tab token_list_t *
 @tab pointer to a structure that lists each token
 @end multitable
 
@@ -10246,16 +10275,16 @@ parse a configuration file
 @noindent
 Usage:
 @example
-const tOptionValue* res = configFileLoad( fname );
+const tOptionValue * res = configFileLoad( fname );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab fname @tab @code{char const*}
+@item @tab fname @tab @code{char const *}
 @tab the file to load
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab An allocated, compound value structure
 @end multitable
 
@@ -10298,10 +10327,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab prog @tab @code{char const*}
+@item @tab prog @tab @code{char const *}
 @tab program name
 @item @tab returns @tab int
 @tab 0 -> SUCCESS, -1 -> FAILURE
@@ -10338,25 +10367,25 @@ find a hierarcicaly valued option instance
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionFindNextValue( odesc, pPrevVal, name, value );
+const tOptionValue * res = optionFindNextValue( odesc, pPrevVal, name, value );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab odesc @tab @code{const tOptDesc*}
+@item @tab odesc @tab @code{const tOptDesc *}
 @tab an option with a nested arg type
 
-@item @tab pPrevVal @tab @code{const tOptionValue*}
+@item @tab pPrevVal @tab @code{const tOptionValue *}
 @tab the last entry
 
-@item @tab name @tab @code{char const*}
+@item @tab name @tab @code{char const *}
 @tab name of value to find
 
-@item @tab value @tab @code{char const*}
+@item @tab value @tab @code{char const *}
 @tab the matching value
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -10383,22 +10412,22 @@ find a hierarcicaly valued option instance
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionFindValue( odesc, name, val );
+const tOptionValue * res = optionFindValue( odesc, name, val );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab odesc @tab @code{const tOptDesc*}
+@item @tab odesc @tab @code{const tOptDesc *}
 @tab an option with a nested arg type
 
-@item @tab name @tab @code{char const*}
+@item @tab name @tab @code{char const *}
 @tab name of value to find
 
-@item @tab val @tab @code{char const*}
+@item @tab val @tab @code{char const *}
 @tab the matching value
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -10431,7 +10460,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -10451,19 +10480,19 @@ get a specific value from a hierarcical list
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionGetValue( pOptValue, valueName );
+const tOptionValue * res = optionGetValue( pOptValue, valueName );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOptValue @tab @code{const tOptionValue*}
+@item @tab pOptValue @tab @code{const tOptionValue *}
 @tab a hierarchcal value
 
-@item @tab valueName @tab @code{char const*}
+@item @tab valueName @tab @code{char const *}
 @tab name of value to get
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -10500,10 +10529,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab line @tab @code{char const*}
+@item @tab line @tab @code{char const *}
 @tab NUL-terminated text
 @end multitable
 
@@ -10534,7 +10563,7 @@ Get the list of members of a bit mask set
 @noindent
 Usage:
 @example
-char* res = optionMemberList( od );
+char * res = optionMemberList( od );
 @end example
 @noindent
 Where the arguments are:
@@ -10543,7 +10572,7 @@ Where the arguments are:
 @item @tab ----- @tab ----- @tab -------------
 @item @tab od @tab @code{tOptDesc *}
 @tab the set membership option description
-@item @tab returns @tab char*
+@item @tab returns @tab char *
 @tab the names of the set bits
 @end multitable
 
@@ -10560,19 +10589,19 @@ get the next value from a hierarchical list
 @noindent
 Usage:
 @example
-const tOptionValue* res = optionNextValue( pOptValue, pOldValue );
+const tOptionValue * res = optionNextValue( pOptValue, pOldValue );
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOptValue @tab @code{const tOptionValue*}
+@item @tab pOptValue @tab @code{const tOptionValue *}
 @tab a hierarchcal list value
 
-@item @tab pOldValue @tab @code{const tOptionValue*}
+@item @tab pOldValue @tab @code{const tOptionValue *}
 @tab a value from this list
-@item @tab returns @tab const tOptionValue*
+@item @tab returns @tab const tOptionValue *
 @tab a compound value structure
 @end multitable
 
@@ -10609,7 +10638,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 
 @item @tab ex_code @tab @code{int}
@@ -10637,10 +10666,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab od @tab @code{tOptDesc*}
+@item @tab od @tab @code{tOptDesc *}
 @tab the descriptor for this arg
 @end multitable
 
@@ -10663,10 +10692,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
-@item @tab od @tab @code{tOptDesc*}
+@item @tab od @tab @code{tOptDesc *}
 @tab the descriptor for this arg
 @end multitable
 
@@ -10692,13 +10721,13 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 
 @item @tab a_ct @tab @code{int}
 @tab program arg count
 
-@item @tab a_v @tab @code{char**}
+@item @tab a_v @tab @code{char **}
 @tab program arg vector
 @item @tab returns @tab int
 @tab the count of the arguments processed
@@ -10742,7 +10771,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -10773,7 +10802,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab opts @tab @code{tOptions*}
+@item @tab opts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -10813,7 +10842,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab pOpts @tab @code{tOptions*}
+@item @tab pOpts @tab @code{tOptions *}
 @tab program options descriptor
 @end multitable
 
@@ -10868,14 +10897,14 @@ return the compiled AutoOpts version number
 @noindent
 Usage:
 @example
-char const* res = optionVersion();
+char const * res = optionVersion();
 @end example
 @noindent
 Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab returns @tab char const*
+@item @tab returns @tab char const *
 @tab the version string in constant memory
 @end multitable
 
@@ -10899,7 +10928,7 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab ch_list @tab @code{char const*}
+@item @tab ch_list @tab @code{char const *}
 @tab characters to equivalence
 @end multitable
 
@@ -10927,10 +10956,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab str1 @tab @code{char const*}
+@item @tab str1 @tab @code{char const *}
 @tab first string
 
-@item @tab str2 @tab @code{char const*}
+@item @tab str2 @tab @code{char const *}
 @tab second string
 @item @tab returns @tab int
 @tab the difference between two differing characters
@@ -11006,10 +11035,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab str1 @tab @code{char const*}
+@item @tab str1 @tab @code{char const *}
 @tab first string
 
-@item @tab str2 @tab @code{char const*}
+@item @tab str2 @tab @code{char const *}
 @tab second string
 
 @item @tab ct @tab @code{int}
@@ -11044,10 +11073,10 @@ Where the arguments are:
 @multitable @columnfractions .05 .15 .20 .55
 @item @tab Name @tab Type @tab Description
 @item @tab ----- @tab ----- @tab -------------
-@item @tab dest @tab @code{char*}
+@item @tab dest @tab @code{char *}
 @tab output string
 
-@item @tab src @tab @code{char const*}
+@item @tab src @tab @code{char const *}
 @tab input string
 @end multitable
 
@@ -11756,7 +11785,7 @@ will produce the following output:
 @example
 Hello, World!
 Buzz off, World!
-Hello, Bruce Korb,,,!
+Hello, Bruce Korb!
 @end example
 @ignore
 START == AO-DATA2 == DO NOT CHANGE THIS COMMENT or the surrounding 'ignore's
@@ -12053,8 +12082,30 @@ Here is the usage output example from AutoOpts error handling
 tests.  The option definition has argument reordering enabled:
 
 @example
+test_errors - Test AutoOpts for errors
+Usage:  errors [ -<flag> [<val>] | --<name>[@{=| @}<val>] ]... arg ...
+  Flg Arg Option-Name    Description
+   -o no  option         The option option descrip
+   -s Str second         The second option descrip
+                                - may appear up to 10 times
+   -i --- ignored        we have dumped this
+   -X no  another        Another option descrip
+                                - may appear up to 5 times
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
+   -> opt save-opts      save the option state to a config file
+   -< Str load-opts      load options from a config file
+                                - disabled as '--no-load-opts'
+                                - may appear multiple times
 
-exit 0
+Options are specified by doubled hyphens and their name or by a single
+hyphen and the flag character.
+Operands and options may be intermixed.  They will be reordered.
+
+The following option preset mechanisms are supported:
+ - reading file errorsRC
+Packaged by Bruce (2016-08-29)
+Report test_errors bugs to bkorb@@gnu.org
 @end example
 
 Using the invocation,
@@ -12104,7 +12155,7 @@ extracted from the script file.
 If the script file already exists and contains Automated Option Processing
 text, the second line of the file through the ending tag will be replaced
 by the newly generated text.  The first '#!' line will be regenerated.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report genshellopt bugs to bkorb@@gnu.org
 
 = = = = = = = =
@@ -12141,7 +12192,7 @@ Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
 All arguments are named options.
 If no 'input' argument is provided or is set to simply "-", and if 'stdin'
 is not a 'tty', then the list of input files will be read from 'stdin'.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report getdefs bugs to bkorb@@gnu.org
 @end example
 
@@ -12152,10 +12203,10 @@ Resulting in the following script:
 # # # # # # # # # # -- do not modify this marker --
 #
 #  DO NOT EDIT THIS SECTION
- OF /u/bkorb/ag/ag/doc/ag-texi-14536.d/.ag-r4JrVV/genshellopt.sh
+ OF /u/bkorb/ag/ag/doc/ag-texi-14514.d/.ag-cjRsM3/genshellopt.sh
 #
 #  From here to the next `-- do not modify this marker --',
-#  the text has been generated Saturday August 30, 2014 at 10:37:59 AM PDT
+#  the text has been generated Monday August 29, 2016 at 02:37:00 PM PDT
 #  From the GETDEFS option definitions
 #
 GETDEFS_LONGUSAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
@@ -12232,7 +12283,7 @@ The following option preset mechanisms are supported:
  - reading file /dev/null
 This program extracts AutoGen definitions from a list of source files.
 Definitions are delimited by '\''/*=<entry-type> <entry-name>\n'\'' and '\''=*/\n'\''.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report getdefs bugs to bkorb@@gnu.org'
 
 GETDEFS_USAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
@@ -12264,7 +12315,7 @@ Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
 All arguments are named options.
 If no '\''input'\'' argument is provided or is set to simply "-", and if '\''stdin'\''
 is not a '\''tty'\'', then the list of input files will be read from '\''stdin'\''.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report getdefs bugs to bkorb@@gnu.org'
 
 
@@ -12948,6 +12999,14 @@ The command (@file{man1}) pages are derived from the options definition
 file, and the library (@file{man3}) pages are derived from
 stylized comments (@pxref{getdefs Invocation}).
 
+Man pages include a date in the footer.  By default, this is derived from
+the current date.  However, this may be overridden with the @code{MAN_PAGE_DATE}
+environment variable.  If set and not empty, its contents will be copied
+into where the output of @code{date '+%d %b %Y'} would otherwise go.
+
+Man pages may be formatted as either traditional man pages or using @code{mdoc} formatting.
+The format is selected by selecting the appropriate template.
+
 @menu
 * man1::      command line man pages
 * man3::      library man pages
@@ -12955,6 +13014,12 @@ stylized comments (@pxref{getdefs Invocation}).
 
 @node man1
 @subsection command line man pages
+
+Man pages for commands are documented using the @file{agman-cmd.tpl}
+and @file{agmdoc-cmd.tpl} templates.  If the options specify pulling
+information from @file{RC}/@file{ini}/@file{cfg} files, then you may use
+the @file{rc-sample.tpl} template to produce an example config file for
+your program.
 
 Using the option definitions for an AutoOpts client program,
 the @samp{agman-cmd.tpl} template will produce an nroff document
@@ -12996,6 +13061,8 @@ greatly appreciated.
 
 @node man3
 @subsection library man pages
+
+Man pages for libraries are documented using the @file{agman3.tpl} template.
 
 Two global definitions are required, and then
 one library man page is produced for each @code{export_func} definition

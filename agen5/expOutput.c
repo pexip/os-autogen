@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -36,12 +36,12 @@
 
 typedef struct {
     char const *  pzSuspendName;
-    out_stack_t*     pOutDesc;
+    out_stack_t * pOutDesc;
 } tSuspendName;
 
 static int            suspendCt   = 0;
 static int            suspAllocCt = 0;
-static tSuspendName*  pSuspended  = NULL;
+static tSuspendName * pSuspended  = NULL;
 static int            outputDepth = 1;
 
 /**
@@ -88,13 +88,13 @@ do_output_file_line(int line_delta, char const * fmt)
 
     {
         void * args[2] = {
-            (void *)fname,
-            (void *)(uintptr_t)line_delta
+            VOIDP(fname),
+            VOIDP(line_delta)
         };
         sprintfv(buf, fmt, (snv_constpointer *)args);
     }
 
-    return AG_SCM_STR02SCM(buf);
+    return scm_from_latin1_string(buf);
 }
 
 /**
@@ -150,9 +150,9 @@ LOCAL void
 open_output_file(char const * fname, size_t nmsz, char const * mode, int flags)
 {
     char *    pz;
-    out_stack_t* p  = AGALOC(sizeof(*p), "out file stack");
+    out_stack_t * p  = AGALOC(sizeof(*p), "out file stack");
 
-    pz = (char*)AGALOC(nmsz + 1, "file name string");
+    pz = (char *)AGALOC(nmsz + 1, "file name string");
     memcpy(pz, fname, nmsz);
     pz[ nmsz ] = NUL;
     memset(p, NUL, sizeof(*p));
@@ -240,9 +240,9 @@ ag_scm_out_delete(void)
 SCM
 ag_scm_out_move(SCM new_file)
 {
-    size_t sz = AG_SCM_STRLEN(new_file);
-    char * pz = (char*)AGALOC(sz + 1, "file name");
-    memcpy(pz, AG_SCM_CHARS(new_file), sz);
+    size_t sz = scm_c_string_length(new_file);
+    char * pz = (char *)AGALOC(sz + 1, "file name");
+    memcpy(pz, scm_i_string_chars(new_file), sz);
     pz[sz] = NUL;
 
     if (OPT_VALUE_TRACE > TRACE_DEBUG_MESSAGE)
@@ -259,7 +259,7 @@ ag_scm_out_move(SCM new_file)
         }
 
         if ((cur_fpstack->stk_flags & FPF_STATIC_NM) == 0) {
-            AGFREE((void*)cur_fpstack->stk_fname);
+            AGFREE(cur_fpstack->stk_fname);
             cur_fpstack->stk_flags &= ~FPF_STATIC_NM;
         }
 
@@ -295,12 +295,12 @@ ag_scm_out_pop(SCM ret_contents)
         fprintf(trace_fp, TRACE_POP_FMT, __func__, cur_fpstack->stk_fname,
                 (ret_contents == SCM_UNDEFINED) ? "" : " #t");
 
-    if (AG_SCM_BOOL_P(ret_contents) && AG_SCM_NFALSEP(ret_contents)) {
+    if (scm_is_bool(ret_contents) && scm_is_true(ret_contents)) {
         long  pos = ftell(cur_fpstack->stk_fp);
         char * pz;
 
         if (pos <= 0) {
-            pz  = (void*)zNil; // const-ness not important
+            pz  = VOIDP(zNil); // const-ness not important
             pos = 0;
 
         } else {
@@ -310,7 +310,7 @@ ag_scm_out_pop(SCM ret_contents)
                 AG_CANT(SCM_OUT_POP_NO_REREAD, cur_fpstack->stk_fname);
         }
 
-        res = AG_SCM_STR2SCM(pz, (size_t)pos);
+        res = scm_from_latin1_stringn(pz, (size_t)pos);
     }
 
     outputDepth--;
@@ -342,12 +342,12 @@ ag_scm_output_file_next_line(SCM num_or_str, SCM str)
     char const * fmt;
     int  line_off = 1;
 
-    if (AG_SCM_NUM_P(num_or_str))
+    if (scm_is_number(num_or_str))
         line_off = (int)AG_SCM_TO_LONG(num_or_str);
     else
         str = num_or_str;
 
-    if (AG_SCM_STRING_P(str))
+    if (scm_is_string(str))
         fmt = ag_scm2zchars(str, "file/line format");
     else
         fmt = FILE_LINE_FMT;
@@ -378,15 +378,15 @@ ag_scm_out_suspend(SCM susp_nm)
     if (++suspendCt > suspAllocCt) {
         suspAllocCt += 8;
         if (pSuspended == NULL)
-            pSuspended = (tSuspendName*)
+            pSuspended = (tSuspendName *)
                 AGALOC(suspAllocCt * sizeof(tSuspendName), "susp file list");
         else
-            pSuspended = (tSuspendName*)
-                AGREALOC((void *)pSuspended,
+            pSuspended = (tSuspendName *)
+                AGREALOC(VOIDP(pSuspended),
                          suspAllocCt * sizeof(tSuspendName), "add to susp f");
     }
 
-    pSuspended[ suspendCt-1 ].pzSuspendName = AG_SCM_TO_NEWSTR(susp_nm);
+    pSuspended[ suspendCt-1 ].pzSuspendName = scm_to_latin1_string(susp_nm);
     pSuspended[ suspendCt-1 ].pOutDesc      = cur_fpstack;
     if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
         fprintf(trace_fp, TRACE_SUSPEND, __func__, cur_fpstack->stk_fname,
@@ -418,7 +418,7 @@ ag_scm_out_resume(SCM susp_nm)
         if (strcmp(pSuspended[ ix ].pzSuspendName, pzName) == 0) {
             pSuspended[ ix ].pOutDesc->stk_prev = cur_fpstack;
             cur_fpstack = pSuspended[ ix ].pOutDesc;
-            free((void*)pSuspended[ ix ].pzSuspendName); /* Guile alloc */
+            free(VOIDP(pSuspended[ ix ].pzSuspendName)); /* Guile alloc */
             if (ix < --suspendCt)
                 pSuspended[ ix ] = pSuspended[ suspendCt ];
             ++outputDepth;
@@ -479,13 +479,13 @@ ag_scm_ag_fprintf(SCM port, SCM fmt, SCM alist)
      *  If "port" is a string, it must match one of the suspended outputs.
      *  Otherwise, we'll fall through to the abend.
      */
-    if (AG_SCM_STRING_P(port)) {
+    if (scm_is_string(port)) {
         int  ix  = 0;
         char const * pzName = ag_scm2zchars(port, "resume name");
 
         for (; ix < suspendCt; ix++) {
             if (strcmp(pSuspended[ ix ].pzSuspendName, pzName) == 0) {
-                out_stack_t* pSaveFp = cur_fpstack;
+                out_stack_t * pSaveFp = cur_fpstack;
                 cur_fpstack = pSuspended[ ix ].pOutDesc;
                 (void) ag_scm_emit(res);
                 cur_fpstack = pSaveFp;
@@ -500,8 +500,8 @@ ag_scm_ag_fprintf(SCM port, SCM fmt, SCM alist)
      *  output.  If the number is out of range, we'll fall through to the
      *  abend.
      */
-    else if (AG_SCM_NUM_P(port)) {
-        out_stack_t* pSaveFp = cur_fpstack;
+    else if (scm_is_number(port)) {
+        out_stack_t * pSaveFp = cur_fpstack;
         long val = AG_SCM_TO_LONG(port);
 
         if (val < 0) {
@@ -548,11 +548,11 @@ ag_scm_out_push_add(SCM new_file)
 {
     static char const append_mode[] = "a" FOPEN_BINARY_FLAG "+";
 
-    if (! AG_SCM_STRING_P(new_file))
+    if (! scm_is_string(new_file))
         AG_ABEND(OUT_ADD_INVALID);
 
-    open_output_file(AG_SCM_CHARS(new_file), AG_SCM_STRLEN(new_file),
-                     append_mode, 0);
+    open_output_file(scm_i_string_chars(new_file),
+                     scm_c_string_length(new_file), append_mode, 0);
 
     return SCM_UNDEFINED;
 }
@@ -570,14 +570,16 @@ ag_scm_make_tmp_dir(void)
 {
     if (pz_temp_tpl == NULL) {
         char * tmpdir = shell_cmd(MK_TMP_DIR_CMD);
-        char * cmdbf  =
-            scribble_get(SET_TMP_DIR_CMD_LEN + 2 * MK_TMP_DIR_CMD_LEN);
+        size_t tmp_sz = strlen(tmpdir);
+        size_t bfsz   = SET_TMP_DIR_CMD_LEN + 2 * tmp_sz;
+        char * cmdbf  = scribble_get(bfsz);
 
         pz_temp_tpl = tmpdir;
-        temp_tpl_dir_len = strlen(tmpdir) - 9;    // "ag-XXXXXX"
+        temp_tpl_dir_len = tmp_sz - 9;    // "ag-XXXXXX"
 
         tmpdir[temp_tpl_dir_len - 1] = NUL;       // trim dir char
-        sprintf(cmdbf, SET_TMP_DIR_CMD, tmpdir);
+        if (snprintf(cmdbf, bfsz, SET_TMP_DIR_CMD, tmpdir) >= (int)bfsz)
+            AG_ABEND(BOGUS_TAG);
         tmpdir[temp_tpl_dir_len - 1] = DIRCH;     // restore dir char
 
         ag_scm_c_eval_string_from_file_line(cmdbf, __FILE__, __LINE__);
@@ -605,9 +607,9 @@ ag_scm_out_push_new(SCM new_file)
 {
     static char const write_mode[] = "w" FOPEN_BINARY_FLAG "+";
 
-    if (AG_SCM_STRING_P(new_file)) {
-        open_output_file(AG_SCM_CHARS(new_file), AG_SCM_STRLEN(new_file),
-                         write_mode, 0);
+    if (scm_is_string(new_file)) {
+        open_output_file(scm_i_string_chars(new_file),
+                         scm_c_string_length(new_file), write_mode, 0);
         return SCM_UNDEFINED;
     }
 
@@ -625,11 +627,11 @@ ag_scm_out_push_new(SCM new_file)
          *  This block is used IFF ENABLE_FMEMOPEN is defined and if
          *  --no-fmemopen is *not* selected on the command line.
          */
-        p = (out_stack_t*)AGALOC(sizeof(out_stack_t), "out file stack");
+        p = (out_stack_t *)AGALOC(sizeof(out_stack_t), "out file stack");
         p->stk_prev  = cur_fpstack;
         p->stk_flags  = FPF_FREE;
         p->stk_fp  = ag_fmemopen(NULL, (ssize_t)0, "w" FOPEN_BINARY_FLAG "+");
-        pzNewFile = (char*)MEM_FILE_STR;
+        pzNewFile = (char *)MEM_FILE_STR;
         p->stk_flags |= FPF_STATIC_NM | FPF_NOUNLINK | FPF_NOCHMOD;
 
         if (p->stk_fp == NULL)
@@ -687,14 +689,14 @@ SCM
 ag_scm_out_switch(SCM new_file)
 {
     struct utimbuf tbuf;
-    char*  pzNewFile;
+    char *  pzNewFile;
 
-    if (! AG_SCM_STRING_P(new_file))
+    if (! scm_is_string(new_file))
         return SCM_UNDEFINED;
     {
-        size_t sz = AG_SCM_STRLEN(new_file);
+        size_t sz = scm_c_string_length(new_file);
         pzNewFile = AGALOC(sz + 1, "new file name");
-        memcpy(pzNewFile, AG_SCM_CHARS(new_file), sz);
+        memcpy(pzNewFile, scm_i_string_chars(new_file), sz);
         pzNewFile[ sz ] = NUL;
     }
 
@@ -702,7 +704,7 @@ ag_scm_out_switch(SCM new_file)
      *  IF no change, THEN ignore this
      */
     if (strcmp(cur_fpstack->stk_fname, pzNewFile) == 0) {
-        AGFREE((void*)pzNewFile);
+        AGFREE(pzNewFile);
         return SCM_UNDEFINED;
     }
 
@@ -742,7 +744,7 @@ ag_scm_out_switch(SCM new_file)
 SCM
 ag_scm_out_depth(void)
 {
-    return AG_SCM_INT2SCM(outputDepth);
+    return scm_from_int(outputDepth);
 }
 
 
@@ -757,9 +759,9 @@ ag_scm_out_depth(void)
 SCM
 ag_scm_out_name(void)
 {
-    out_stack_t* p = cur_fpstack;
+    out_stack_t * p = cur_fpstack;
     while (p->stk_flags & FPF_UNLINK)  p = p->stk_prev;
-    return AG_SCM_STR02SCM((void*)p->stk_fname);
+    return scm_from_latin1_string(VOIDP(p->stk_fname));
 }
 
 
@@ -792,7 +794,7 @@ ag_scm_out_line(void)
         fseek(cur_fpstack->stk_fp, svpos, SEEK_SET);
     } while(0);
 
-    return AG_SCM_INT2SCM(lineNum);
+    return scm_from_int(lineNum);
 }
 
 #if 0 /* for compilers that do not like C++ comments... */
@@ -867,7 +869,7 @@ ag_scm_make_header_guard(SCM name)
     size_t       gsz;
 
     {
-        out_stack_t* p = cur_fpstack;
+        out_stack_t * p = cur_fpstack;
         while (p->stk_flags & FPF_UNLINK)  p = p->stk_prev;
         opz = p->stk_fname;
         osz = strlen(opz);
@@ -883,9 +885,9 @@ ag_scm_make_header_guard(SCM name)
          *  to "HEADER"
          */
         char const * lpz =
-            AG_SCM_STRING_P(name) ? AG_SCM_CHARS(name) : HEADER_STR;
+            scm_is_string(name) ? scm_i_string_chars(name) : HEADER_STR;
         size_t lsz = (lpz == HEADER_STR)
-            ? HEADER_STR_LEN : AG_SCM_STRLEN(name);
+            ? HEADER_STR_LEN : scm_c_string_length(name);
 
         /*
          *  Full, maximal length of output
@@ -930,11 +932,13 @@ ag_scm_make_header_guard(SCM name)
         size_t sz2 = MK_HEAD_GUARD_GUARD_LEN + 2 * gsz;
         size_t sz  = (sz1 < sz2) ? sz2 : sz1;
         char * p   = scribble_get((ssize_t)sz);
-        sprintf(p, MK_HEAD_GUARD_SCM, opz, gpz);
+        if (snprintf(p, sz, MK_HEAD_GUARD_SCM, opz, gpz) >= (int)sz)
+            AG_ABEND(BOGUS_TAG);
         (void)ag_scm_c_eval_string_from_file_line(p, __FILE__, __LINE__);
 
-        sprintf(p, MK_HEAD_GUARD_GUARD, gpz);
-        name = AG_SCM_STR02SCM(p);
+        if (snprintf(p, sz, MK_HEAD_GUARD_GUARD, gpz) >= (int)sz)
+            AG_ABEND(BOGUS_TAG);
+        name = scm_from_latin1_string(p);
     }
 
     AGFREE(gpz);

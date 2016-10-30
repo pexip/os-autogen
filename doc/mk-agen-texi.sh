@@ -2,7 +2,7 @@
 
 ##  This file is part of AutoGen.
 ##
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -103,7 +103,11 @@ setup_exports()
   OPTIONS_DEF=${AGsrc}/opts.def
   GETDEF_SRC=`${FGREP} -l '/*=' ${AGsrc}/*.[ch] ${AGsrc}/*.scm`
 
-  AGEN_TEXI=${top_builddir}/agen5/invoke-autogen.texi
+  for d in "${top_builddir}" "${top_srcdir}"
+  do test -f "$d/agen5/invoke-autogen.texi" || continue
+     AGEN_TEXI=${d}/agen5/invoke-autogen.texi
+     break
+  done
   DOC_TEXT=${top_srcdir}/doc/autogen-texi.txt
 
   ADDON_TEXI="
@@ -182,9 +186,9 @@ sanity_check()
   for f in ${ADDON_TEXI} ${AGEN_TEXI} \
            ${top_builddir}/autoopts/libopts.texi
   do
-    test -f ${f} || (
-      cd `dirname ${f}`
-      ${MAKE} `basename ${f}` >&2
+    test -f "${f}" || (
+      cd `dirname "${f}"`
+      ${MAKE} `basename "${f}"` >&2
       test $? -ne 0 && die MAKE of ${f} failed.
     )
   done
@@ -192,8 +196,8 @@ sanity_check()
   # Make sure we have all our sources and generate the doc
   #
   for f in ${DOC_DEPENDS}
-  do test -f ${f} || die cannot find doc file: ${f}
-     test -f `basename $f` || ln -s $f .
+  do test -f "${f}" || die cannot find doc file: ${f}
+     test -f `basename $f` || ln -s "${f}" .
   done
 }
 

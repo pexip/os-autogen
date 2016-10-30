@@ -4,7 +4,7 @@
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -24,11 +24,11 @@
 
 BUILT_SOURCES  	    =
 MOSTLYCLEANFILES    =
-
-SUBDIRS         = @OPTS_TESTDIR@
-AM_CPPFLAGS     = @INCLIST@
-libsrc          = libopts-@AO_CURRENT@.@AO_REVISION@.@AO_AGE@.tar.gz
-LIBOPTS_VER     = @AO_CURRENT@:@AO_REVISION@:@AO_AGE@
+libdatadir          = $(libdir)/@PACKAGE@
+SUBDIRS             = @OPTS_TESTDIR@
+AM_CPPFLAGS         = @INCLIST@
+libsrc              = libopts-@AO_CURRENT@.@AO_REVISION@.@AO_AGE@.tar.gz
+LIBOPTS_VER         = @AO_CURRENT@:@AO_REVISION@:@AO_AGE@
 
 if  NEED_PATHFIND
 PATHFIND_MAN    = pathfind.3
@@ -55,10 +55,11 @@ GENMAN          = $(PATHFIND_MAN) \
     strneqvcmp.3                  strtransform.3
 
 nodist_pkgdata_DATA = $(libsrc) \
-    tpl/man2man         tpl/man2mdoc        tpl/man2texi \
-    tpl/mdoc2man        tpl/mdoc2mdoc       tpl/mdoc2texi \
-    tpl/texi2man        tpl/texi2mdoc       tpl/texi2texi \
+    tpl/man2mdoc        tpl/man2texi        tpl/mdoc2man \
+    tpl/mdoc2texi       tpl/texi2man        tpl/texi2mdoc \
     tpl/tpl-config.tlib
+
+nodist_libdata_DATA = tpl/tpl-config.tlib
 
 pkgdata_DATA    = \
     autoopts.m4         tpl/Mdoc.pm         tpl/aginfo.tpl \
@@ -112,6 +113,7 @@ stdnoreturn.h: $(top_builddir)/config.status
 endif
 MOSTLYCLEANFILES += stdnoreturn.h stdnoreturn.h-t
 EXTRA_DIST += stdnoreturn.in.h
+EXTRA_DIST += verify.h
 
 GENHDRS         = autoopts/options.h autoopts/usage-txt.h genshell.h \
 		option-xat-attribute.h option-value-type.h ao-strs.h \
@@ -157,22 +159,22 @@ EXTRA_DIST += $(SRC) $(EXTRA_DATA) $(man_MANS) $(DEF_FILES)
 
 INST_MANS                 = autoopts-config.1 $(GENMAN)
 INST_PKGCFG               = pkgconfig/autoopts.pc
-INST_PKGDATA              = autoopts.m4 $(TPL_FILES)
 INST_LIBS                 = libopts.la
 INST_HDRS                 = autoopts/options.h autoopts/usage-txt.h
 INST_SH                   = autoopts-config
 
 man_MANS                  = $(INST_MANS)
 m4data_DATA               = autoopts.m4
-nobase_data_DATA          = $(INST_PKGCFG)
+pkgconfig_DATA            = $(INST_PKGCFG)
 lib_LTLIBRARIES           = $(INST_LIBS)
 nobase_include_HEADERS    = $(INST_HDRS)
 bin_SCRIPTS               = $(INST_SH)
 
-BOOTENV         = AGexe="$(AGexe)" GDexe="$(GDexe)" CLexe="$(CLexe)" \
-	srcdir="$(srcdir)"     top_srcdir="$(top_srcdir)" \
+BOOTENV = AGexe="$(AGexe)" GDexe="$(GDexe)" CLexe="$(CLexe)" \
+	srcdir="$(srcdir)"     top_srcdir="$(top_srcdir)"     \
 	builddir="$(builddir)" top_builddir="$(top_builddir)" \
-	POSIX_SHELL="$(POSIX_SHELL)"
+	AO_AGE="$(AO_AGE)"     AO_CURRENT="$(AO_CURRENT)"     \
+	AO_REVISION="$(AO_REVISION)" POSIX_SHELL="$(POSIX_SHELL)"
 
 ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ##
@@ -185,7 +187,7 @@ $(GENSCRIPTS)   : tpl-config-stamp
 
 tpl-config-stamp: $(HDRS) $(CSRC) \
 	    $(top_builddir)/config.h $(srcdir)/mk-tpl-config.sh
-	LGCFLAGS="$(LIBGUILE_CFLAGS)" \
+	LGCFLAGS="$(GUILE_CFLAGS)" \
 	$(BOOTENV) \
 	    $(POSIX_SHELL) $(srcdir)/mk-tpl-config.sh $@ $(HDRS) $(CSRC)
 
@@ -228,6 +230,7 @@ pkgconfig/autoopts.pc : mk-autoopts-pc
 install-data-hook:
 	@DESTdestdir='$(DESTDIR)$(includedir)/autoopts' \
 	DESTpkgdatadir='$(DESTDIR)$(pkgdatadir)' \
+	DESTlibdatadir='$(DESTDIR)$(pkglibdir)' \
 	top_builddir='$(top_builddir)' \
 	LIBOPTS_VER='$(LIBOPTS_VER)' \
 	POSIX_SHELL='$(POSIX_SHELL)'  \

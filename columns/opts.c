@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:0:16 templates.
+ * Generated from AutoOpts 41:1:16 templates.
  *
  *  AutoOpts is a copyrighted work.  This source file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -791,7 +791,7 @@ doUsageOpt(tOptions * opts, tOptDesc * od)
     ex_code = COLUMNS_EXIT_SUCCESS;
     optionUsage(&columnsOptions, ex_code);
     /* NOTREACHED */
-    exit(1);
+    exit(COLUMNS_EXIT_FAILURE);
     (void)opts;
     (void)od;
 }
@@ -833,7 +833,7 @@ doOptWidth(tOptions* pOptions, tOptDesc* pOptDesc)
     option_usage_fp = stderr;
 
  emit_ranges:
-    optionShowRange(pOptions, pOptDesc, (void *)rng, 1);
+optionShowRange(pOptions, pOptDesc, VOIDP(rng), 1);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -870,7 +870,7 @@ doOptColumns(tOptions* pOptions, tOptDesc* pOptDesc)
     option_usage_fp = stderr;
 
  emit_ranges:
-    optionShowRange(pOptions, pOptDesc, (void *)rng, 1);
+optionShowRange(pOptions, pOptDesc, VOIDP(rng), 1);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -907,7 +907,7 @@ doOptCol_Width(tOptions* pOptions, tOptDesc* pOptDesc)
     option_usage_fp = stderr;
 
  emit_ranges:
-    optionShowRange(pOptions, pOptDesc, (void *)rng, 1);
+optionShowRange(pOptions, pOptDesc, VOIDP(rng), 1);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -945,7 +945,7 @@ doOptSpread(tOptions* pOptions, tOptDesc* pOptDesc)
     option_usage_fp = stderr;
 
  emit_ranges:
-    optionShowRange(pOptions, pOptDesc, (void *)rng, 1);
+optionShowRange(pOptions, pOptDesc, VOIDP(rng), 1);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -967,17 +967,17 @@ doOptInput(tOptions* pOptions, tOptDesc* pOptDesc)
      * reset its state.
      */
     /* extracted from opts.def, line 304 */
-    FILE* fp = freopen(
+    FILE * fp = freopen(
         pOptDesc->optArg.argString, "r" FOPEN_BINARY_FLAG, stdin);
 
-    if (fp == (FILE*)NULL) {
+    if (fp == (FILE *)NULL) {
         fprintf(stderr, OPEN_ERROR_FMT, errno, strerror(errno),
                 pOptDesc->optArg.argString);
         USAGE(EXIT_FAILURE);
     }
     (void)pOptions;
 }
-/* extracted from optmain.tlib near line 1245 */
+/* extracted from optmain.tlib near line 1250 */
 
 /**
  * The directory containing the data associated with columns.

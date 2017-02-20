@@ -1,2 +1,7 @@
-00_fix_as-needed.diff
 01_fix_hurd_FTBFS.diff
+02_fix_hurd_identifiermacro.diff
+03_no_rpath_multiarch.diff
+04_crossbuild.diff
+10_licensing.diff
+11_fix_testsuite.error.diff
+15_add_missing_file_from_GIT.diff

@@ -1,11 +1,10 @@
 dnl --------------------------------------------------------------------
 dnl configure.ac --- GNU autoconf source for toplevel directory.
 dnl
-dnl Time-stamp:      "2011-01-26 19:01:56 bkorb"
 dnl Author:           Bruce Korb <bkorb@gnu.org>
 dnl
 dnl  This file is part of AutoGen.
-dnl  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+dnl  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 dnl
 dnl AutoGen is free software: you can redistribute it and/or modify it
 dnl under the terms of the GNU General Public License as published by the
@@ -20,16 +19,17 @@ dnl
 dnl You should have received a copy of the GNU General Public License along
 dnl with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl
-AC_INIT([GNU AutoGen],[5.12],[autogen-users@lists.sourceforge.net])
-AC_CONFIG_SRCDIR(agen5/autogen.c)
-AC_CONFIG_AUX_DIR(config)
+AC_INIT([GNU AutoGen],[5.18.4],[autogen-users@lists.sourceforge.net])
+AC_CONFIG_SRCDIR([agen5/autogen.c])
+AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 [. $srcdir/VERSION
 d=`dirname $0`
 ag_top_srcdir=`cd $d && pwd`
 ag_top_builddir=`pwd`]
-AM_INIT_AUTOMAKE([gnu check-news 1.5 dist-bzip2])
+AM_INIT_AUTOMAKE([gnu check-news 1.5 dist-xz])
 AC_USE_SYSTEM_EXTENSIONS
+AC_CONFIG_MACRO_DIR([config])
 AC_LIBTOOL_WIN32_DLL    m4_define(AC_PROVIDE_AC_LIBTOOL_WIN32_DLL)
 AC_PROG_LIBTOOL
 ifdef([AC_REVISION],AC_REVISION($Revision: 4.34 $),)dnl
@@ -81,8 +81,8 @@ AM_WITH_DMALLOC
 # ----------------------------------------------------------------------
 # check for various programs used during the build.
 # ----------------------------------------------------------------------
-AM_PROG_CC_C_O
 AC_PROG_CC_STDC
+AM_PROG_CC_C_O
 gl_FUNC_GLIBC_UNLOCKED_IO
 AC_EXEEXT
 AC_PROG_INSTALL
@@ -105,7 +105,7 @@ else
 fi]
 AC_DEFINE_UNQUOTED([SNV_LONG_DOUBLE],$snv_long_double,
                    [Define this to the long+double type])
-AC_CHECK_TYPES([u_int, long long, uintmax_t, size_t, wchar_t])
+AC_CHECK_TYPES([long long, uintmax_t, size_t, wchar_t])
 AC_CHECK_SIZEOF(char*, 4)
 AC_CHECK_SIZEOF(int,   4)
 AC_CHECK_SIZEOF(long,  4)
@@ -150,6 +150,7 @@ then]
   AC_MSG_ERROR([AutoGen requires sigsetjmp(3)])[
 fi
 ]
+gl_STDNORETURN_H
 # ----------------------------------------------------------------------
 # Do SNPRINTFV macros
 # ----------------------------------------------------------------------
@@ -170,7 +171,7 @@ AGexe=${ag_top_builddir}/agen5/${AGnam}
 GDexe=${ag_top_builddir}/getdefs/${GDnam}
 CLexe=${ag_top_builddir}/columns/${CLnam}
 M4_SRC=`cd $srcdir/config ; echo [a-z]*.m4`
-
+ENABLE_STATIC=${enable_static}
 config_end_time=`date +%s 2>/dev/null`
 time_delta=`expr ${config_end_time} - ${config_start_time} 2>/dev/null`
 
@@ -194,6 +195,7 @@ AC_SUBST(AG_TIMEOUT)
 AC_SUBST(ac_aux_dir)
 AC_SUBST(LIBS)
 AC_SUBST(DEBUG_ENABLED)
+AC_SUBST(ENABLE_STATIC)
 [
 if test "$ag_top_srcdir" = "$ag_top_builddir"
 then
@@ -202,24 +204,20 @@ else
  INCLIST='-I${top_builddir} -I${top_srcdir}'
  INCLIST="${INCLIST} -I\${top_builddir}/autoopts -I\${top_srcdir}/autoopts"
 fi
-]
-AC_SUBST(INCLIST)
-[
+]AC_SUBST(INCLIST)[
 test ${GUILE_VERSION} -ge 108000 \
   -a "X${WERROR}" = Xyes \
   -a "X${GCC}" = Xyes && \
     CFLAGS=`echo $CFLAGS -Wall -Werror -Wcast-align -Wmissing-prototypes \
-       -Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
-       -fno-strict-aliasing`
-]
-AM_CONFIG_HEADER(config.h:config-h.in)
-
+	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
+	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=3 \
+	-Wextra
+`
+]dnl -Wconversion -Wsign-conversion -Wstrict-overflow
+AC_CONFIG_HEADER(config.h:config-h.in)
 AH_TOP([#ifndef AUTOGEN_CONFIG_H])
 AH_TOP([#define AUTOGEN_CONFIG_H 1])
 AH_BOTTOM([#endif /* AUTOGEN_CONFIG_H */])
-
-AC_CONFIG_FILES([doc/mk-agen-texi.sh:doc/mk-agen-texi-in],
-                [chmod +x doc/mk-agen-texi.sh])
 AC_CONFIG_FILES([autoopts/mk-autoopts-pc],
                 [chmod +x autoopts/mk-autoopts-pc])
 AC_CONFIG_FILES([autoopts/autoopts-config],
@@ -228,16 +226,19 @@ AC_CONFIG_FILES([autoopts/autoopts-config],
 AC_CONFIG_FILES([autoopts/tpl/tpl-config.tlib:autoopts/tpl/tpl-config-tlib.in])
 AC_CONFIG_FILES([doc/auto_gen.tpl:doc/auto_gen-tpl.in])
 AC_CONFIG_FILES([
-    autoopts/test/defs     pkg/pkg-env            Makefile
-    agen5/test/Makefile    agen5/Makefile         autoopts/test/Makefile
-    autoopts/Makefile      columns/Makefile       compat/Makefile
-    doc/Makefile           getdefs/test/Makefile  getdefs/Makefile
-    pkg/Makefile           snprintfv/Makefile     xml2ag/test/Makefile
-    xml2ag/Makefile])
+    autoopts/test/defs     config/mk-shdefs       pkg/pkg-env
+    Makefile               agen5/Makefile         agen5/test/Makefile
+    autoopts/Makefile      autoopts/test/Makefile columns/Makefile
+    compat/Makefile        doc/Makefile           getdefs/Makefile
+    getdefs/test/Makefile  pkg/Makefile           snprintfv/Makefile
+    xml2ag/Makefile        xml2ag/test/Makefile])
 
 AC_CONFIG_COMMANDS([stamp-h],
 [test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h])
-[CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}]
+[CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
+f=`${CONFIG_SHELL} -c 'echo true | (
+    exec 2>/dev/null ; read -u0 line ; echo $line ; )'`
+test X$f = Xtrue || CONFIG_SHELL=`command -v bash`]
 AC_SUBST(CONFIG_SHELL)
 AC_DEFINE_UNQUOTED(CONFIG_SHELL,$CONFIG_SHELL,
                    [Define this to a working Bourne shell])

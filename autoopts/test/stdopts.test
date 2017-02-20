@@ -3,12 +3,11 @@
 # ----------------------------------------------------------------------
 # stdopts.test ---   test standard options
 #
-# Time-stamp:        "2011-02-02 11:54:52 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -20,11 +19,11 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 #
 # ----------------------------------------------------------------------
 
@@ -40,7 +39,15 @@ cat > ${testname}.def <<- _EOF_
 	prog-name = test_${testname};
 	prog-title = "${testname} test";
 	config-header = 'config.h';
-	test-main;
+	no-xlate = anything;
+	main = {
+	    main-type = main;
+	    main-text = <<- _EndMain_
+		\    (void)optionProcess(&test_${testname}Options, argc, argv);
+		\    optionPutShell(&test_${testname}Options);
+		\    return ferror(stdout) ? 1 : 0;
+		_EndMain_;
+	};
 	long-opts;
 
 	#define VERBOSE_ENUM
@@ -57,9 +64,9 @@ compile "-?"
 # # # # # # # # # # HELP OUTPUT FILE # # # # # # # # #
 
 echo creating ${testname}.hlp
-cat > ${testname}.hbase <<- _EOF_
+clean_help > ${testname}.hbase <<- _EOF_
 	test_stdopts - stdopts test
-	USAGE:  stdopts [ -<flag> [<val>] | --<name>[{=| }<val>] ]...
+	Usage:  stdopts [ -<flag> [<val>] | --<name>[{=| }<val>] ]...
 
 	The following options are commonly used and are provided and supported
 	by AutoOpts:
@@ -67,11 +74,11 @@ cat > ${testname}.hbase <<- _EOF_
 	  Flg Arg Option-Name    Description
 	   -V KWd verbose        run program with progress info
 
-	version and help options:
+	Version, usage and configuration options:
 
 	  Flg Arg Option-Name    Description
-	   -? no  help           Display extended usage information and exit
-	   -! no  more-help      Extended usage information passed thru pager
+	   -? no  help           display extended usage information and exit
+	   -! no  more-help      extended usage information passed thru pager
 
 	Options are specified by doubled hyphens and their name or by a single
 	hyphen and the flag character.
@@ -106,7 +113,8 @@ cmp -s ${testname}.o* || \
 
 # # # # # # # # # # USAGE OPTION # # # # # # # # # # #
 
-( ${SED} "s/${testname}/${testname}-2/g" ${testname}.def
+( ${SED} "s/${testname}/${testname}-2/g
+	s/-2Options/_2Options/g" ${testname}.def
   echo 'usage-opt;'
 ) > ${testname}-2.def
 
@@ -119,14 +127,14 @@ ${AG_L} ${testname}.def || {
 
 compile "--usage"
 
-cat > ${testname}.hbase <<- _EOF_
+clean_help > ${testname}.hbase <<- _EOF_
 	test_stdopts-2 - stdopts-2 test
-	USAGE:  stdopts-2 [ -<flag> [<val>] | --<name>[{=| }<val>] ]...
+	Usage:  stdopts-2 [ -<flag> [<val>] | --<name>[{=| }<val>] ]...
 	  Flg Arg Option-Name    Description
 	   -V KWd verbose        run program with progress info
-	   -? no  help           Display extended usage information and exit
-	   -! no  more-help      Extended usage information passed thru pager
-	   -u no  usage          Abbreviated usage to stdout
+	   -? no  help           display extended usage information and exit
+	   -! no  more-help      extended usage information passed thru pager
+	   -u no  usage          abbreviated usage to stdout
 
 	Options are specified by doubled hyphens and their name or by a single
 	hyphen and the flag character.

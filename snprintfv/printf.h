@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -263,7 +262,7 @@ enum
       } \
   } SNV_STMT_END
 
-#line 267 "printf.in"
+#line 266 "printf.in"
 /**
  * printf_generic_info:
  * @pinfo: the current state information for the format
@@ -299,7 +298,7 @@ printf_generic_info (struct printf_info *const pinfo, size_t n, int *argtypes);
 extern int
 printf_generic (STREAM *stream, struct printf_info *const pinfo, union printf_arg const *args);
 
-#line 268 "printf.in"
+#line 267 "printf.in"
 /**
  * register_printf_function: printf.h
  * @spec: the character which will trigger @func, cast to an unsigned int.
@@ -793,7 +792,7 @@ snv_vasprintf (char **result, const char *format, va_list ap);
 extern int
 snv_asprintfv (char **result, const char *format, snv_constpointer const args[]);
 
-#line 269 "printf.in"
+#line 268 "printf.in"
 
 /* If you don't want to use snprintfv functions for *all* of your string
    formatting API, then define COMPILING_SNPRINTFV_C and use the snv_

@@ -5,10 +5,8 @@ texi
 ##  Documentation template
 ##
 ## Author:            Bruce Korb <bkorb@gnu.org>
-## Time-stamp:        "2011-01-31 12:09:40 bkorb"
-##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -119,8 +117,6 @@ Published by Bruce Korb, 910 Redwood Dr., Santa Cruz, CA  95060
 @insertcopying
 @end titlepage
 
-@ifinfo
-
 @node Top, Introduction, , (dir)
 @top The Automated Program Generator
 @comment  node-name,  next,  previous,  up
@@ -135,7 +131,7 @@ The AutoGen distribution includes the basic generator engine and
 several add-on libraries and programs.  Of the most general interest
 would be Automated Option processing, @xref{AutoOpts}, which also
 includes stand-alone support for configuration file parsing, @xref{Features}.
-Please see the ``Add-on packages for AutoGen'' section for additional
+@xref{Add-Ons, Add-on packages for AutoGen}, section for additional
 programs and libraries associated with AutoGen.
 
 This edition documents version [=`echo ${AG_REVISION}, ${UPDATED}.`=]
@@ -156,6 +152,7 @@ All of the normal C preprocessing directives are recognized, though
 several are ignored.  There is also an additional @code{#shell} -
 @code{#endshell} pair.  Another minor difference is that AutoGen
 directives must have the hash character (@code{#}) in column 1.
+Unrecognized directives produce an error.
 
 The final tweak is that @code{#!} is treated as a comment line.
 Using this feature, you can use:  @samp{#! /usr/local/bin/autogen}
@@ -163,32 +160,53 @@ as the first line of a definitions file, set the mode to executable
 and "run" the definitions file as if it were a direct invocation of
 AutoGen.  This was done for its hack value.
 
-The ignored directives are:
-[=
+The AutoGen recognized directives are:
+@table @code[=`
+if test -z "$top_srcdir" || test ! -d "$top_srcdir"
+then top_srcdir=.. ; fi
+f=${top_srcdir}/agen5/defDirect.c
+test -f ${f} || die missing $f
 
-FOR directive       =][=
+load_comment() {
+    comment_text=
+    nl=''
+    while IFS= read -r line
+    do
+        case "X$line" in
+        X*' */' ) return ;; esac
 
-  (if (exist? "dummy")
-      (string-downcase! (sprintf "@code{#%s}, " (get "name")))) =][=
+        comment_text=${comment_text}${nl}$(
+            echo "$line" | sed 's/ *\\* *//')
+        nl='
+'
+    done
+    die 'end of comment not found'
+}
 
-ENDFOR directive    =]and @code{#if}.
-Note that when ignoring the @code{#if} directive, all intervening
-text through its matching @code{#endif} is also ignored,
-including the @code{#else} clause.
-
-The AutoGen directives that affect the processing of
-definitions are:
-
-@table @code[=
-FOR directive "\n" =][=
-  IF (exist? "text") =]
-@item #[=% name (string-downcase! "%s") =][= % arg " %s" =]
-@cindex #[=% name (string-downcase! "%s") =]
-@cindex [=% name (string-downcase! "%s") =] directive
-[= id-file =]
-[=text     =][=
-  ENDIF    =][=
-ENDFOR directive=]
+while IFS= read -r line
+do
+    test "X$line" = "X/**" || continue
+    load_comment
+    IFS= read -r line || break
+    test "X$line" = "Xchar *" || continue
+    IFS= read -r line || die bad read
+    case "X$line" in
+    XdoDir_* )
+        line=${line%%(*}
+        line=${line#doDir_}
+        ;;
+    * )
+        continue
+        ;;
+    esac
+    {
+        printf '\n@item #%s\n@cindex %s\n@cindex %s directive\n' \
+               $line $line $line
+        echo "$comment_text"
+    } > ${tmp_dir}/directive-$line
+done < $f
+cat ${tmp_dir}/directive-*
+`=]
 @end table
 [=
 
@@ -342,6 +360,8 @@ FOR macfunc =][=
        (get "what") ) =][=
   ENDIF =][=
 ENDFOR macfunc=]
+* shell command::    Inserting text from a shell script
+* guile command::    Inserting text from a scheme script
 @end menu
 @node AGMacro syntax
 @subsection AutoGen Macro Syntax
@@ -412,11 +432,11 @@ set up as arguments.  @xref{DEFINE}.
 The AutoGen @code{COMMENT}, @code{ELSE}, @code{ESAC} and the @code{END*}
 macros take no arguments and ignore everything after the macro name
 (e.g. see @ref{COMMENT})
-@end enumerate[=
+@end enumerate[= #
 
 
-#  FOR each defined function,
-      this code will insert the extracted documentation =][=
+@c  FOR each defined function,
+@c    this code will insert the extracted documentation =][=
 
 FOR macfunc =][=
   IF (exist? "desc") =]
@@ -432,6 +452,25 @@ FOR macfunc =][=
 [=desc=][=
   ENDIF desc exists =][=
 ENDFOR macfunc=]
+@node shell command
+@subsection Inserting text from a shell script
+
+If the text between the start and end macro markers starts with an opening
+curly brace ('@code{@{}') or is surrounded by back quotes ('@code{`}'), then
+the text is handed off to the server shell for evaluation.  The output to
+standard out is inserted into the document.  If the text starts with the
+curly brace, all the text is passed off as is to the shell.  If surrounded by
+back quotes, then the string is ``cooked'' before being handed off to the
+shell.
+
+@node guile command
+@subsection Inserting text from a scheme script
+
+If the text between the start and end macro markers starts with a semi-colon
+or an opening parenthesis, all the text is handed off to the Guile/scheme
+processor.  If the last result is text or a number, it is added (as text)
+to the output document.
+
 [=
 
 INVOKE  get-text tag = augmenting
@@ -449,7 +488,7 @@ Invocation section from [= ag-texi =]
 [=
 
 INVOKE  get-text tag = installation     =][=
-INCLUDE "auto-opts.tpl"
+INCLUDE "auto-opts.tlib"
 
 =]
 @page
@@ -466,10 +505,14 @@ the primary reason why many people would even look into AutoGen
 at all, I decided to leave it in the list of chapters.
 
 @menu
-* AutoFSM::                        Automated Finite State Machine
-* AutoXDR::                        Combined RPC Marshalling
-* AutoEvents::                     Automated Event Management
-[=`cat  ${ADDON_MENU}`=]
+* AutoFSM::                        Automated Finite State Machine.
+* AutoXDR::                        Combined RPC Marshalling.
+* AutoEvents::                     Automated Event Management.
+* Bit Maps::                       Bit Maps and Enumerations.
+* columns Invocation::             Invoking columns.
+* getdefs Invocation::             Invoking getdefs.
+* xml2ag Invocation::              Invoking xml2ag.
+* snprintfv::                      The extensible format printing library.
 @end menu
 [=
 

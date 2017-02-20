@@ -1,8 +1,9 @@
 [= AutoGen5 Template c=fork.c -*- Mode: C -*- =]
-[= # Time-stamp:        "2011-04-03 13:51:36 bkorb"
-
+[= #
+ *  fork.tpl: template for passing arguments to autogen forked process.
+ *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -30,20 +31,21 @@
 static char const zFsError[] = "%s fs ERROR %d (%s) on %s\n";
 
 static void
-add_arg(char const* pzArg, int ix)
+add_arg(char const * arg, int ix)
 {
-    char** pArgv = xml2agOptions.origArgVect;
-    if (ix >= xml2agOptions.origArgCt) {
-        xml2agOptions.origArgCt += 5;
-        pArgv = realloc(pArgv, sizeof( void* ) * (xml2agOptions.origArgCt+1));
-        if (pArgv == NULL) {
-            fprintf(stderr, "No memory for %d args\n",
-                    xml2agOptions.origArgCt);
+    char ** arg_vec = xml2agOptions.origArgVect;
+    int      arg_ct = (int)xml2agOptions.origArgCt;
+
+    if (ix >= (int)arg_ct) {
+        arg_ct += 5;
+        arg_vec = realloc(arg_vec, sizeof(void*) * (size_t)(arg_ct+1));
+        if (arg_vec == NULL) {
+            fprintf(stderr, "No memory for %d args\n", arg_ct);
             exit(EXIT_FAILURE);
         }
-        xml2agOptions.origArgVect = pArgv;
+        xml2agOptions.origArgVect = arg_vec;
     }
-    pArgv[ ix ] = (void*)pzArg;
+    arg_vec[ ix ] = (void*)arg;
 }
 
 static int
@@ -123,7 +125,7 @@ forkAutogen(char const* pzInput)
             if (p == NULL) {
                 strcpy(pz, zAg);
             } else {
-                size_t len = (p - xml2agOptions.pzProgPath) + 1;
+                size_t len = (size_t)(p - xml2agOptions.pzProgPath) + 1;
                 memcpy(pz, xml2agOptions.pzProgPath, len);
                 strcpy(pz + len, zAg);
             }
@@ -133,7 +135,40 @@ forkAutogen(char const* pzInput)
 
         FOR flag                   =][=
           IF (define opt-name (up-c-name "name"))
-             (not (~~ opt-name "OVERRIDE_TPL|OUTPUT") ) =]
+
+             (and
+                 (not (~~ opt-name "OVERRIDE_TPL|OUTPUT"))
+                 (not (exist? "documentation"))
+             )  =][=
+
+            INVOKE handle-option   =][=
+          ENDIF (not override)     =][=
+        ENDFOR                     =]
+
+        xml2agOptions.origArgVect[ix] = NULL;
+        execvp(xml2agOptions.origArgVect[0], xml2agOptions.origArgVect);
+
+        /*
+         *  IF the first try fails, it may be because xml2ag and autogen have
+         *  different paths.  Try again with just plain "autogen" and let
+         *  the OS search "PATH" for the program.
+         */
+        execvp(zAg, xml2agOptions.origArgVect);
+        fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+                errno, strerror(errno), "execvp(2)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/*
+ * Local Variables:
+ * c-file-style: "stroustrup"
+ * indent-tabs-mode: nil
+ * End:
+ * end of [= (out-name) =] */
+[=
+
+DEFINE handle-option =]
 
         if (HAVE_OPT([=(. opt-name)=])) {[=
 
@@ -183,27 +218,7 @@ forkAutogen(char const* pzInput)
 
           ESAC arg-type            =]
         }[=
-          ENDIF (not override)  =][=
-        ENDFOR                     =]
 
-        xml2agOptions.origArgVect[ix] = NULL;
-        execvp(xml2agOptions.origArgVect[0], xml2agOptions.origArgVect);
+ENDDEF handle-option
 
-        /*
-         *  IF the first try fails, it may be because xml2ag and autogen have
-         *  different paths.  Try again with just plain "autogen" and let
-         *  the OS search "PATH" for the program.
-         */
-        execvp(zAg, xml2agOptions.origArgVect);
-        fprintf(stderr, zFsError, xml2agOptions.pzProgName,
-                errno, strerror(errno), "execvp(2)");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/*
- * Local Variables:
- * c-file-style: "stroustrup"
- * indent-tabs-mode: nil
- * End:
- * end of autogen.c */
+end of fork.tpl \=]

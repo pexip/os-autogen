@@ -2,11 +2,9 @@
 
 AutoGen5 Template
 
-## Time-stamp:        "2011-04-06 11:12:16 bkorb"
-##
 ##  This file is part of AutoGen.
 ##
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -73,14 +71,14 @@ DEFINE  emit-macro                              =][=
   ~~  with|without|with-group                   =][=
       (define bad-define-name   "WITHOUT_%s")
       (define good-define-name  "WITH_%s")      =][=
-     
+
   ~~  withlib|withconf                          =][=
       (define lib-name          (string-append "lib" down-name))
       (define bad-define-name   "WITHOUT_LIB%s")
       (define good-define-name  "WITH_LIB%s")   =][=
 
   * =][= (error (string-append "unknown macro type: " (get "type"))) =][=
-      
+
   ESAC                                          =][=
 
   IF  (. separate-macros)                       =][=
@@ -91,15 +89,16 @@ DEFINE  emit-macro                              =][=
 
 =]
 AC_DEFUN([[=
+
   (define fcn-name (string-append "try-" (get "type")))
-  (define c-text (get "code"))  =][=
+  (define c-text (get "code"))
+  (define end-requested-disablement "")
 
-  IF (= (get "code-mode") "body")               =][=
+  (if (= (get "code-mode") "body")
     (set! c-text (string-append "int main(int argc,char** argv) {\n"
-          c-text "\nreturn 0; }" )) =][=
-  ENDIF                         =][=
+          c-text "\nreturn 0; }" )) )
 
-  (. mac-name)                  =]],[[=
+  mac-name                      =]],[[=
 
   IF (ag-function? fcn-name)    =][=
     INVOKE (. fcn-name)         =][=
@@ -194,10 +193,12 @@ DEFINE start-feat-test =][=
 ENDDEF start-feat-test =][=
 
 DEFINE  end-feat-test  =][=
-
-  (. pop-language)     =]
-  ]) # end of AC_CACHE_VAL for [=(. cv-name)=]
-  AC_MSG_RESULT([${[=(. cv-name)=]}])[=
+  (string-append
+     pop-language
+     "\n  ]) # end of AC_CACHE_VAL for " cv-name
+     end-requested-disablement
+     "\n  AC_MSG_RESULT([${" cv-name "}])")
+  =][=
   emit-results         =][=
 
 ENDDEF  end-feat-test
@@ -206,11 +207,17 @@ ENDDEF  end-feat-test
 
 DEFINE  collect-act   =][=
 
-  CASE (set! tmp-text (get "act-text"))
+       (set! tmp-text (get "act-text"))
        (set! TMP-text (string-upcase tmp-text))
-       (string-append
-         (if (exist? "no") "no-" "yes-")
-         (get "act-type"))
+       (define action-type (get "no" "yes")) =][=
+       (if (<= (string-length action-type) 0)
+           (set! action-type "no")) =][=
+       (set! action-type (string-append action-type "-"
+           (get "act-type" "script"))) =][=
+
+  CASE
+       (. action-type)
+
     =][=
 
   == yes-define        =][=
@@ -252,6 +259,25 @@ DEFINE  collect-act   =][=
           (if (exist? "asis") tmp-text (protect-text tmp-text))  ))
     =][=
 
+  == all-define        =][=
+    (set! all-text (string-append all-text
+          "\n    AC_DEFINE" (if (exist? "unquoted") "_UNQUOTED" "")
+          "([" (sprintf good-define-name up-name) "],["
+          (if (> (string-length tmp-text) 0) tmp-text "1")
+          "],\n        [Define this if " (protect-text (get "check")) "])" ))
+    =][=
+
+  == all-subst         =][=
+    (set! all-subst 1)
+    (set! all-text (string-append all-text
+                 "\n    " sub-name "=" (protect-text (shell-str tmp-text)) ))
+    =][=
+
+  == all-script        =][=
+    (set! all-text (string-append all-text "\n    "
+          (if (exist? "asis") tmp-text (protect-text tmp-text))  ))
+    =][=
+
   ESAC                 =][=
 
 ENDDEF  collect-act
@@ -262,35 +288,30 @@ DEFINE  emit-results   =][=
 
   (define good-subst 0 )
   (define bad-subst  0 )
+  (define all-subst  0 )
+  (define all-text   "")
   (define TMP-text   "")
   (define tmp-text   "") =][=
 
   IF (and (= (get "type") "withlib") (exist? "config")) =]
     AC_SUBST([LIB[=(. up-name)=]_CFLAGS])
-    AC_SUBST([LIB[=(. up-name)=]_LIBS])
-    AC_SUBST([LIB[=(. up-name)=]_PATH])[=
+    AC_SUBST([LIB[=(. up-name)=]_LIBS])[=
 
     (define good-subst 1)
     (define bad-subst  1)
     (set! good-text (string-append good-text (sprintf "[
       LIB%1$s_CFLAGS=\"${%2$s_cflags}\"
-      LIB%1$s_LIBS=\"${%2$s_libs}\"
-      case \"${LIB%1$s_LIBS}\" in *-L* )
-        LIB%1$s_PATH=`echo ,${LIB%1$s_LIBS} | \
-          sed 's/.*[, ]-L[ \t]*//;s/[ \t].*//'`
-      ;; * ) LIB%1$s_PATH='' ;; esac]"
-       up-name cv-name )))
+      LIB%1$s_LIBS=\"${%2$s_libs}\"]" up-name cv-name )))
 
     (set! bad-text (string-append bad-text (sprintf "
       LIB%1$s_CFLAGS=''
-      LIB%1$s_LIBS=''
-      LIB%1$s_PATH=''"  up-name )))  =][=
+      LIB%1$s_LIBS=''"  up-name )))  =][=
 
-  ENDIF  type is withlib =][=
+  ENDIF type is withlib =][=
 
-  FOR     action         =][=
-    INVOKE collect-act   =][=
-  ENDFOR  action         =][=
+  FOR     action        =][=
+    INVOKE collect-act  =][=
+  ENDFOR  action        =][=
 
   (if (> good-subst 0)
       (if (< bad-subst 1)
@@ -304,27 +325,24 @@ DEFINE  emit-results   =][=
 =]
   if test "X${[=(. cv-name)=]}" [=
 
-  IF (> (string-length good-text) 0)
+  (if (> (string-length good-text) 0)
+    (emit "!= Xno\n  then" good-text
+       (if (> (string-length bad-text) 0)
+           (string-append "\n  else" bad-text) "")
+       "\n  fi" )
+    (emit "= Xno\n  then" bad-text "\n  fi") )
 
-    =]!= Xno
-  then[=
-    (. good-text) =][=
+  (if (> (+ good-subst bad-subst all-subst) 0)
+     (emit "\n  AC_SUBST([" sub-name "])" ))
+  (emit all-text)       =][=
 
-    IF (> (string-length bad-text) 0) =]
-  else[=
-    ENDIF         =][=
-  ELSE            =]= Xno
-  then[=
-  ENDIF           =][=
-    (. bad-text)  =]
-  fi[=
-
-  (if (> (+ good-subst bad-subst) 0)
-     (string-append "\n  AC_SUBST([" sub-name "])" ))  =][=
-
-  FOR conditional =]
+  FOR conditional       =]
   AM_CONDITIONAL([[= conditional =]],[test "X${[=(. cv-name)=]}" != Xno])[=
-  ENDFOR cond..   =][=
+  ENDFOR                =][=
+
+  FOR affirmed          =]
+  AM_CONDITIONAL([[= conditional =]],[test "X${[=(. cv-name)=]}" = Xyes])[=
+  ENDFOR                =][=
 
 ENDDEF  emit-results
 
@@ -345,6 +363,23 @@ DEFINE  emit-enablement
   INVOKE emit-results =][=
 
 ENDDEF  emit-enablement
+
+# # # # # # # # # # SETTING # # # # # # # # # # =][=
+
+DEFINE  emit-setting
+
+  =]
+  AC_ARG_[=arg-name=]([[=(. hyphen-name)=]],
+    AS_HELP_STRING([--[=type=]-[=(. hyphen-name)=]], [[=check=]]),
+    [[=(. cv-name)=]=${[=(string-downcase! (get "arg-name"))
+      =]_[=(. down-name)=]}],
+    AC_CACHE_CHECK([whether [=check=]], [=(. cv-name)=],
+      [=(. cv-name)=]=no)
+  ) # end of AC_ARG_[=arg-name=][=
+
+  INVOKE emit-results =][=
+
+ENDDEF  emit-setting
 
 # # # # # # # # # SET-LANGUAGE # # # # # # # # =][=
 
@@ -390,6 +425,15 @@ DEFINE  try-with                =][=
   INVOKE emit-enablement
        arg-name  = WITH         =][=
 ENDDEF  try-with                =][=
+
+# # # # # # # # # # WITHCONF # # # # # # # =][=
+
+DEFINE  try-withconf            =][=
+  (set! cv-name (string-append group-pfx "cv_set_" down-name)) =][=
+  INVOKE emit-setting
+       type      = with
+       arg-name  = WITH         =][=
+ENDDEF  try-withconf            =][=
 
 # # # # # # # # # # WITHOUT # # # # # # # =][=
 
@@ -478,7 +522,7 @@ DEFINE  try-withlib             =][=
   ) # end of AC_ARG_WITH [=(. lib-name)=]
 
   if test "${with_[=(. lib-name)=]+set}" = set && \
-     test "${withval}" = no
+     test "X${withval}" = Xno
   then ## disabled by request
     [=(. cv-name)=]_root=no
     [=(. cv-name)=]_cflags=no
@@ -488,8 +532,7 @@ DEFINE  try-withlib             =][=
   AC_ARG_WITH([[=(. lib-name)=]-cflags],
     AS_HELP_STRING([--with-lib[=(string-tr down-name "_A-Z" "-a-z")
         =]-cflags], [[=(. lib-name)=] compile flags]),
-    [[=(. cv-name)=]_cflags=${with_[=(string-tr test-name "-A-Z" "_a-z")
-                                   =]_cflags}],
+    [[=(. cv-name)=]_cflags=${with_[=(. lib-name)=]_cflags}],
     AC_CACHE_CHECK([whether with-[=(. lib-name)=]-cflags was specified], [=
         (. cv-name)=]_cflags,
       [=(. cv-name)=]_cflags=no)
@@ -498,8 +541,7 @@ DEFINE  try-withlib             =][=
   AC_ARG_WITH([[=(. lib-name)=]-libs],
     AS_HELP_STRING([--with-lib[=(string-tr down-name "_A-Z" "-a-z")
         =]-libs], [[=(. lib-name)=] link command arguments]),
-    [[=(. cv-name)=]_libs=${with_[=(string-tr test-name "-A-Z" "_a-z")
-                                   =]_libs}],
+    [[=(. cv-name)=]_libs=${with_[=(. lib-name)=]_libs}],
     AC_CACHE_CHECK([whether with-[=(. lib-name)=]-libs was specified], [=
         (. cv-name)=]_libs,
       [=(. cv-name)=]_libs=no)
@@ -555,11 +597,10 @@ DEFINE  try-withlib             =][=
 
   ENDIF (exist? "config")
 
-  =][= # # # # set cflags/libs # # # #
+  =][= ;; # # # # set cflags/libs # # # #
 
+  (define end-requested-disablement "\n  fi ## disabled by request")
 =]
-  fi ## disabled by request
-
   case "X${[=(. cv-name)=]_cflags}" in
   Xyes|Xno|X )
     [=(. cv-name)=]_cflags="" ;;
@@ -600,9 +641,9 @@ DEFINE  try-withlib             =][=
   ==   run                      =]
   AC_MSG_CHECKING([whether [=(. lib-name)=] functions properly])[=
   set-language                  =]
-  AC_TRY_RUN([[=(protect-text c-text)=]],
+  AC_RUN_IFELSE([[=(protect-text c-text)=]],
     [[=(. cv-name)=]=yes], [[=(. cv-name)=]=no],
-    [[=(. cv-name)=]=no]) # end of AC_TRY_RUN [=
+    [[=(. cv-name)=]=no]) # end of AC_RUN_IFELSE [=
 
   ESAC                          =][=
 
@@ -633,10 +674,10 @@ DEFINE  try-run                 =][=
 
   start-feat-test               =][=
   set-language                  =]
-  AC_TRY_RUN([[=(protect-text c-text)=]],
+  AC_RUN_IFELSE([[=(protect-text c-text)=]],
     [[=(. cv-name)=]=yes],[[=(. cv-name)=]=no],[[=
         (. cv-name)=]=no]
-  ) # end of TRY_RUN[=
+  ) # end of RUN_IFELSE[=
   end-feat-test                 =][=
 
 ENDDEF  try-run                 =][=
@@ -647,12 +688,18 @@ DEFINE  try-link                =][=
 
   start-feat-test               =][=
   set-language                  =]
-  AC_TRY_LINK([[= (protect-text (shellf
-    "egrep '^#' <<_EOF_\n%s\n_EOF_" c-text )) =]],
-    [[= (protect-text (shellf
-    "egrep -v '^#' <<_EOF_\n%s\n_EOF_" c-text )) =]],
-    [[=(. cv-name)=]=yes],[[=(. cv-name)=]=no]
-  ) # end of TRY_LINK[=
+  AC_LINK_IFELSE([=
+
+  IF (exist? "code")            =]
+    AC_LANG_SOURCE([[= (protect-text (get "code")) =]])[=
+
+  ELSE                          =]
+    AC_LANG_PROGRAM([[= (protect-text (get "code-pfx")) =]],
+      [[= (protect-text (get "code-bdy")) =]])[=
+  ENDIF                         =],
+    [[=(. cv-name)=]=yes],
+    [[=(. cv-name)=]=no]
+  ) # end of AC_LINK_IFELSE[=
   end-feat-test                 =][=
 
 ENDDEF  try-link                =][=
@@ -663,9 +710,18 @@ DEFINE  try-compile             =][=
 
   start-feat-test               =][=
   set-language                  =]
-  AC_TRY_COMPILE([= % includes "[%s]" =],[[=(protect-text c-text)=]],
-    [[=(. cv-name)=]=yes],[[=(. cv-name)=]=no]
-  ) # end of TRY_COMPILE[=
+  AC_COMPILE_IFELSE([=
+
+  IF (exist? "code")            =]
+    AC_LANG_SOURCE([[= (protect-text (get "code")) =]])[=
+
+  ELSE                          =]
+    AC_LANG_PROGRAM([[= (protect-text (get "code-pfx")) =]],
+      [[= (protect-text (get "code-bdy")) =]])[=
+  ENDIF                         =],
+    [[=(. cv-name)=]=yes],
+    [[=(. cv-name)=]=no]
+  ) # end of AC_COMPILE_IFELSE[=
   end-feat-test                 =][=
 
 ENDDEF  try-compile             =]

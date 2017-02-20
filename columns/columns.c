@@ -1,14 +1,15 @@
 
+/**
+ *  @file columns.c
+ *  @group columns
+ *  @{
+ */
 /*
- *  \file columns.c
- *
- *  Time-stamp:        "2011-03-04 10:17:17 bkorb"
- *
- *  Columns Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  Columns Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *  Columns is free software.
  *  This file is part of AutoGen.
  *
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -92,7 +93,7 @@ main(int argc, char ** argv)
 
     if (HAVE_OPT( INDENT )) {
         indentSize = pad_indentation( OPT_ARG(INDENT), &pzLinePfx);
-        OPT_VALUE_WIDTH -= indentSize;
+        OPT_VALUE_WIDTH -= (long)indentSize;
 
         pzFirstPfx = HAVE_OPT(FIRST_INDENT)
             ? construct_first_pfx( OPT_ARG(FIRST_INDENT))
@@ -100,13 +101,13 @@ main(int argc, char ** argv)
     }
 
     if (HAVE_OPT( LINE_SEPARATION ))
-        OPT_VALUE_WIDTH -= strlen( OPT_ARG( LINE_SEPARATION ));
+        OPT_VALUE_WIDTH -= (long int)strlen( OPT_ARG( LINE_SEPARATION));
 
     if (HAVE_OPT( COL_WIDTH ))
-        columnSz = OPT_VALUE_COL_WIDTH;
+        columnSz = (size_t)OPT_VALUE_COL_WIDTH;
 
     if (HAVE_OPT( COLUMNS ))
-        columnCt = OPT_VALUE_COLUMNS;
+        columnCt = (size_t)OPT_VALUE_COLUMNS;
 
     if (OPT_VALUE_WIDTH <= 16)
         OPT_VALUE_WIDTH = 16;
@@ -117,10 +118,11 @@ main(int argc, char ** argv)
         qsort( (void*)papzLines, usedCt, sizeof( char* ), &compProc );
 
     if (HAVE_OPT( BY_COLUMNS ))
-         writeColumns();
+        writeColumns();
     else if (HAVE_OPT(FILL))
         writeFill();
-    else writeRows();
+    else
+        writeRows();
 
     return EXIT_SUCCESS;
 }
@@ -204,7 +206,7 @@ pad_indentation(char const * pzIndentArg, char const ** pfx)
     /*
      *  IF the indent argument is a number
      */
-    if ((*pz == NUL) && (errno == 0) && (cct < OPT_VALUE_WIDTH)) {        
+    if ((*pz == NUL) && (errno == 0) && (cct < OPT_VALUE_WIDTH)) {
         char * p;
 
         /*
@@ -238,8 +240,8 @@ pad_indentation(char const * pzIndentArg, char const ** pfx)
                 goto colsCounted;
 
             case '\t':
-                cct += OPT_VALUE_TAB_WIDTH;
-                cct -= (cct % OPT_VALUE_TAB_WIDTH);
+                cct += (unsigned)OPT_VALUE_TAB_WIDTH;
+                cct -= (unsigned)(cct % OPT_VALUE_TAB_WIDTH);
                 break;
 
             case '\n':
@@ -265,12 +267,8 @@ pad_indentation(char const * pzIndentArg, char const ** pfx)
 static void
 readLines(void)
 {
-    int   sepLen;
-
-    if (HAVE_OPT(SEPARATION))
-         sepLen = strlen(OPT_ARG(SEPARATION));
-    else sepLen = 0;
-
+    int sepLen = HAVE_OPT(SEPARATION)
+        ? (int)strlen(OPT_ARG(SEPARATION)) : 0;
 
     /*
      *  Read the input text, stripping trailing white space
@@ -306,7 +304,8 @@ readLines(void)
          */
         if (HAVE_OPT(FORMAT)) {
             pzText = zFmtLine;
-            len = snprintf(zFmtLine, sizeof(zFmtLine), OPT_ARG(FORMAT), zLine);
+            len = (size_t)snprintf(
+                zFmtLine, sizeof(zFmtLine), OPT_ARG(FORMAT), zLine);
         } else {
             pzText = zLine;
         }
@@ -314,7 +313,7 @@ readLines(void)
         /*
          *  Allocate a string and space in the pointer array.
          */
-        len += sepLen + 1;
+        len += (size_t)sepLen + 1;
         pzL = (char*)malloc_or_die( len );
         if (++usedCt > allocCt) {
             allocCt += 128;
@@ -335,8 +334,8 @@ readLines(void)
         if (sepLen > 0)
             strcat(pzL, OPT_ARG(SEPARATION));
 
-        if (len > maxEntryWidth)
-            maxEntryWidth = len;
+        if ((int)len > maxEntryWidth)
+            maxEntryWidth = (int)len;
     next_line:;
     }
 
@@ -361,26 +360,26 @@ readLines(void)
          *  THEN compute it.
          */
         if (columnCt == 0)
-            columnCt = OPT_VALUE_WIDTH / maxEntryWidth;
+            columnCt = (size_t)(OPT_VALUE_WIDTH / maxEntryWidth);
 
         /*
          *  IF there are to be multiple columns, ...
          */
         if (columnCt > 1) {
-            int  spreadwidth = OPT_VALUE_WIDTH - maxEntryWidth;
-            int  sz = spreadwidth / (columnCt-1);
+            size_t spreadwidth = (size_t)(OPT_VALUE_WIDTH - maxEntryWidth);
+            int  sz = (int)(spreadwidth / (size_t)(columnCt-1));
 
             /*
              *  Either there is room for added space,
              *  or we must (possibly) reduce the number of columns
              */
             if (sz >= maxEntryWidth)
-                columnSz = sz;
+                columnSz = (size_t)sz;
             else {
-                columnCt = (spreadwidth / maxEntryWidth) + 1;
+                columnCt = ((size_t)spreadwidth / (size_t)maxEntryWidth) + 1;
                 if (columnCt > 1)
-                     columnSz = spreadwidth / (columnCt - 1);
-                else columnSz = OPT_VALUE_WIDTH;
+                     columnSz = (size_t)spreadwidth / (size_t)(columnCt - 1);
+                else columnSz = (size_t)OPT_VALUE_WIDTH;
             }
         }
     }
@@ -389,20 +388,27 @@ readLines(void)
      *  Otherwise, the column size has been set.  Ensure it is sane.
      */
     else {
+        bool compute_val = (columnCt == 0);
+
         /*
          *  Increase the column size to the width of the widest entry
          */
-        if (maxEntryWidth > columnSz)
-            columnSz = maxEntryWidth;
+        if (maxEntryWidth > (int)columnSz)
+            columnSz = (size_t)maxEntryWidth;
 
         /*
          *  IF     we have not been provided a column count
          *    *OR* we are set to overfill the output line,
          *  THEN compute the number of columns.
          */
-        if (  (columnCt == 0)
-           || (((columnSz * (columnCt-1)) + maxEntryWidth) > OPT_VALUE_WIDTH))
-            columnCt = ((OPT_VALUE_WIDTH - maxEntryWidth) / columnSz) + 1;
+        if (! compute_val) {
+            long width = (long)maxEntryWidth + (long)(columnSz * (columnCt-1));
+            compute_val = width > (unsigned)OPT_VALUE_WIDTH;
+        }
+        if (compute_val)
+            columnCt = (size_t)(
+                (((long)OPT_VALUE_WIDTH - (long)maxEntryWidth) /
+                 (long)columnSz) + 1);
     }
 
     /*
@@ -410,8 +416,8 @@ readLines(void)
      *  does not exceed the parameterized limit.
      */
     if (   HAVE_OPT( SPREAD )
-        && ((maxEntryWidth + OPT_VALUE_SPREAD - 1) < columnSz))
-        columnSz = maxEntryWidth + OPT_VALUE_SPREAD - 1;
+           && ((maxEntryWidth + OPT_VALUE_SPREAD - 1) < (int)columnSz))
+        columnSz = (size_t)(maxEntryWidth + OPT_VALUE_SPREAD - 1);
 }
 
 
@@ -422,7 +428,7 @@ writeColumns(void)
     int  colCt, rowCt, col, row;
     tpPrintList pPL;
 
-    colCt = columnCt;
+    colCt = (int)columnCt;
     snprintf(zFmt, sizeof(zFmt), "%%-%ds", (int)columnSz);
 
     if (colCt == 1) {
@@ -430,7 +436,7 @@ writeColumns(void)
         return;
     }
 
-    pPL = (tpPrintList)malloc_or_die( colCt * sizeof( tPrintList ));
+    pPL = (tpPrintList)malloc_or_die((unsigned long)colCt * sizeof(tPrintList));
 
     /*
      *  This "loop" is normally executed half way through and exited.
@@ -450,7 +456,7 @@ writeColumns(void)
         int  rem;
         int  fsz;
 
-        rowCt = (usedCt/colCt) + ((usedCt % colCt) ? 1 : 0);
+        rowCt = ((int)usedCt/colCt) + (((int)usedCt % colCt) ? 1 : 0);
 
         /*
          *  FOR each column, compute the address of the pointer to
@@ -466,7 +472,7 @@ writeColumns(void)
          *  IF the final column is not empty,
          *  THEN break out and start printing.
          */
-        if (pPL[colCt-1].index < usedCt)
+        if (pPL[colCt-1].index < (int)usedCt)
             break;
 
         /*
@@ -474,7 +480,7 @@ writeColumns(void)
          *  even if the user specified a count!!
          */
         colCt--;
-        rem   = OPT_VALUE_WIDTH - (colCt * maxEntryWidth);
+        rem   = (int)OPT_VALUE_WIDTH - (int)(colCt * maxEntryWidth);
 
         if ((rem == 0) || (colCt < 2) || (columnSz > 0))
             fsz = maxEntryWidth;
@@ -498,7 +504,7 @@ writeColumns(void)
          *  IF it goes beyond the end of the entries in use,
          *  THEN reduce our column count.
          */
-        if ((pPL[colCt-1].index)++ >= usedCt)
+        if ((pPL[colCt-1].index)++ >= (int)usedCt)
             colCt--;
 
         /*
@@ -575,7 +581,7 @@ writeRows(void)
     char zFmt[32];
     int  colCt;
 
-    colCt = columnCt;
+    colCt = (int)columnCt;
     snprintf(zFmt, sizeof(zFmt), "%%-%ds", (int)columnSz);
 
     if (HAVE_OPT( SEPARATION ))
@@ -652,7 +658,7 @@ emitWord(char const * word, size_t len, int col)
     static int ended_with_period = 0;
 
     if (col > 0) {
-        if (len >= (OPT_VALUE_WIDTH - col)) {
+        if ((int)len >= (OPT_VALUE_WIDTH - col)) {
             putc('\n', stdout);
             if (pzLinePfx != NULL)
                 fputs(pzLinePfx, stdout);
@@ -669,7 +675,7 @@ emitWord(char const * word, size_t len, int col)
     }
 
     fwrite(word, len, 1, stdout);
-    col += len;
+    col += (int)len;
     ended_with_period = (word[len - 1] == '.');
 
     return col;
@@ -755,7 +761,8 @@ compProc(const void * p1, const void * p2)
     char const * pz2 = *(char* const*)p2;
     return strcmp(pz1, pz2);
 }
-/*
+/** @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

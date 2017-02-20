@@ -2,11 +2,10 @@
 #  -*- Mode: Shell-script -*-
 # define.test --- test evalstack functionality
 #
-# Time-stamp:        "2010-06-26 16:06:29 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -66,7 +65,8 @@ cat > $testname.tpl <<'_EOF_'
 
 DEFINE nest     =][=
   IF (exist? "name") =]
-level [=level=] iteration [=(for-index)=] Nested Name:  [=name=][=
+level [=(shell "printf '%u\\n' " (get "level"))
+=] iteration [=(for-index)=] Nested Name:  [=name=][=
   ENDIF         =][=
 
   FOR .nesting  =][=
@@ -108,10 +108,10 @@ nesting[1] = {
   level = 1;
   name = primary;
   nesting[1] = {
-    level = 2;
+    level = 0x2;
     name = secondary;
   }, {
-    level = 2;
+    level = 0x2;
     /* no name defined - default to primary level */
     nesting[1] = {
       level = 3;
@@ -145,7 +145,7 @@ _EOF_
 run_ag x --lib=$testname.tlib $testname.def || \
   failure "autogen failed"
 set -x
-cmp -s $testname.test $testname.test || \
+cmp -s $testname.samp $testname.test || \
   failure "`diff $testname.samp $testname.test`"
 
 cleanup

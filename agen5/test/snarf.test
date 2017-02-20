@@ -2,11 +2,10 @@
 #  -*- Mode: Shell-script -*-
 # snarf.test --- test the extraction of scm-type definitions
 #
-# Time-stamp:        "2011-04-20 15:04:32 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -62,8 +61,8 @@ _EOF_
 
 f=`echo ${AGexe} | ${SED} 's/ .*//'`
 
-agsrc=`cd $srcdir/.. && pwd`
-tplsrc=`dirname $agsrc`/autoopts/tpl
+agsrc=`cd $top_srcdir/agen5 && pwd`
+tplsrc=`cd $top_srcdir/autoopts/tpl && pwd`
 
 cat > ${testname}.cfg <<- _EOF_
 	subblock       exparg=arg_name,arg_desc,arg_optional,arg_list
@@ -97,6 +96,10 @@ ${SED} "${sed_omit_license}" ${testname}.h > ${testname}.h.tst1
 
 echo creating ${testname}.ini.OK1
 cat > ${testname}.ini.OK1 <<'_EOF_'
+/** \file snarf.ini
+ *
+ * Guile Initializations - snarf_grp Global Variables
+ */
 #include "snarf.h"
 typedef SCM (*scm_callback_t)(void);
 void Chosen_init(void);
@@ -113,15 +116,17 @@ static SCM snarf_grp_scm_sym_mumble_check       = SCM_BOOL_F;
                    _Ar, _Ao, _Ax)
 #endif
 
-/*
+/**
  * snarf_grp Initialization procedure.
  */
 void
 Chosen_init(void)
 {
 static char const g_nm[55] =
-    "test->example!\0"   "guile-syntax-ele\0" "bumble-it\0"
-    "mumble-check\0";
+/*     0 */ "test->example!\0"
+/*    15 */ "guile-syntax-ele\0"
+/*    32 */ "bumble-it\0"
+/*    42 */ "mumble-check";
 
     NEW_PROC(g_nm +   0, 0, 0, 1, test_to_example_x);
     scm_make_synt(g_nm+15, scm_makacro, scm_m_undefine);
@@ -137,8 +142,12 @@ cmp ${testname}.ini.tst1 ${testname}.ini.OK1 || \
 
 echo creating ${testname}.h.OK
 cat > ${testname}.h.OK <<_EOF_
+/** \file snarf.h
+ *  Guile Implementation Routines - for the snarf_grp group
+ */
 #ifndef GUILE_PROCS_SNARF_H_GUARD
 #define GUILE_PROCS_SNARF_H_GUARD 1
+
 #if GUILE_VERSION >= 108000
 # include <libguile.h>
 #else
@@ -190,6 +199,10 @@ ${SED} "${sed_omit_license}" ${testname}.h > ${testname}.h.tst2
 
 echo creating ${testname}.ini.OK2
 cat > ${testname}.ini.OK2 <<'_EOF_'
+/** \file snarf.ini
+ *
+ * Guile Initializations - snarf_grp Global Variables
+ */
 #include "snarf.h"
 typedef SCM (*scm_callback_t)(void);
 void Chosen_init(void);
@@ -203,7 +216,7 @@ agrelay_scm_test_to_example_x(SCM scm0)
     if (OPT_VALUE_TRACE >= TRACE_EVERYTHING) {
         static char const proc_z[] =
             "Called ag_scm_test_to_example_x()\n";
-        fwrite(proc_z, sizeof(proc_z) - 1, 1, pfTrace);
+        fwrite(proc_z, sizeof(proc_z) - 1, 1, trace_fp);
     }
     return ag_scm_test_to_example_x(scm0);
 }
@@ -230,15 +243,17 @@ agrelay_scm_test_to_example_x(SCM scm0)
 #endif
 #endif /* DEBUG_ENABLED */
 
-/*
+/**
  * snarf_grp Initialization procedure.
  */
 void
 Chosen_init(void)
 {
 static char const g_nm[55] =
-    "test->example!\0"   "guile-syntax-ele\0" "bumble-it\0"
-    "mumble-check\0";
+/*     0 */ "test->example!\0"
+/*    15 */ "guile-syntax-ele\0"
+/*    32 */ "bumble-it\0"
+/*    42 */ "mumble-check";
 
     NEW_PROC(g_nm +   0, 0, 0, 1, test_to_example_x);
     scm_make_synt(g_nm+15, scm_makacro, scm_m_undefine);

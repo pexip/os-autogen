@@ -2,12 +2,14 @@
 /**
  * @file functions.c
  *
- *  Time-stamp:        "2011-06-03 11:54:40 bkorb"
- *
  *  This module implements text functions.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,14 +25,162 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static char const zCantInc[] = "cannot include file";
-static char const zTrcFmt[] = "%-10s (%2X) in %s at line %d\n";
+/*=macfunc CONTINUE
+ *
+ *  handler-proc:   Break
+ *  load-proc:      Leave
+ *  what:           Skip to end of a FOR or WHILE macro.
+ *
+ *  desc:
+ *  This will skip the remainder of the loop and start the next.
+=*/
+
+/*=macfunc BREAK
+ *
+ *  handler-proc:   Break
+ *  load-proc:      Leave
+ *  what:           Leave a FOR or WHILE macro
+ *
+ *  desc:
+ *  This will unwind the loop context and resume after ENDFOR/ENDWHILE.
+ *  Note that unless this happens to be the last iteration anyway,
+ *  the (last-for?) function will never yield "#t".
+=*/
+macro_t *
+mFunc_Break(templ_t * tpl, macro_t * mac)
+{
+    for_state_t * fst = curr_ivk_info->ii_for_data;
+    int code = (mac->md_code == FTYP_BREAK) ? LOOP_JMP_BREAK : LOOP_JMP_NEXT;
+    if (fst == NULL) {
+        char const * which =
+            (mac->md_code == FTYP_BREAK) ? BREAK_STR : CONTINUE_STR;
+        AG_ABEND(aprf(BAD_BREAK_FMT, which));
+    }
+    fst += curr_ivk_info->ii_for_depth - 1;
+
+    (void)tpl;
+    (void)mac;
+    longjmp(fst->for_env, code);
+}
+
+/**
+ * wrapper function for calling gen_block in a loop.
+ * It sets up and handles the jump buffer, returning the jump result.
+ *
+ * @param[in,out] jbuf     the jump buffer
+ * @param[in]     tpl      the new active template
+ * @param[in]     mac      the looping macro
+ * @param[in]     end_mac  pointer to the first macro after the block
+ *
+ * @returns either LOOP_JMP_OKAY (0) or LOOP_JMP_BREAK (the caller should
+ * exit the loop).
+ */
+LOCAL loop_jmp_type_t
+call_gen_block(jmp_buf jbuf, templ_t * tpl, macro_t * mac, macro_t * end_mac)
+{
+    switch (setjmp(jbuf)) {
+    case LOOP_JMP_OKAY: // 0
+        gen_block(tpl, mac, end_mac);
+        /* FALLTHROUGH */
+
+    case LOOP_JMP_NEXT:
+        return LOOP_JMP_OKAY;
+
+    case LOOP_JMP_BREAK:
+    default:
+        return LOOP_JMP_BREAK;
+    }
+}
+
+/*=macfunc RETURN
+ *
+ *  handler-proc:
+ *  load-proc:      Leave
+ *
+ *  what:           Leave an INVOKE-d (DEFINE) macro
+ *
+ *  desc:
+ *  This will unwind looping constructs inside of a DEFINE-d macro and
+ *  return to the invocation point.  The output files and diversions
+ *  @i{are left alone}.  This means it is unwise to start diversions
+ *  in a DEFINEd macro and RETURN from it before you have handled the
+ *  diversion.  Unless you are careful.  Here is some rope for you.
+ *  Please be careful using it.
+=*/
+macro_t *
+mFunc_Return(templ_t * tpl, macro_t * mac)
+{
+    (void)tpl;
+    (void)mac;
+    free_for_context(INT_MAX);
+    if (curr_ivk_info->ii_prev == NULL)
+        AG_ABEND_IN(tpl, mac, RETURN_FROM_NOWHERE);
+    longjmp(curr_ivk_info->ii_env, 1);
+}
+
+/**
+ * Generate a block with a new template context.  It may be either
+ * an @code{INCLUDE}-d template or a user @code{DEFINE}-d macro.
+ * If @code{gen_block} returns with a long jump, the long jump value
+ * is ignored.  It was terminated early with a @code{RETURN}.
+ *
+ * @param[in] tpl new template block (included or invoked).
+ */
+LOCAL void
+gen_new_block(templ_t * tpl)
+{
+    templ_t *   oldt = current_tpl;
+    ivk_info_t    ii = IVK_INFO_INITIALIZER(curr_ivk_info);
+
+    curr_ivk_info = &ii;
+
+    if (setjmp(ii.ii_env) == 0) {
+        macro_t * m = tpl->td_macros;
+        gen_block(tpl, m, m + tpl->td_mac_ct);
+    }
+
+    current_tpl   = oldt;
+    curr_ivk_info = ii.ii_prev;
+}
+
+/**
+ * Validate the context for leaving early.  @code{FOR} and @code{WHILE} loops
+ * may leave an interation early with @code{CONTINUE} or @code{BREAK}.
+ * @code{DEFINE}-d macros and @code{INCLUDE}-d files may leave early with
+ * @code{RETURN}.  Loops may not be left early from an @code{INVOKE}-d macro
+ * or an @code{INCLUDE}-d template.
+ *
+ * This load function handles @code{BREAK}, @code{CONTINUE} and @code{RETURN}.
+ * It is always defined, so it must check for itself whether the
+ * context is correct or not.
+ *
+ *  @param tpl     template being loaded
+ *  @param mac     the macro descriptor
+ *  @param p_scan  the input text scanning pointer
+ *
+ *  @returns the macro table entry after mac
+ */
+macro_t *
+mLoad_Leave(templ_t * tpl, macro_t * mac, char const ** p_scan)
+{
+    (void) tpl;
+
+    if (mac->md_code == FTYP_RETURN) {
+        /*
+         * Check returns at load time.  "break" and "continue" at
+         * instantiation time.
+         */
+        if (! defining_macro && (include_depth == 0))
+            (void)mLoad_Bogus(tpl, mac, p_scan);
+    }
+    return mac + 1;
+}
 
 /*=macfunc INCLUDE
  *
  *  what:   Read in and emit a template block
  *  handler_proc:
- *  load_proc:
+ *  load_proc:    Expr
  *
  *  desc:
  *
@@ -43,70 +193,52 @@ static char const zTrcFmt[] = "%-10s (%2X) in %s at line %d\n";
  *  @samp{IF} and @samp{WHILE}; extending through their respective
  *  terminating macro functions.
 =*/
-tMacro*
-mFunc_Include(tTemplate* pT, tMacro* pMac)
+macro_t *
+mFunc_Include(templ_t * tpl, macro_t * mac)
 {
-    tTemplate *   pNewTpl;
-    ag_bool       needFree;
-    char const *  pzFile = evalExpression(&needFree);
-    tMacro*       pM;
+    bool         allocated_name;
+    char const * fname = eval_mac_expr(&allocated_name);
 
-    if (*pzFile != NUL) {
-        pNewTpl = loadTemplate(pzFile, pT->pzTplFile);
+    include_depth++;
+    if (*fname != NUL) {
+        templ_t * new_tpl  = tpl_load(fname, tpl->td_file);
+        macro_t * last_mac = new_tpl->td_macros + (new_tpl->td_mac_ct - 1);
 
-        /*
-         *  Strip off trailing white space from included templates
-         */
-        pM = pNewTpl->aMacros + (pNewTpl->macroCt - 1);
-        if (pM->funcCode == FTYP_TEXT) {
-            char* pz  = pNewTpl->pzTemplText + pM->ozText;
-            char* pzE = pz + strlen(pz);
-            while ((pzE > pz) && IS_WHITESPACE_CHAR(pzE[-1]))  --pzE;
+        if (last_mac->md_code == FTYP_TEXT) {
+            /*
+             *  Strip off trailing white space from included templates
+             */
+            char * pz = new_tpl->td_text + last_mac->md_txt_off;
+            char * pe = SPN_WHITESPACE_BACK(pz, pz);
 
             /*
              *  IF there is no text left, remove the macro entirely
              */
-            if (pz == pzE)
-                 pNewTpl->macroCt--;
-            else *pzE = NUL;
+            if (pe > pz) {
+                *pe = NUL;
+            } else {
+                new_tpl->td_mac_ct--;
+            }
         }
 
         if (OPT_VALUE_TRACE > TRACE_DEBUG_MESSAGE) {
-            static char const zTplFmt[] = "Template %s included\n";
-            static char const zLinFmt[] = "\tfrom %s line %d\n";
-            fprintf(pfTrace, zTplFmt, pNewTpl->pzTplFile);
+            fprintf(trace_fp, TRACE_FN_INC_TPL, new_tpl->td_file);
             if (OPT_VALUE_TRACE == TRACE_EVERYTHING)
-                fprintf(pfTrace, zLinFmt, pCurTemplate->pzTplFile,
-                        pMac->lineNo);
+                fprintf(trace_fp, TRACE_FN_INC_LINE, current_tpl->td_file,
+                        mac->md_line);
         }
 
-        generateBlock(pNewTpl, pNewTpl->aMacros,
-                      pNewTpl->aMacros + pNewTpl->macroCt);
-        unloadTemplate(pNewTpl);
-        pCurTemplate = pT;
+        gen_new_block(new_tpl);
+        tpl_unload(new_tpl);
+        current_tpl = tpl;
     }
+    include_depth--;
 
-    if (needFree)
-        AGFREE((void*)pzFile);
+    if (allocated_name)
+        AGFREE((void*)fname);
 
-    return pMac + 1;
+    return mac + 1;
 }
-
-
-/*
- *  mLoad_Include  --  digest an INCLUDE macro
- *
- *  Simply verify that there is some argument to this macro.
- *  Regular "expr" macros are their own argument, so there is always one.
- */
-tMacro*
-mLoad_Include(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
-{
-    if ((int)pMac->res == 0)
-        AG_ABEND_IN(pT, pMac, "The INCLUDE macro requires a file name");
-    return mLoad_Expr(pT, pMac, ppzScan);
-}
-
 
 /*=macfunc UNKNOWN
  *
@@ -124,54 +256,55 @@ mLoad_Include(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
  *
  *  You may not specify @code{UNKNOWN} explicitly.
 =*/
-tMacro*
-mFunc_Unknown(tTemplate* pT, tMacro* pMac)
+macro_t *
+mFunc_Unknown(templ_t * pT, macro_t * pMac)
 {
-    tTemplate * pInv = findTemplate(pT->pzTemplText + pMac->ozName);
+    templ_t * pInv = find_tpl(pT->td_text + pMac->md_name_off);
     if (pInv != NULL) {
         if (OPT_VALUE_TRACE >= TRACE_EVERYTHING)
-            fprintf(pfTrace, zTrcFmt, "remapped to 'Invoke'", pMac->funcCode,
-                    pT->pzTplFile, pMac->lineNo);
-        pMac->funcCode    = FTYP_DEFINE;
-        pMac->funcPrivate = (void*)pInv;
-        parseMacroArgs(pT, pMac);
+            fprintf(trace_fp, TRACE_FN_REMAPPED, TRACE_FN_REMAP_INVOKE,
+                    pMac->md_code, pT->td_file, pMac->md_line);
+        pMac->md_code    = FTYP_DEFINE;
+        pMac->md_pvt = (void*)pInv;
+        parse_mac_args(pT, pMac);
         return mFunc_Define(pT, pMac);
     }
 
     if (OPT_VALUE_TRACE >= TRACE_EVERYTHING) {
-        fprintf(pfTrace, zTrcFmt, "remapped to Expr", pMac->funcCode,
-                pT->pzTplFile, pMac->lineNo);
-        fprintf(pfTrace, "\tbased on %s\n", pT->pzTemplText + pMac->ozName);
+        fprintf(trace_fp, TRACE_FN_REMAPPED, TRACE_FN_REMAP_EXPR,
+                pMac->md_code, pT->td_file, pMac->md_line);
+        fprintf(trace_fp, TRACE_FN_REMAP_BASE,
+                pT->td_text + pMac->md_name_off);
     }
 
-    pMac->funcCode = FTYP_EXPR;
-    if (pMac->ozText == 0) {
-        pMac->res = EMIT_VALUE;
+    pMac->md_code = FTYP_EXPR;
+    if (pMac->md_txt_off == 0) {
+        pMac->md_res = EMIT_VALUE;
 
     } else {
-        char* pzExpr = pT->pzTemplText + pMac->ozText;
+        char* pzExpr = pT->td_text + pMac->md_txt_off;
         switch (*pzExpr) {
         case ';':
         case '(':
-            pMac->res = EMIT_EXPRESSION;
+            pMac->md_res = EMIT_EXPRESSION;
             break;
 
         case '`':
-            pMac->res = EMIT_SHELL;
-            spanQuote(pzExpr);
+            pMac->md_res = EMIT_SHELL;
+            span_quote(pzExpr);
             break;
 
         case '"':
         case '\'':
-            spanQuote(pzExpr);
+            span_quote(pzExpr);
             /* FALLTHROUGH */
 
         default:
-            pMac->res = EMIT_STRING;
+            pMac->md_res = EMIT_STRING;
         }
 
         if (OPT_VALUE_TRACE >= TRACE_EVERYTHING)
-            fprintf(pfTrace, "\tcode %lX -- %s\n", pMac->res, pzExpr);
+            fprintf(trace_fp, TRACE_UNKNOWN_FMT, pMac->md_res, pzExpr);
     }
 
     return mFunc_Expr(pT, pMac);
@@ -185,14 +318,13 @@ mFunc_Unknown(tTemplate* pT, tMacro* pMac)
  *  load_proc:
  *  unnamed:
 =*/
-tMacro*
-mFunc_Bogus(tTemplate* pT, tMacro* pMac)
+macro_t*
+mFunc_Bogus(templ_t* pT, macro_t* pMac)
 {
-    static char const z[] =
-        "%d (%s) is an unknown macro function, or has no handler";
-
-    char* pz = aprf(z, pMac->funcCode, (pMac->funcCode < FUNC_CT)
-                    ? apzFuncNames[ pMac->funcCode ] : "??");
+    char * pz = aprf(FN_BOGUS_FMT, pMac->md_code,
+                     (pMac->md_code < FUNC_CT)
+                     ? ag_fun_names[ pMac->md_code ]
+                     : FN_BOGUS_HUH);
 
     AG_ABEND_IN(pT, pMac, pz);
     /* NOTREACHED */
@@ -206,11 +338,11 @@ mFunc_Bogus(tTemplate* pT, tMacro* pMac)
  *  handler_proc:
  *  unnamed:
 =*/
-tMacro*
-mFunc_Text(tTemplate* pT, tMacro* pMac)
+macro_t*
+mFunc_Text(templ_t* pT, macro_t* pMac)
 {
-    fputs(pT->pzTemplText + pMac->ozText, pCurFp->pFile);
-    fflush(pCurFp->pFile);
+    fputs(pT->td_text + pMac->md_txt_off, cur_fpstack->stk_fp);
+    fflush(cur_fpstack->stk_fp);
     return pMac + 1;
 }
 
@@ -233,106 +365,131 @@ mFunc_Text(tTemplate* pT, tMacro* pMac)
  *    [+ # say what you want, but no '+' before any ']' chars +]
  *    @end example
 =*/
-tMacro *
-mLoad_Comment(tTemplate * pT, tMacro * pMac, char const ** ppzScan)
+macro_t *
+mLoad_Comment(templ_t * tpl, macro_t * mac, char const ** p_scan)
 {
-    memset((void*)pMac, 0, sizeof(*pMac));
-    return pMac;
+    (void)tpl;
+    (void)p_scan;
+    memset((void*)mac, 0, sizeof(*mac));
+    return mac;
 }
 
-
-/*
- *  mLoad_Unknown  --  the default (unknown) load function
+/**
+ *  The default (unknown) load function.
  *
- *  Move any text into the text offset field.
- *  This is used as the default load mechanism.
+ *  Move any text into the text offset field.  This macro will change to
+ *  either INVOKE or an expression function, depending on whether or not a
+ *  DEFINE macro corresponds to the name.  This is determined at instantiation
+ *  time.  This is used as the default load mechanism.
+ *
+ *  @param tpl     template being loaded
+ *  @param mac     the macro descriptor
+ *  @param p_scan  the input text scanning pointer
+ *
+ *  @returns the macro table entry after mac
  */
-tMacro *
-mLoad_Unknown(tTemplate * pT, tMacro * pMac, char const ** ppzScan)
+macro_t *
+mLoad_Unknown(templ_t * tpl, macro_t * mac, char const ** unused)
 {
-    char *        pzCopy = pT->pNext;
-    char const *  pzSrc;
-    size_t        srcLen = (size_t)pMac->res;         /* macro len  */
+    char const * scan;
+    ssize_t      src_len = (ssize_t)mac->md_res; /* macro len  */
+    (void)unused;
 
-    if (srcLen <= 0)
-        goto return_emtpy_expression;
+    if (src_len <= 0)
+        goto return_emtpy_expr;
 
-    pzSrc = (char const*)pMac->ozText; /* macro text */
+    scan = (char const *)mac->md_txt_off; /* macro text */
 
-    switch (*pzSrc) {
+    switch (*scan) {
     case ';':
+    {
+        char const * start = scan;
+
         /*
          *  Strip off scheme comments
          */
         do  {
-            while (--srcLen, (*++pzSrc != NL)) {
-                if (srcLen <= 0)
-                    goto return_emtpy_expression;
-            }
+            scan = strchr(scan, NL);
+            if (scan == NULL)
+                goto return_emtpy_expr;
 
-            while (--srcLen, IS_WHITESPACE_CHAR(*++pzSrc)) {
-                if (srcLen <= 0)
-                    goto return_emtpy_expression;
-            }
-        } while (*pzSrc == ';');
+            scan = SPN_WHITESPACE_CHARS(scan);
+            if (*scan == NUL)
+                goto return_emtpy_expr;
+
+            src_len -= scan - start;
+            if (src_len <= 0)
+                goto return_emtpy_expr;
+
+            start = scan;
+        } while (*scan == ';');
         break;
+    }
 
     case '[':
     case '.':
     {
-        size_t remLen;
-
         /*
-         *  We are going to recopy the definition name,
-         *  this time as a canonical name (i.e. with '[', ']' and '.'
-         *  characters and all blanks squeezed out)
+         *  We are going to recopy the definition name, this time as a
+         *  canonical name (i.e. including '[', ']' and '.'  characters,
+         *  but with all blanks squeezed out)
          */
-        pzCopy = pT->pzTemplText + pMac->ozName;
+        char * cname     = tpl->td_text + mac->md_name_off;
+        size_t cname_len = strlen(cname);
 
         /*
          *  Move back the source pointer.  We may have skipped blanks,
          *  so skip over however many first, then back up over the name.
+         *  We have found a name, so we won't back up past the start.
          */
-        while (IS_WHITESPACE_CHAR(pzSrc[-1])) pzSrc--, srcLen++;
-        remLen  = strlen(pzCopy);
-        pzSrc  -= remLen;
-        srcLen += remLen;
+        while (IS_WHITESPACE_CHAR(scan[-1])) scan--, src_len++;
+        scan    -= cname_len;
+        src_len += (ssize_t)cname_len;
 
         /*
          *  Now copy over the full canonical name.  Check for errors.
+         *  Advance the scan pointer to just past the name we've copied.
          */
-        remLen = canonicalizeName(pzCopy, pzSrc, (int)srcLen);
-        if (remLen > srcLen)
-            AG_ABEND_IN(pT, pMac, "Invalid definition name");
+        {
+            ssize_t rem_len = canonical_name(cname, scan, (int)src_len);
+            if (rem_len > src_len)
+                AG_ABEND_IN(tpl, mac, LD_UNKNOWN_INVAL_DEF);
 
-        pzSrc  += srcLen - remLen;
-        srcLen  = remLen;
+            scan   += src_len - rem_len;
+            src_len = (ssize_t)rem_len;
+        }
 
-        pT->pNext = pzCopy + strlen(pzCopy) + 1;
-        if (srcLen <= 0)
-            goto return_emtpy_expression;
+        /*
+         *  Where we are stashing text ("td_scan") gets set to just past the
+         *  NUL byte terminating the name.  "cname" is now longer than before.
+         */
+        tpl->td_scan = cname + strlen(cname) + 1;
+        if (src_len <= 0)
+            goto return_emtpy_expr;
         break;
     }
     }
 
     /*
-     *  Copy the expression
+     *  Copy the expression (the remaining text)
      */
-    pzCopy = pT->pNext; /* next text dest   */
-    pMac->ozText = (pzCopy - pT->pzTemplText);
-    pMac->res    = 0;
-    memcpy(pzCopy, pzSrc, srcLen);
-    pzCopy      += srcLen;
-    *(pzCopy++)  = NUL;
-    *pzCopy      = NUL; /* double terminate */
-    pT->pNext    = pzCopy;
+    {
+        char * dest = tpl->td_scan; /* next text dest   */
+        mac->md_txt_off = (uintptr_t)(dest - tpl->td_text);
+        mac->md_res = 0;
+        memcpy(dest, scan, (size_t)src_len);
+        dest       += src_len;
+        *(dest++)   = NUL;
+        *dest       = NUL; /* double terminate */
+        tpl->td_scan = dest;
+    }
 
-    return pMac + 1;
+    return mac + 1;
 
- return_emtpy_expression:
-    pMac->ozText = 0;
-    pMac->res    = 0;
-    return pMac + 1;
+ return_emtpy_expr:
+    mac->md_txt_off = 0;
+    mac->md_res     = 0;
+    return mac + 1;
 }
 
 
@@ -341,17 +498,21 @@ mLoad_Unknown(tTemplate * pT, tMacro * pMac, char const ** ppzScan)
  *  For example, ELIF, ELSE and ENDIF are all known to AutoGen.
  *  However, the load function pointer for those functions points
  *  here, until an "IF" function is encountered.
+ *
+ *  @param tpl     template being loaded
+ *  @param mac     the macro descriptor
+ *  @param p_scan  the input text scanning pointer
+ *
+ *  @returns the macro table entry after mac
  */
-tMacro*
-mLoad_Bogus(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+macro_t *
+mLoad_Bogus(templ_t * tpl, macro_t * mac, char const ** p_scan)
 {
-    static char const zUnk[] =
-        "Unknown macro or invalid context in %s line %d:\n\t%s%s";
-
-    char const * pzSrc = (char const*)pMac->ozText; /* macro text */
+    char const * pzSrc = (char const*)mac->md_txt_off; /* macro text */
     char const * pzMac;
 
     char z[ 64 ];
+    (void)p_scan;
 
     if (pzSrc != NULL) {
         z[0] = ':';
@@ -364,20 +525,22 @@ mLoad_Bogus(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
         pzSrc = zNil;
 
     {
-        int ix = pMac->funcCode;
+        int ix = mac->md_code;
         if ((unsigned)ix >= FUNC_CT)
             ix = 0;
 
-        pzMac = apzFuncNames[ ix ];
+        pzMac = ag_fun_names[ ix ];
     }
 
-    pzSrc = aprf(zUnk, pT->pzTplFile, pMac->lineNo, pzMac, pzSrc);
+    pzSrc = aprf(LD_BOGUS_UNKNOWN, tpl->td_file, mac->md_line, pzMac, pzSrc);
 
-    AG_ABEND_IN(pT, pMac, pzSrc);
+    AG_ABEND_IN(tpl, mac, pzSrc);
     /* NOTREACHED */
     return NULL;
 }
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

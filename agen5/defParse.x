@@ -4,10 +4,8 @@
  *
  * Definition parser functions.
  *
- *  Time-stamp:        "2011-06-03 12:20:23 bkorb"
- *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -45,71 +43,77 @@ dp_invalid_transition(te_dp_state st, te_dp_event evt)
 }
 
 static te_dp_state
-dp_do_empty_val(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_empty_val(te_dp_state initial, te_dp_state maybe_next,
+                te_dp_event trans_evt)
 {
     /*
      *  Our state is either "have-name" or "indx-name" and we found a ';',
      *  end of statement.  It is a string value with an empty string.
      */
-    tDefEntry * pDE = findPlace(pz_new_name, NULL);
+    def_ent_t * pDE = number_and_insert_ent(pz_new_name, NULL);
 
-    pDE->val.pzText = (char *)zEmpty;
-    pDE->valType    = VALTYP_TEXT;
+    (void)initial; (void)trans_evt;
+
+    pDE->de_val.dvu_text = (char *)zNil;
+    pDE->de_type    = VALTYP_TEXT;
     if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
-        print_def(pDE);
+        print_ent(pDE);
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_end_block(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_end_block(te_dp_state initial, te_dp_state maybe_next,
+                te_dp_event trans_evt)
 {
-    if (stackDepth <= 0)
+    if (ent_stack_depth <= 0)
         yyerror((void*)"Too many close braces");
 
-    pCurrentEntry = ppParseStack[ stackDepth-- ];
+    (void)initial; (void)trans_evt;
+
+    curr_ent = ent_stack[ ent_stack_depth-- ];
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_have_name_lit_eq(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_need_value_delete_ent(te_dp_state initial, te_dp_state maybe_next,
+                            te_dp_event trans_evt)
 {
+    (void)initial; (void)trans_evt;
+    delete_ent(curr_ent);
+    return maybe_next;
+}
+
+static te_dp_state
+dp_do_have_name_lit_eq(te_dp_state initial, te_dp_state maybe_next,
+                       te_dp_event trans_evt)
+{
+    (void)initial; (void)trans_evt;
     /*
      *  Create a new entry but defer "makeMacro" call until we have the
      *  assigned value.
      */
-    findPlace(pz_new_name, NULL);
+    number_and_insert_ent(pz_new_name, NULL);
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_indexed_name(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_indexed_name(te_dp_state initial, te_dp_state maybe_next,
+                   te_dp_event trans_evt)
 {
+    (void)initial; (void)trans_evt;
     /*
      *  Create a new entry with a specified indes, but defer "makeMacro" call
      *  until we have the assigned value.
      */
-    findPlace(pz_new_name, pz_token);
+    number_and_insert_ent(pz_new_name, token_str);
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_invalid(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_invalid(te_dp_state initial, te_dp_state maybe_next,
+              te_dp_event trans_evt)
 {
+    (void)maybe_next;
     dp_invalid_transition(initial, trans_evt);
     yyerror((void*)"invalid transition");
     /* NOTREACHED */
@@ -117,129 +121,123 @@ dp_do_invalid(
 }
 
 static te_dp_state
-dp_do_need_name_end(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_need_name_end(te_dp_state initial, te_dp_state maybe_next,
+                    te_dp_event trans_evt)
 {
-    if (stackDepth != 0)
+    (void)initial; (void)trans_evt;
+    if (ent_stack_depth != 0)
         yyerror((void*)"definition blocks were left open");
 
     /*
      *  We won't be using the parse stack any more.
      *  We only process definitions once.
      */
-    if (ppParseStack != parseStack)
-        AGFREE(ppParseStack);
+    if (ent_stack != dft_ent_stack)
+        AGFREE(ent_stack);
 
     /*
      *  The seed has now done its job.  The real root of the
      *  definitions is the first entry off of the seed.
      */
-    rootDefCtx.pDefs = rootDefCtx.pDefs->val.pDefEntry;
+    root_def_ctx.dcx_defent = root_def_ctx.dcx_defent->de_val.dvu_entry;
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_need_name_var_name(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_need_name_var_name(te_dp_state initial, te_dp_state maybe_next,
+                         te_dp_event trans_evt)
 {
-    pz_new_name = pz_token;
+    (void)initial; (void)trans_evt;
+    pz_new_name = token_str;
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_next_val(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_next_val(te_dp_state initial, te_dp_state maybe_next,
+               te_dp_event trans_evt)
 {
+    (void)initial; (void)trans_evt;
     /*
      *  Clone the entry name of the current entry.
      */
-    findPlace(pCurrentEntry->pzDefName, NULL);
+    number_and_insert_ent(curr_ent->de_name, NULL);
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_start_block(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_start_block(te_dp_state initial, te_dp_state maybe_next,
+                  te_dp_event trans_evt)
 {
-    if (pCurrentEntry->valType == VALTYP_TEXT)
+    (void)initial; (void)trans_evt;
+    if (curr_ent->de_type == VALTYP_TEXT)
         yyerror((void*)"assigning a block value to text name");
-    pCurrentEntry->valType = VALTYP_BLOCK; /* in case not yet determined */
+    curr_ent->de_type = VALTYP_BLOCK; /* in case not yet determined */
 
     if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
-        print_def(pCurrentEntry);
+        print_ent(curr_ent);
 
-    if (++stackDepth >= stackSize) {
-        tDefEntry** ppDE;
-        stackSize += stackSize / 2;
+    if (++ent_stack_depth >= ent_stack_sz) {
+        def_ent_t** ppDE;
+        ent_stack_sz += ent_stack_sz / 2;
 
-        if (ppParseStack == parseStack) {
-            ppDE = AGALOC(stackSize * sizeof(void*), "def stack");
-            memcpy(ppDE, parseStack, sizeof(parseStack));
+        if (ent_stack == dft_ent_stack) {
+            ppDE = AGALOC(ent_stack_sz * sizeof(void*), "def stack");
+            memcpy(ppDE, dft_ent_stack, sizeof(dft_ent_stack));
         } else {
-            ppDE = AGREALOC(ppParseStack, stackSize * sizeof(void*),
+            ppDE = AGREALOC(ent_stack, ent_stack_sz * sizeof(void*),
                             "stretch def stack");
         }
-        ppParseStack = ppDE;
+        ent_stack = ppDE;
     }
-    ppParseStack[ stackDepth ] = pCurrentEntry;
-    pCurrentEntry = NULL;
+    ent_stack[ ent_stack_depth ] = curr_ent;
+    curr_ent = NULL;
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_str_value(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_str_value(te_dp_state initial, te_dp_state maybe_next,
+                te_dp_event trans_evt)
 {
-    if (pCurrentEntry->valType == VALTYP_BLOCK)
+    (void)initial; (void)trans_evt;
+    if (curr_ent->de_type == VALTYP_BLOCK)
         yyerror((void*)"assigning a block value to text name");
 
-    pCurrentEntry->val.pzText = pz_token;
-    pCurrentEntry->valType = VALTYP_TEXT;
+    curr_ent->de_val.dvu_text = token_str;
+    curr_ent->de_type = VALTYP_TEXT;
 
     if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
-        print_def(pCurrentEntry);
+        print_ent(curr_ent);
 
     /*
      *  The "here string" marker is the line before where the text starts.
      */
     if (trans_evt == DP_EV_HERE_STRING)
-        pCurrentEntry->srcLineNum++;
+        curr_ent->de_line++;
     return maybe_next;
 }
 
 static te_dp_state
-dp_do_tpl_name(
-    te_dp_state initial,
-    te_dp_state maybe_next,
-    te_dp_event trans_evt )
+dp_do_tpl_name(te_dp_state initial, te_dp_state maybe_next,
+               te_dp_event trans_evt)
 {
+    (void)initial; (void)trans_evt;
     /*
      *  Allow this routine to be called multiple times.
      *  This may happen if we include another definition file.
      */
-    if (rootDefCtx.pDefs == NULL) {
+    if (root_def_ctx.dcx_defent == NULL) {
         static char const zBogus[] = "@BOGUS@";
-        static tDefEntry  seed = {
+        static def_ent_t  seed = {
             NULL, NULL, NULL, NULL, (char*)zBogus, 0, { NULL },
             (char*)zBogus, 0, VALTYP_BLOCK };
 
-        rootDefCtx.pDefs = &seed;
+        root_def_ctx.dcx_defent = &seed;
 
         if (! HAVE_OPT(OVERRIDE_TPL))
-             pzTemplFileName = pz_token;
+             tpl_fname = token_str;
 
-        stackDepth = 0;
-        ppParseStack[0] = &seed;
+        ent_stack_depth = 0;
+        ent_stack[0] = &seed;
     }
     return maybe_next;
 }

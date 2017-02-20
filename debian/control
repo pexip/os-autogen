@@ -2,18 +2,22 @@ Source: autogen
 Section: devel
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
-XSBC-Pexip-Original-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-XSBC-Original-Maintainer: Bradley Smith <bradsmith@debian.org>
-Build-Depends: debhelper (>= 7), autotools-dev, gperf, guile-1.8-dev, libxml2-dev, texinfo, texlive, texi2html, quilt
-Standards-Version: 3.8.3
+XSBC-Pexip-Original-Maintainer: Andreas Metzler <ametzler@debian.org>
+Build-Depends: debhelper (>= 9), autotools-dev, gperf,
+ guile-2.0-dev (>= 2.0.11+1-0), libxml2-dev, pkg-config, dh-autoreconf,
+Build-Depends-Indep: texinfo, texlive, texi2html, cm-super-minimal
+Standards-Version: 3.9.6
 Homepage: http://www.gnu.org/software/autogen/
-Vcs-Git: http://git.brad-smith.co.uk/git/debian/pkg-autogen.git
-Vcs-Browser: http://git.brad-smith.co.uk/?p=debian/pkg-autogen.git
+Vcs-Git: git://anonscm.debian.org/collab-maint/autogen.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/autogen.git
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: autogen
 Architecture: any
-Depends: ${shlibs:Depends}, dpkg (>= 1.15.4) | install-info, libopts25-dev (= ${binary:Version}), ${misc:Depends}
+Depends: ${shlibs:Depends}, libopts25-dev (= ${binary:Version}),
+ ${misc:Depends}
+Recommends: autogen-doc
+Multi-Arch: foreign
 Description: automated text file generator
  AutoGen is a tool designed for generating program files that contain
  repetitive text with varied substitutions. This is especially valuable if
@@ -27,13 +31,28 @@ Description: automated text file generator
  .
  This package contains the development tools. libopts25-dev contains the
  static libraries and header files. libopts25 contains the shared libraries.
+ autogen-doc contains the PostScript and HTML documentation.
+
+Package: autogen-doc
+Section: doc
+Breaks: autogen (<< 1:5.18.3-4)
+Replaces: autogen (<< 1:5.18.3-4)
+Depends: ${misc:Depends}
+Architecture: all
+Description: automated text file generator - documentation
+ AutoGen is a tool designed for generating program files that contain
+ repetitive text with varied substitutions. This is especially valuable if
+ there are several blocks of such text that must be kept synchronized.
+ .
+ This package contains the PostScript and HTML documentation.
 
 Package: libopts25
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: libopts9
-Replaces: autogen, libopts9
+Replaces: autogen
 Section: libs
+Multi-Arch: same
 Description: automated option processing library based on autogen
  This package contains the shared libraries needed by binaries that use
  autoopts for option processing. The package containing the header files
@@ -42,10 +61,12 @@ Description: automated option processing library based on autogen
 
 Package: libopts25-dev
 Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: libopts25 (= ${binary:Version}), ${misc:Depends}
 Conflicts: libopts9-dev
 Replaces: autogen, libopts9-dev
 Section: libdevel
+Multi-Arch: same
 Description: automated option processing library based on autogen
  This package contains the header files and static libraries used by
  autoopts. The package containing the shared libraries is libopts25. The

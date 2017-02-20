@@ -1,4 +1,27 @@
+@ignore
 
+This file is part of AutoGen.
+AutoGen is free software.
+AutoGen is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+
+AutoGen is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+AutoGen is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file has the following md5sum:
+
+43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
+
+@end ignore
 @menu
 * Introduction::         AutoGen's Purpose
 * Definitions File::     AutoGen Definitions File
@@ -14,8 +37,6 @@
 * Function Index::       Function index
 @end menu
 
-@end ifinfo
-
 @ignore
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 @end ignore
@@ -30,10 +51,10 @@ maintenance of programs that contain large amounts of repetitious text.
 This is especially valuable if there are several blocks of such text
 that must be kept synchronized in parallel tables.
 
-One common example is the problem of maintaining the code required for
-processing program options.  Processing options requires a minimum of
-four different constructs be kept in proper order in different places in
-your program.  You need at least:
+An obvious example is the problem of maintaining the code required for
+processing program options and configuration settings.  Processing options
+requires a minimum of four different constructs be kept in proper order in
+different places in your program.  You need at least:
 
 @enumerate
 @item
@@ -47,13 +68,14 @@ a line in the usage text.
 @end enumerate
 
 @noindent
-You will need more things besides this if you choose to implement long
-option names, rc/ini/config file processing, environment variables and so on.
-All of this can be done mechanically; with the proper templates and this
-program.  In fact, it has already been done and AutoGen itself uses it@:
-@xref{AutoOpts}.  For a simple example of Automated Option processing,
-@xref{Quick Start}.  For a full list of the Automated Option features,
-@xref{Features}.
+You will need more things besides this if you choose to implement long option
+names, configuration (rc/ini) file processing, environment variable settings
+and keep all the documentation for these up to date.  This can be done
+mechanically; with the proper templates and this program.  In fact, it has
+already been done and AutoGen itself uses it@: @xref{AutoOpts}.  For a simple
+example of Automated Option processing, @xref{Quick Start}.  For a full list
+of the Automated Option features, @xref{Features}.  Be forewarned, though, the
+feature list is ridiculously extensive.
 
 @menu
 * Generalities::         The Purpose of AutoGen
@@ -135,7 +157,7 @@ functions are available for saving text or values for later use.
 This is just one simple example that shows a few basic features.
 If you are interested, you also may run "make check" with the
 @code{VERBOSE} environment variable set and see a number of other
-examples in the @file{agen5/test/testdir} directory.
+examples in the @file{agen5/test} directory.
 
 Assume you have an enumeration of names and you wish to associate some
 string with each name.  Assume also, for the sake of this example,
@@ -280,10 +302,9 @@ requirements:
 
 @enumerate
 @item
-It handles @code{trap $sig ":"} without output to standard out.
-This is done when the server shell is first started.
-If your shell does not handle this, then it may be able to by
-loading functions from its start up files.
+It handles @code{trap ":" $sig} without output to standard out.  This is done
+when the server shell is first started.  If your shell does not handle this,
+then it may be able to by loading functions from its start up files.
 @item
 At the beginning of each scriptlet, the command @code{\\cd $PWD}
 is inserted.  This ensures that @code{cd} is not aliased to something
@@ -451,10 +472,18 @@ it prints an error message and exits.
 @section Named Definitions
 @cindex definitions
 
-Any name may have multiple values associated with it in the definition
-file.  If there is more than one instance, the @strong{only} way to
-expand all of the copies of it is by using the FOR (@pxref{FOR}) text
-function on it, as described in the next chapter.
+A name is a sequence of characters beginning with an alphabetic character
+(@code{a} through @code{z}) followed by zero or more alpha-numeric
+characters and/or separator characters: hyphen (@code{-}), underscore
+(@code{_}) or carat (@code{^}).  Names are case insensitive.
+
+Any name may have multiple values associated with it.  Every name may be
+considered a sparse array of one or more elements.  If there is more than
+one value, the values my be accessed by indexing the value with
+@code{[index]} or by iterating over them using the FOR (@pxref{FOR}) AutoGen
+macro on it, as described in the next chapter.  Sparse arrays are specified
+by specifying an index when defining an entry
+(@pxref{Index Assignments,, Assigning an Index to a Definition}).
 
 There are two kinds of definitions, @samp{simple} and @samp{compound}.
 They are defined thus (@pxref{Full Syntax}):
@@ -462,13 +491,14 @@ They are defined thus (@pxref{Full Syntax}):
 @example
 compound_name '=' '@{' definition-list '@}' ';'
 
-simple_name '=' string ';'
+simple-name[2] '=' string ';'
 
-no_text_name ';'
+no^text^name ';'
 @end example
 
 @noindent
-@code{No_text_name} is a simple definition with a shorthand empty string
+@code{simple-name} has the third index (index number 2) defined here.
+@code{No^text^name} is a simple definition with a shorthand empty string
 value.  The string values for definitions may be specified in any of
 several formation rules.
 
@@ -513,9 +543,16 @@ list = @{ list_element = omega;  last;
 @subsection Double Quote String
 
 @cindex string, double quote
-The string follows the C-style escaping (@code{\}, @code{\n}, @code{\f},
-@code{\v}, etc.), plus octal character numbers specified as @code{\ooo}.
-The difference from "C" is that the string may span multiple lines.
+The string follows the C-style escaping, using the backslash to quote
+(escape) the following character(s).  Certain letters are translated to
+various control codes (e.g. @code{\n}, @code{\f}, @code{\t}, etc.).
+@code{x} introduces a two character hex code.  @code{0} (the digit zero)
+introduces a one to three character octal code (note: an octal byte followed
+by a digit must be represented with three octal digits, thus: @code{"\0001"}
+yielding a NUL byte followed by the ASCII digit 1).  Any other character
+following the backslash escape is simply inserted, without error, into the
+string being formed.
+
 Like ANSI "C", a series of these strings, possibly intermixed with
 single quote strings, will be concatenated together.
 
@@ -590,22 +627,24 @@ are @strong{dis}abled at this stage, so do not use them.
 @subsection A Here String
 @cindex here-string
 
-A @samp{here string} is formed in much the same way as a shell here doc.
-It is denoted with two less than characters(@code{<<}) and, optionally, a
-hyphen.  This is followed by optional horizontal white space and an
-ending marker-identifier.  This marker must follow the syntax rules
-for identifiers.  Unlike the shell version, however, you must not quote
-this marker.
+A @samp{here string} is formed in much the same way as a shell here doc.  It
+is denoted with two less than characters(@code{<<}) and, optionally, a hyphen.
+This is followed by optional horizontal white space and an ending
+marker-identifier.  This marker must follow the syntax rules for identifiers.
+Unlike the shell version, however, you must not quote this marker.
 
-The resulting string will start with the first character on the next line
-and continue up to but not including the newline that precedes the line that
-begins with the marker token.  If a hyphen follows the less than characters,
-then leading tabs will be stripped and the terminating marker will be
-recognized even if preceded by tabs.  No backslash or any other kind of
-processing is done on this string.  The characters are copied directly into
-the result string.
+The resulting string will start with the first character on the next line and
+continue up to but not including the newline that precedes the line that
+begins with the marker token.  The characters are copied directly into the
+result string.  Mostly.
 
-Here are two examples:
+If a hyphen follows the less than characters, then leading tabs will be
+stripped and the terminating marker will be recognized even if preceded by
+tabs.  Also, if the first character on the line (after removing tabs) is a
+backslash and the next character is a tab or space, then the backslash will
+be removed as well.  No other kind of processing is done on this string.
+
+Here are three examples:
 @example
 str1 = <<-  STR_END
         $quotes = " ' `
@@ -615,6 +654,10 @@ str2 = <<   STR_END
         $quotes = " ' `
         STR_END;
 STR_END;
+
+str3 = <<-  STR_END
+        \	$quotes = " ' `
+        STR_END;
 @end example
 The first string contains no new line characters.
 The first character is the dollar sign, the last the back quote.
@@ -624,6 +667,10 @@ is the tab character preceding the dollar sign.  The last character is
 the semicolon after the @code{STR_END}.  That @code{STR_END} does not
 end the string because it is not at the beginning of the line.  In the
 preceding case, the leading tab was stripped.
+
+The third string is almost identical to the first, except that the
+first character is a tab.  That is, it exactly matches the first line
+of the second string.
 
 @node concat-string
 @subsection Concatenated Strings

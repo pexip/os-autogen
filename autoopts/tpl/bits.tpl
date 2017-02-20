@@ -1,32 +1,28 @@
 [= AutoGen5 Template -*- Mode: C -*-
 
-h
-c
+h c
 
-#!/bin/sh
-
-## Time-stamp:      "2010-07-17 10:09:01 bkorb"                                 
-## Author:          Bruce Korb <bkorb@gnu.org>                                  
-##                                                                              
-##  This file is part of AutoOpts, a companion to AutoGen.                      
-##  AutoOpts is free software.                                                  
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved     
-##                                                                              
-##  AutoOpts is available under any one of two licenses.  The license           
-##  in use must be one of these two and the choice is under the control         
-##  of the user of the license.                                                 
-##                                                                              
-##   The GNU Lesser General Public License, version 3 or later                  
-##      See the files "COPYING.lgplv3" and "COPYING.gplv3"                      
-##                                                                              
-##   The Modified Berkeley Software Distribution License                        
-##      See the file "COPYING.mbsd"                                             
-##                                                                              
-##  These files have the following md5sums:                                     
-##                                                                              
-##  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3                  
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3                 
-##  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd                   
+## Author:          Bruce Korb <bkorb@gnu.org>
+##
+##  This file is part of AutoOpts, a companion to AutoGen.
+##  AutoOpts is free software.
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##
+##  AutoOpts is available under any one of two licenses.  The license
+##  in use must be one of these two and the choice is under the control
+##  of the user of the license.
+##
+##   The GNU Lesser General Public License, version 3 or later
+##      See the files "COPYING.lgplv3" and "COPYING.gplv3"
+##
+##   The Modified Berkeley Software Distribution License
+##      See the file "COPYING.mbsd"
+##
+##  These files have the following sha256 sums:
+##
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
  (define base-name     "")
  (define BASE-NAME     "")
@@ -195,7 +191,7 @@ FOR bit (for-from 0) (for-by 1) =][=
          (set! ix          (string-table-add "nm" tmp))
          (set! offset-list (string-append offset-list (sprintf "%d\n" ix)))
          (set! sorted-off  (string-append sorted-off
-                           (sprintf "%-40s { %3d, %3d }\n" tmp ix (for-index))))
+               (sprintf "%-40s { %3d, %3d }\n" tmp ix (for-index))))
       )
 
       (set! offset-list (string-append offset-list "0\n" ))
@@ -542,7 +538,7 @@ ESAC                =]
 /* end of [= (out-name) =] */
 [=#
 
-= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
 
 DEFINE  preamble    =][=
 
@@ -569,7 +565,7 @@ _EOF_
 
 ENDDEF  preamble
 
-= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
 
 DEFINE  emit-bit-list       =][=
 
@@ -671,7 +667,7 @@ DEFINE  emit-word-macro     =][=
 [= ENDIF omit-test-n-set =][=
 ENDDEF  emit-word-macro
 
-= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =][=
 
 DEFINE  emit-loop-macro
 

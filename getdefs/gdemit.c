@@ -1,13 +1,15 @@
+
 /**
- * \file gdemit.c
- *
- *  getdefs Copyright (c) 1999-2011 by Bruce Korb - all rights reserved
+ *  @file gdemit.c
+ *  @addtogroup columns
+ *  @{
+ */
+/*
+ *  getdefs Copyright (C) 1999-2014 by Bruce Korb - all rights reserved
  *
  *  Author:            Bruce Korb <bkorb@gnu.org>
- *  Time-stamp:        "2011-04-22 12:47:57 bkorb"
- *
  *  This file is part of AutoGen.
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -43,7 +45,7 @@ static char*
 emit_subblock(char const * pzDefList, char * pzText, char * pzOut);
 
 static char*
-subblock_str(char ** ppzText, u_int sepChar, char * pzOut);
+subblock_str(char ** ppzText, uint_t sepChar, char * pzOut);
 /* = = = END-STATIC-FORWARD = = = */
 
 /*
@@ -76,7 +78,7 @@ compress_def(char * pz)
      */
     nlCt =  0;
 
-skip_leading_space:
+ skip_leading_space:
     while (isspace( *pzSrc )) {
         if (*(pzSrc++) == '\n') {
             nlCt++;
@@ -289,8 +291,8 @@ list_attrib(char * pzText, char * pzOut)
 {
     static char const  zStart[]  = " = ";
 
-    u_int sepChar   = ',';
-    int   FirstAttr = 1;
+    uint_t sepChar   = ',';
+    int    FirstAttr = 1;
 
     strcpy(pzOut, zStart);
     pzOut += sizeof(zStart) - 1;
@@ -301,7 +303,7 @@ list_attrib(char * pzText, char * pzOut)
      *  a quote character.
      */
     if (ispunct(*pzText) && (*pzText != '"') && (*pzText != '\''))
-        sepChar = (u_int)*(pzText++);
+        sepChar = (uint_t)*(pzText++);
     while (isspace(*pzText)) pzText++;
 
     /*
@@ -318,7 +320,7 @@ list_attrib(char * pzText, char * pzOut)
          *  If the first thing we find is the separator char,
          *  then emit the empty string.
          */
-        if ((u_int)*pzText == sepChar) {
+        if ((uint_t)*pzText == sepChar) {
             *(pzOut++) = '\''; *(pzOut++) = '\'';
             pzText++;
             continue;
@@ -416,7 +418,7 @@ emit_attribute(char const ** def_pp, char ** out_pp)
         }
     }
 
-leave_emit_attribute:
+ leave_emit_attribute:
 
     *out++  = ';';
     *out_pp = out;
@@ -432,8 +434,8 @@ emit_subblock(char const * pzDefList, char * pzText, char * pzOut)
     static char const zStart[]  = " = {";
     static char const zEnd[]    = "\n    };\n";
 
-    u_int sepChar   = ',';
-    int   FirstAttr = 1;
+    uint_t sepChar   = ',';
+    int    FirstAttr = 1;
 
     /*
      *  Advance past subblock name to the entry name list
@@ -448,7 +450,7 @@ emit_subblock(char const * pzDefList, char * pzText, char * pzOut)
      *  a quote character.
      */
     if (ispunct(*pzText) && (*pzText != '"') && (*pzText != '\''))
-        sepChar = (u_int)*(pzText++);
+        sepChar = (uint_t)*(pzText++);
 
     /*
      *  Loop for as long as we have text entries and subblock
@@ -459,7 +461,7 @@ emit_subblock(char const * pzDefList, char * pzText, char * pzOut)
          *  IF the first character is the separator,
          *  THEN this entry is skipped.
          */
-        if ((u_int)*pzText == sepChar) {
+        if ((uint_t)*pzText == sepChar) {
             next_def_entry(&pzText, &pzDefList);
             continue;
         }
@@ -488,7 +490,7 @@ emit_subblock(char const * pzDefList, char * pzText, char * pzOut)
          *  IF there are no data for this attribute,
          *  THEN we leave the definition empty.
          */
-        if ((u_int)*pzText == sepChar) {
+        if ((uint_t)*pzText == sepChar) {
             pzText++;
             continue;
         }
@@ -512,7 +514,7 @@ emit_subblock(char const * pzDefList, char * pzText, char * pzOut)
  *  correctly reconstruct it.
  */
 static char*
-subblock_str(char ** ppzText, u_int sepChar, char * pzOut)
+subblock_str(char ** ppzText, uint_t sepChar, char * pzOut)
 {
     char * pzText  = *ppzText;
     char * pcComma;
@@ -535,7 +537,7 @@ subblock_str(char ** ppzText, u_int sepChar, char * pzOut)
          *  separation character.
          */
         while (isspace(*pzText)) pzText++;
-        if (*pzText == sepChar) {
+        if ((uint_t)*pzText == sepChar) {
             pzText++;
             while (isspace(*pzText)) pzText++;
         }
@@ -593,7 +595,8 @@ subblock_str(char ** ppzText, u_int sepChar, char * pzOut)
     return pzOut;
 }
 
-/* emacs
+/** @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

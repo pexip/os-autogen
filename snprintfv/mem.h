@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -50,9 +49,9 @@
 
 /* This is the API we use throughout libsnprintfv. */
 #define snv_new(type, count)		\
-		((type*)snv_malloc((size_t)sizeof(type) * (count)))
+		((type*)snv_malloc(sizeof(type) * (size_t)(count)))
 #define snv_renew(type, ptr, count)	\
-    		((type*)snv_xrealloc((ptr), (size_t)sizeof(type) * (count)))
+    		((type*)snv_xrealloc((ptr), sizeof(type) * (size_t)(count)))
 #define snv_delete(old)	snv_free(old)
 
 #ifdef __cplusplus

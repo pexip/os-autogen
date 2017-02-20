@@ -2,10 +2,8 @@
 # config/bootstrap.local --- maintainer's bootstrap script
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
-# Time-stamp:        "2010-11-08 09:18:53 bkorb"
-##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -36,7 +34,7 @@ doit ()
     if test "x$1" != x:
     then
         echo "RUN:  $*"
-        eval "$@" || exit 1
+        eval "$@" || die "FAILURE $?:  $*"
     fi
 }
 
@@ -89,9 +87,11 @@ test -n "${BASH_VERSION}" || {
 
 test -z "${BASH_VERSION}" && local() { : ; }
 # Setup run_ag
-tpl_dir='-L'$(\cd ${top_srcdir}/autoopts/tpl && pwd)' -L'$(
-    \cd ${top_builddir}/autoopts/tpl && pwd)
-typeset -r tpl_dir
+f=$(\cd ${top_srcdir}/autoopts/tpl >/dev/null && pwd)
+g=$(\cd ${top_builddir}/autoopts/tpl >/dev/null && pwd)
+tpl_dir='-L'$f
+test "X$f" = "X$g" || tpl_dir=$tpl_dir' -L'$g
+readonly tpl_dir
 
 if ${VERBOSE}
 then
@@ -103,7 +103,11 @@ then
         local tag=${1} ; shift
         # local vgfile=/tmp/vglog/${tag}-%p.txt
         local tfile='>>'ag-${tag}-$$.log
-        tag="-MFstamp-${tag} --trace=every --trace-out=${tfile}"
+        if test -n "$DEPFILE"
+        then tag="-MTstamp-${tag} -MF${DEPFILE} -MP"
+        else tag="-MFstamp-${tag} -MP"
+        fi
+        tag="${tag} --trace=every --trace-out=${tfile}"
 
         MALLOC_CHECK_=2 \
             ${AGexe} ${tpl_dir} ${tag} "$@" || die "FAILED: ${AGexe} $*"
@@ -112,7 +116,11 @@ else
     run_ag()
     {
         # local vgfile=/tmp/vglog/${1}-%p.txt
-        local tag="-MFstamp-${1}" ; shift
+        if test -n "$DEPFILE"
+        then tag="-MTstamp-${1} -MF${DEPFILE} -MP"
+        else tag="-MFstamp-${1} -MP"
+        fi
+        shift
 
         echo ${AGexe} ${tpl_dir} ${tag} "$@"
         ${AGexe} ${tpl_dir} ${tag} "$@" || die "FAILED: ${AGexe} $*"
@@ -126,8 +134,12 @@ test "X${CDPATH}" = X || {
 }
 
 nl=$'\n'
+ht=$'\t'
+GREP=$(command -v grep)
+EGREP=${GREP}\ -E
+FGREP=${GREP}\ -F
 
-export setx dashx VERBOSE nl
+export setx dashx VERBOSE nl ht
 
 # # # # # # # # # # # # # # # # # # #
 #
@@ -154,13 +166,15 @@ make_opts()
 #
 make_proto()
 {
-    rm -f proto.h
-    exec 5> proto.h
+    local target=stamp-proto temp_proto=proto-h$$ proto_h=proto.h
+    echo '#' stamped `date` > ${target}-$$
+
+    exec 5> $temp_proto
 
     local files=`ls -1 *.c | grep -v 'fsm\.c$'`
-    local dirname=
+    local locs=
     local base_dir=`basename \`pwd\``
-    local marker=`echo ${base_dir} | tr a-z A-Z`_PROTO_H_GUARD
+    local marker=`echo ${base_dir} | tr '[a-z]' '[A-Z]'`_PROTO_H_GUARD
     local ct=0
 
     cat >&5 <<- _EOF_
@@ -172,14 +186,9 @@ make_proto()
 	#ifndef ${marker}
 	#define ${marker} 1
 
-	#ifndef LOCAL
-	#  define LOCAL extern
-	#  define REDEF_LOCAL 1
-	#else
-	#  undef  REDEF_LOCAL
-	#endif
 	_EOF_
 
+    deplist=
     for f in ${files}
     do
         test ! -f ${f} && echo "not a file:  $f" >&2 && continue
@@ -197,12 +206,13 @@ make_proto()
             cat $f.Y >&4
             exec 4>&-
 
-            if cmp $f.X $f > /dev/null 2>&1
-            then :
-            else echo WARNING: ${f} has been updated >&2
-                mv -f $f.X $f ; fi
+            cmp -s $f.X $f || {
+                echo WARNING: ${f} has been updated >&2
+                mv -f $f.X $f
+            }
 
             rm -f $f.[XY]
+            deplist=$deplist' \'$nl$ht$f
             ;;
 
         ( 0 ) : ;;
@@ -211,22 +221,35 @@ make_proto()
             continue
         esac
 
-        ct=`echo \`egrep '^LOCAL ' $f | wc -l\` `
-        test $ct -eq 0 && continue
-
-        echo $'/*\n *  Extracted from '$f$'\n */' >&5
-        sed -n '/^LOCAL /,/^{/p' $f | \
-            sed 's/)$/);/;s/^{.*//' >&5
+        egrep '^LOCAL ' $f >/dev/null && {
+            printf '/*\n *  Extracted from %s\n */\n' $f
+            sed -n '/^LOCAL /,/^{/p' $f | \
+                sed 's/^LOCAL /static /;s@)$@);@;s/^{.*//'
+        } >&5
     done
 
-    cat >&5 <<- _EOF_
-	#ifdef REDEF_LOCAL
-	#  undef LOCAL
-	#  define LOCAL
-	#endif
-	#endif /* ${marker} */
-	_EOF_
+    test -d "$DEPDIR" && {
+        echo "${proto_h}  : stamp-proto"
+        echo "stamp-proto : $deplist"
+    } > $DEPDIR/stamp-proto.d
+
+    echo "#endif /* ${marker} */" >&5
     exec 5>&-
+
+    if test -f ${proto_h} && cmp -s ${temp_proto} ${proto_h}
+    then
+        rm -f ${temp_proto}
+        if test -f ${target}
+        then
+            rm -f ${target}-$$
+        else
+            mv -f ${target}-$$ ${target}
+            touch ${proto_h}
+        fi
+    else
+        mv -f ${temp_proto} ${proto_h}
+        mv -f ${target}-$$  ${target}
+    fi
 }
 
 # Local Variables:

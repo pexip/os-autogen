@@ -3,12 +3,11 @@
 
 # rc.test ---  test loading and saving of rc files
 #
-# Time-stamp:        "2011-02-02 11:55:25 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -20,22 +19,21 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
 . ./defs
 
 AUTOOPTS_TRACE=every
 AUTOOPTS_TRACE_OUT=">>`pwd`/${testname}-ag-trace.txt"
 export AUTOOPTS_TRACE AUTOOPTS_TRACE_OUT
-set -x
 
 # # # # # # # # # # DEFINITIONS FILE # # # # # # # # #
-
-: "creating ${testname}.def in `pwd`"
+startdir=`pwd`
+: "creating ${testname}.def in $startdir"
 
 TESTNAME=RC
 export TESTNAME
@@ -56,18 +54,18 @@ ${AG_L} ${testname}.def || \
 
 # # # # # # # # # # VALIDATE HELP # # # # # # # # #
 
-cat > ${testname}-base1.help <<_EOF_
+clean_help > ${testname}-base1.help <<_EOF_
 test_rc - Test AutoOpts for rc
-USAGE:  rc [ -<flag> [<val>] | --<name>[{=| }<val>] ]... mumble
+Usage:  rc [ -<flag> [<val>] | --<name>[{=| }<val>] ]... mumble
   Flg Arg Option-Name    Description
    -o no  option         The option option descrip
    -s Str second         The second option descrip
    -t Str third          The third option descrip
-   -? no  help           Display extended usage information and exit
-   -! no  more-help      Extended usage information passed thru pager
-   -> opt save-opts      Save the option state to a config file
-   -< Str load-opts      Load options from a config file
-				- disabled as --no-load-opts
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
+   -> opt save-opts      save the option state to a config file
+   -< Str load-opts      load options from a config file
+				- disabled as '--no-load-opts'
 				- may appear multiple times
 
 Options are specified by doubled hyphens and their name or by a single
@@ -92,16 +90,9 @@ cmp ${testname}-*1.help || \
 #  We change into the ${testname}.run directory and run the program.
 #  It should pick up the value saved into the ${testname}.rc dir.
 #
-
-echo from `pwd`:
-echo "./${testname} --second=third '->'${testname}.rc/${testname}.file"
 ./${testname} --second=third '->'${testname}.rc/${testname}.file
 
-ls -l ${testname}.rc/${testname}.file
-
 cd ${testname}.run
-echo from `pwd`:
-echo '../${testname} -t xxx MUMBLE > ${testname}.cmds'
 ../${testname} -t xxx MUMBLE > ${testname}.cmds
 
 #  This is what the output should be:
@@ -204,7 +195,7 @@ cmp  ${testname}.cmds ${testname}.test || {
 
 # # # # # # # # # # THIRD TEST OUTPUT FILE # # # # # # # # #
 
-cd ${testsubdir}
+cd ${startdir}
 
 echo 'disable-save;' >> ${testname}.def
 
@@ -214,7 +205,7 @@ ${AG_L} ${testname}.def || \
 compile "--help"
 ${SED} 's@\( - reading file \).*\(/'${testname}.rc/rc.file'\)@\1....\2@' \
     ${testname}.help > ${testname}-res2.help
-egrep -v ' save-opts  +Save ' ${testname}-base1.help > ${testname}-base2.help
+egrep -v ' save-opts  +save ' ${testname}-base1.help > ${testname}-base2.help
 
 cmp ${testname}-*2.help || \
   failure "`diff ${testname}-*2.help`"
@@ -228,9 +219,8 @@ compile "--help"
 ${SED} 's@\( - reading file \).*\(/'${testname}.rc/rc.file'\)@\1....\2@' \
     ${testname}.help > ${testname}-res3.help
 
-${SED} -e '/ load-opts   *Load /,/multiple times$/d' \
-    -e '/ save-opts   *Save /d' \
-    ${testname}-base1.help > ${testname}-base3.help
+${SED} -e '/ load-opts   *load /,/multiple times$/d' \
+    ${testname}-base2.help > ${testname}-base3.help
 
 cmp ${testname}-*3.help || \
   failure "`diff ${testname}-*3.help`"

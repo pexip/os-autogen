@@ -5,12 +5,11 @@
 #                    make sure that when it is not specified
 #                    then option processing consumes all args.
 #
-# Time-stamp:        "2011-01-28 17:46:20 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -22,11 +21,11 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 #
 # ----------------------------------------------------------------------
 
@@ -108,23 +107,20 @@ cat > ${testname}.def <<-  _EOF_
 		     */
 		    switch (WHICH_IDX_PRINT) {
 		    case NO_EQUIVALENT:
-		        /* FALLTHROUGH */
 		    case INDEX_OPT_PRINT:
-		        /* FALLTHROUGH */
 		    case INDEX_OPT_DUMP_LOG:
-		        /* FALLTHROUGH */
 		    case INDEX_OPT_ALL_DUMP:
 		        if (COUNT_OPT( MSG_NUM ) > 1) {
-		            fputs( "Except for 'set' and 'unset' functions, "
-		                   "only one 'msg-num' is allowed\n", stderr );
-		            USAGE( EXIT_FAILURE );
+		            fputs("Except for 'set' and 'unset' functions, "
+		                  "only one 'msg-num' is allowed\n", stderr);
+		            USAGE(EXIT_FAILURE);
 		        }
 		        break;
 		    case INDEX_OPT_SET:
-		        set_options( 1, pOptDesc->pzLastArg );
+		        set_options(1, pOptDesc->pzLastArg);
 		        break;
 		    case INDEX_OPT_UNSET:
-		        set_options( 0, pOptDesc->pzLastArg );
+		        set_options(0, pOptDesc->pzLastArg);
 		        break;
 		    };
 		_EndOfFlagCode_;
@@ -141,7 +137,7 @@ cat > ${testname}.def <<-  _EOF_
 		 "#include \"config.h\"\n"
 		 "#include \"compat/compat.h\"";
 
-		include = 'void set_options( int mode, char const* pzArg );';
+		include = 'void set_options(int mode, char const* pzArg);';
 
 	main = {
 	   main-type = include;
@@ -156,12 +152,12 @@ cat > ${testname}.def <<-  _EOF_
 cat > ${testname}.tpl <<- \__EOF
 	[= AutoGen5 Template -*- Mode: C -*- =]
 	[=(define proc-list "")=]
-	typedef int (do_proc_t)( void );
+	typedef int (do_proc_t)(void);
 	extern do_proc_t
 	[=  (set! proc-list (string-append "do_print_undefined,\ndo_print_"
 	                    (join ",\ndo_print_" (stack "flag[0].keyword"))  ))
 	    (set! proc-list
-	         (shell (string-append "columns -I4 --spread=1 <<_EOF_\n"
+	         (shell (string-append "${CLexe} -I4 --spread=1 <<_EOF_\n"
 	            proc-list "\n_EOF_")) )
 	    proc-list =];
 	do_proc_t* do_proc[] = {
@@ -170,9 +166,9 @@ cat > ${testname}.tpl <<- \__EOF
 	[=(shellf "procs='%s' ; ix=0 ; for p in ${procs}
 	do
 	  p=`echo $p | sed s/,//`
-	  echo int ${p}'( void ) {'
-	  printf 'fputs( \"'${p}'\\\\n\", stdout );\n'
-	  echo return ${ix}'; }'
+	  echo int ${p}'(void) {'
+	  printf '    fputs(\"'${p}'\\\\n\", stdout);\n'
+	  echo   \"    return ${ix}; }\"
 	  ix=`expr $ix + 1`
 	done" proc-list) =]
 
@@ -189,30 +185,30 @@ cat > ${testname}.tpl <<- \__EOF
 	}
 
 	int
-	do_set( int which_way )
+	do_set(int which_way)
 	{
-	    printf( "PRINT = 0x%lX\n", DESC(PRINT).optCookie );
-	    printf( "SET   = 0x%lX\n", DESC(SET).optCookie );
+	    printf("PRINT = 0x%lX\n", (unsigned long)DESC(PRINT).optCookie);
+	    printf("SET   = 0x%lX\n", (unsigned long)DESC(SET).optCookie);
 	    if (which_way)
-	        printf( "0x%lX\n", OPT_VALUE_SET );
+	        printf("0x%lX\n", OPT_VALUE_SET);
 	    else
-	        printf( "0x%lX\n", (~ OPT_VALUE_SET) & SET_MEMBERSHIP_MASK );
+	        printf("0x%lX\n", (~ OPT_VALUE_SET) & SET_MEMBERSHIP_MASK);
 	    return 0;
 	}
 
 	void
-	set_options( int mode, char const* pzArg )
+	set_options(int mode, char const* pzArg)
 	{
-	    exit( atoi( pzArg ));
+	    exit(atoi(pzArg));
 	}
 	__EOF
 
-cat >> ${testname}.tpl <<__EOF
+cat >> ${testname}.tpl <<- __EOF
 	int
 	main( int argc, char** argv )
 	{
 	    {
-	        int ct = optionProcess( &${testname}_testOptions, argc, argv );
+	        int ct = optionProcess(&${testname}_testOptions, argc, argv);
 	        argc -= ct;
 	        argv += ct;
 	    }
@@ -229,8 +225,8 @@ cat >> ${testname}.tpl <<__EOF
 	        case INDEX_OPT_PRINT:    res = do_proc[OPT_VALUE_PRINT](); break;
 	        case INDEX_OPT_DUMP_LOG: res = do_dump_log();  break;
 	        case INDEX_OPT_ALL_DUMP: res = do_all_dump();  break;
-	        case INDEX_OPT_SET:      res = do_set( 1 );    break;
-	        case INDEX_OPT_UNSET:    res = do_set( 0 );    break;
+	        case INDEX_OPT_SET:      res = do_set(1);    break;
+	        case INDEX_OPT_UNSET:    res = do_set(0);    break;
 	        }
 	        return res;
 	    }
@@ -249,39 +245,40 @@ compile "-?"
 
 basehlp=${testname}.hlp
 echo creating ${basehlp}
-cat > ${basehlp} <<_EOF_
+clean_help > ${basehlp} <<_EOF_
 ${testname}-test - test complex main procedure
-USAGE:  ${testname} { -<flag> [<val>] | --<name>[{=| }<val>] }... [ <node> ]
+Usage:  ${testname} { -<flag> [<val>] | --<name>[{=| }<val>] }... [ <node> ]
   Flg Arg Option-Name   Req?  Description
    -p KWd print          YES  Print operational info
    -D no  dump-log       opt  Dump the program log
-				- an alternate for print
+				- an alternate for 'print'
    -A no  all-dump       opt  Dump everything we've got
-				- an alternate for print
+				- an alternate for 'print'
    -s Mbr set            opt  set options
-				- an alternate for print
+				- an alternate for 'print'
    -u Str unset          opt  unset debug options
-				- an alternate for print
+				- an alternate for 'print'
    -m Str msg-num        opt  message number
 				- may not be preset
 				- may appear multiple times
-   -? no  help           opt  Display extended usage information and exit
-   -! no  more-help      opt  Extended usage information passed thru pager
+   -? no  help           opt  display extended usage information and exit
+   -! no  more-help      opt  extended usage information passed thru pager
 
 Options are specified by doubled hyphens and their name or by a single
 hyphen and the flag character.
 
 The valid "print" option keywords are:
   one two three four five six seven eight nine ten
-  or an integer between 0 and 9
+  or an integer from 1 through 10
 The valid "set" option keywords are:
   first      second     third      fourth     fifth      sixth      seventh
   eighth     ninth      tenth      eleventh   twelfth    thirteenth fourteenth
   fifteenth  sixteenth
-  or an integer between 0 and 15
-or you may use a numeric representation.  Preceding these with a '!' will
-clear the bits, specifying 'none' will clear all bits, and 'all' will set them
-all.  Multiple entries may be passed as an option argument list.
+  or an integer mask with any of the lower 16 bits set
+or you may use a numeric representation.  Preceding these with a '!'
+will clear the bits, specifying 'none' will clear all bits, and 'all'
+will set them all.  Multiple entries may be passed as an option
+argument list.
 _EOF_
 
 cmp -s ${testname}.h*lp || \

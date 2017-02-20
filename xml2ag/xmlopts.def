@@ -1,12 +1,12 @@
 /* -*- Mode: conf -*- */
 
 autogen definitions options;
+addtogroup = xml2ag;
 
-// Time-stamp:        "2011-03-24 23:19:16 bkorb"
-
-/*
+/* xmlopts.def: option definitions for xml2ag
+ *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -51,6 +51,12 @@ export = <<-  EOExport
 	EOExport;
 
 flag = {
+    name        = the-xml2ag-option;
+    documentation;
+    descrip = 'All other options are derived from autogen';
+};
+
+flag = {
     name        = output;
     value       = O;
     arg-type    = string;
@@ -70,6 +76,18 @@ flag = {
 	        exit(EXIT_FAILURE);
 	    }
 	FLAG_CODE_END ;
+};
+
+flag = {
+    name        = autogen-options;
+    documentation = <<- _EODoc_
+	These options are @i{mostly} just passed throug to @code{autogen}.
+	The one exception is @code{--override-tpl} which replaces the
+	default template in the output definitions.  It does not get passed
+	through on the command line.
+	_EODoc_;
+
+    descrip = 'All other options';
 };
 
 #define XML2AG
@@ -159,4 +177,4 @@ prog-info-descrip = <<-  END_DETAIL
 	it becomes impossible to have the definitions be the same type
 	(compound or text values).
 	END_DETAIL ;
-/* end of opts.def */
+/* end of xmlopts.def */

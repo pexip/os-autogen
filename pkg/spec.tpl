@@ -1,9 +1,7 @@
 [= AutoGen5 Template spec =]
 [= #
-   Time-stamp:        "2010-02-24 08:36:09 bkorb"
-
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -42,7 +40,7 @@ libopts LGPL  This is a tear-off, redistributable option processing library
 autofsm BSD   This is a template for producing finite state machine programs
 
 The Copyright itself is privately held by Bruce Korb.
-Copyright (c) [= copyright.date =] by [= copyright.owner
+Copyright (C) [= copyright.date =] by [= copyright.owner
                 =].  All rights reserved.  Licensed under GPL, [=#
                 =]version 2 or later.
 %prep
@@ -53,14 +51,15 @@ chmod -R +rw *
 %configure
 make CFLAGS="$RPM_OPT_FLAGS"
 
-if [ `id -u` -eq 0 ] && egrep -q ^nobody /etc/passwd
+if [ `id -u` -eq 0 ] && grep -E -q '^nobody:' /etc/passwd
 then
     echo "switching to user nobody to run 'make check'"
-    chown -R nobody . ; su -c "umask 002; make check || touch FAIL" nobody
+    chown -R nobody .
+    su -s /bin/bash -c "umask 002; make check || touch FAIL" nobody
+    test -f FAIL && exit 1 || :
 else
     make check
 fi
-[ -f FAIL ] && exit 1
 
 %install
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -70,9 +69,7 @@ make install DESTDIR=${RPM_BUILD_ROOT}
 # IF we have a valid file list OR the build root is _the_ root,
 # THEN skip the file list generation.
 #
-if test \( -f autogen-filelist \
-        -a -s autogen-filelist \) \
-        -o ${#RPM_BUILD_ROOT} -le 1
+if test -s autogen-filelist -o ${#RPM_BUILD_ROOT} -le 1
 then : ; else
   ( cd ${RPM_BUILD_ROOT}
     rm -f usr/share/info/dir
@@ -99,7 +96,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %files -f autogen-filelist
 %defattr(-,root,root)
 
-%doc AUTHORS TODO COPYING NEWS NOTES THANKS README VERSION
+%doc[=`
+for f in AUTHORS TODO COPYING NEWS THANKS README
+do test -f ${top_builddir}/$f -o -f ${top_srcdir}/$f && printf " $f" ; done
+`=]
 
 %changelog
 [=
@@ -128,6 +128,8 @@ echo \* ${date} ${name} \<${LOGNAME}@${domain}\> Regenerated
 (shell (out-pop #t))
 
 =]
+* Sun May  6 2012 Install only existing files to doc directory.
+- Omit NOTES and VERSION.
 * Fri Dec 31 2004 Bruce Korb <bkorb@gnu.org> Restored the file list
 * Wed Oct 27 2004 Ed Swierk <eswierk@users.sf.net> fixed up for Fedora
 * Tue Dec 16 2003 Richard Zidlicky <rz@linux-m68k.org> 5.5.7pre5-5

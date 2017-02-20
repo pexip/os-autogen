@@ -2,8 +2,7 @@
 ##
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-03-06 14:06:37 bkorb"
-## Copyright (c) 1992-2011 by Bruce Korb
+## Copyright (C) 1992-2014 by Bruce Korb
 ##
 ## This file is part of AutoGen.
 ##
@@ -34,11 +33,12 @@ RUNAG           = $(AGexe) -L$(top_srcdir)/autoopts/tpl \
 	-L$(top_builddir)/autoopts/tpl -MF$@
 man_MANS        = columns.1
 
-INCLUDES        = @INCLIST@
+AM_CPPFLAGS     = @INCLIST@
 
 CONFIG_CLEAN_FILES = $(BUILT_SOURCES) stamp-*
 MAINTAINERCLEANFILES = $(CONFIG_CLEAN_FILES)
 DISTCLEANFILES  = cols.c
+DOC_TIMEOUT     = -DLEVEL=section --timeout=`expr $(AG_TIMEOUT) '*' 3`
 
 gen : $(BUILT_SOURCES)
 
@@ -59,7 +59,7 @@ cols.c : Makefile
 
 stamp-agtexi : opts.def columns$(EXEEXT)
 	top_builddir=$(top_builddir) \
-	$(RUNAG) -Tagtexi-cmd.tpl -DLEVEL=section $(srcdir)/opts.def
+	$(RUNAG) -Tagtexi-cmd.tpl $(DOC_TIMEOUT) $(srcdir)/opts.def
 
 stamp-agman  : opts.def columns$(EXEEXT)
 	top_builddir=$(top_builddir) \
@@ -67,4 +67,4 @@ stamp-agman  : opts.def columns$(EXEEXT)
 
 .NOTPARALLEL:
 
-# Makefile.am ends here
+# end of Makefile.am

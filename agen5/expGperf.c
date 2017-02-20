@@ -1,14 +1,16 @@
 /**
  * @file expGperf.c
  *
- *  Time-stamp:        "2011-06-03 12:20:16 bkorb"
- *
  *  Create a perfect hash function program and use it to compute
  *  index values for a list of provided names.  It also documents how
  *  to incorporate that hashing function into a generated C program.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -65,11 +67,11 @@ HIDE_FN(SCM ag_scm_gperf(SCM name, SCM str))
 SCM
 ag_scm_make_gperf(SCM name, SCM hlist)
 {
-    static ag_bool do_cleanup = AG_TRUE;
+    static bool do_cleanup = true;
 
-    char const * pzName  = ag_scm2zchars(name, "gperf name");
-    char const * pzList;
-    SCM          newline = AG_SCM_STR2SCM("\n", (size_t)1);
+    char const * gp_nam = ag_scm2zchars(name, "gp nm");
+    char const * h_list;
+    SCM          nl_scm = AG_SCM_STR2SCM(NEWLINE, (size_t)1);
 
     if (! AG_SCM_STRING_P(name))
         return SCM_UNDEFINED;
@@ -77,29 +79,29 @@ ag_scm_make_gperf(SCM name, SCM hlist)
     /*
      *  Construct the newline separated list of values
      */
-    hlist  = ag_scm_join(newline, hlist);
-    pzList = ag_scm2zchars(hlist, "hash list");
+    hlist  = ag_scm_join(nl_scm, hlist);
+    h_list = ag_scm2zchars(hlist, "hash list");
 
     /*
      *  Stash the concatenated list somewhere, hopefully without an alloc.
      */
     {
-        char * pzCmd = aprf(zMakeGperf, zMakeProg, pzName, pzList);
+        char * cmd = aprf(MK_GPERF_SCRIPT, make_prog, gp_nam, h_list);
 
         /*
          *  Run the command and ignore the results.
          *  In theory, the program should be ready.
          */
-        pzList = runShell(pzCmd);
-        AGFREE(pzCmd);
+        h_list = shell_cmd(cmd);
+        AGFREE(cmd);
 
-        if (pzList != NULL)
-            free((void *)pzList);
+        if (h_list != NULL)
+            free((void *)h_list);
     }
 
     if (do_cleanup) {
-        SCM_EVAL_CONST("(add-cleanup \"rm -rf ${gpdir}\")");
-        do_cleanup = AG_FALSE;
+        SCM_EVAL_CONST(MAKE_GPERF_CLEANUP);
+        do_cleanup = false;
     }
 
     return SCM_BOOL_T;
@@ -126,28 +128,30 @@ ag_scm_make_gperf(SCM name, SCM hlist)
 SCM
 ag_scm_gperf(SCM name, SCM str)
 {
-    char const * pzCmd;
-    char const * pzStr  = ag_scm2zchars(str,  "key-to-hash");
-    char const * pzName = ag_scm2zchars(name, "gperf name");
+    char const * cmd;
+    char const * key2hash = ag_scm2zchars(str,  "key-to-hash");
+    char const * gp_name  = ag_scm2zchars(name, "gperf name");
 
     /*
      *  Format the gperf command and check the result.  If it fits in
      *  scribble space, use that.
      *  (If it does fit, then the test string fits already).
      */
-    pzCmd = aprf(zRunGperf, pzName, pzStr);
-    pzStr = runShell(pzCmd);
-    if (*pzStr == NUL)
+    cmd = aprf(RUN_GPERF_CMD, gp_name, key2hash);
+    key2hash = shell_cmd(cmd);
+    if (*key2hash == NUL)
         str = SCM_UNDEFINED;
     else
-        str = AG_SCM_STR02SCM(pzStr);
+        str = AG_SCM_STR02SCM(key2hash);
 
-    AGFREE((void *)pzCmd);
-    AGFREE((void *)pzStr);
+    AGFREE((void *)cmd);
+    AGFREE((void *)key2hash);
     return str;
 }
 #endif
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

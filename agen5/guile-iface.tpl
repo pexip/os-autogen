@@ -1,7 +1,45 @@
 [= AutoGen5 Template h =]
 [=
 
-(out-push-new)  =]
+;;;  This file is part of AutoGen.
+;;;  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+;;;
+;;; AutoGen is free software: you can redistribute it and/or modify it
+;;; under the terms of the GNU General Public License as published by the
+;;; Free Software Foundation, either version 3 of the License, or
+;;; (at your option) any later version.
+;;;
+;;; AutoGen is distributed in the hope that it will be useful, but
+;;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;;; See the GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU General Public License along
+;;; with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(emit (make-header-guard "mutating"))
+(shell "ranged='#if'
+guile_range() {
+  local lo=${1%%-*}
+  local hi=${1##*-}
+  if test ${#lo} -eq 0
+  then echo \"${ranged} (GUILE_VERSION <= $hi)\"
+  elif test ${#hi} -eq 0
+  then echo \"${ranged} (GUILE_VERSION >= $lo)\"
+  else echo \"${ranged} (GUILE_VERSION >= $lo) && (GUILE_VERSION <= $hi)\"
+  fi
+  ranged='#elif'
+}") =]
+[=
+
+FOR invalid     \=]
+
+[= (shell (string-append "guile_range " (get "invalid"))) =]
+# error AutoGen does not work with this version of Guile
+  choke me.
+[=
+ENDFOR invalid  =]
+[= (out-push-new)  =]
 set -- $(sort -n -u <<_EOF_
 [=  (join "\n" (stack "iface.i-impl.i-end")) =]
 _EOF_
@@ -24,7 +62,7 @@ fill_in() {
 }
 
 emit_iface_macro() {
-  NM=$(echo $i | tr a-z- A-Z_)
+  NM=$(echo $i | tr '[a-z-]' '[A-Z_]')
   eval NM=\"$NM\(\${${i}_args}\)\"
   if test ${#code} -lt 40 -a ${#NM} -lt 22
   then
@@ -35,12 +73,12 @@ emit_iface_macro() {
 }
 
 emit_iface_type() {
-  local nm=ag_scm_$(echo $i | tr A-Z- a-z_)
+  local nm=ag_scm_$(echo $i | tr '[a-z-]' '[A-Z_]')
   printf '# define %-28s %s\n' $nm "$code"
 }
 
 prt_tbl() {
-  if='#if  '
+  if='#[= (if (exist? "invalid") "elif" "if  ") =]'
   for v in $v_list
   do
     printf '%s GUILE_VERSION < %s000\n' "$if" "$v"
@@ -85,8 +123,13 @@ FOR iface       =][=
 ENDFOR iface    =][=
 
 `prt_tbl`
-
 =]
+
 #else
-#error unknown GUILE_VERSION
+# error unknown GUILE_VERSION
+  choke me.
 #endif
+
+#endif /* [= (. header-guard) =][=
+
+# end of guile-iface.tpl =] */

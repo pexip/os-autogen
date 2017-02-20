@@ -1,258 +1,275 @@
 /* -*- buffer-read-only: t -*- vi: set ro:
  *
  * Prototypes for agen5
- * Generated Sun Jun 26 07:40:07 PDT 2011
+ * Generated Sat Aug 30 10:36:46 PDT 2014
  */
 #ifndef AGEN5_PROTO_H_GUARD
 #define AGEN5_PROTO_H_GUARD 1
 
-#ifndef LOCAL
-#  define LOCAL extern
-#  define REDEF_LOCAL 1
-#else
-#  undef  REDEF_LOCAL
-#endif
 /*
  *  Extracted from agCgi.c
  */
-LOCAL void
+static void
 loadCgi(void);
+
+/*
+ *  Extracted from agDep.c
+ */
+static void
+add_source_file(char const * pz);
+
+static void
+rm_source_file(char const * pz);
+
+static void
+add_target_file(char const * pz);
+
+static void
+rm_target_file(char const * pz);
+
+static void
+start_dep_file(void);
+
+static void
+wrap_up_depends(void);
 
 /*
  *  Extracted from agInit.c
  */
-LOCAL void
-initialize(int arg_ct, char** arg_vec);
+static void
+initialize(int arg_ct, char ** arg_vec);
 
-LOCAL void
-config_dep(tOptions * pOptions, tOptDesc * pOptDesc);
+static void
+config_dep(tOptions * opts, tOptDesc * od);
+
+static void
+prep_env(void);
 
 /*
  *  Extracted from agShell.c
  */
-LOCAL void
+static void
 close_server_shell(void);
 
-LOCAL char*
-runShell(char const*  pzCmd);
+static char *
+shell_cmd(char const * cmd);
 
 /*
  *  Extracted from agUtils.c
  */
-LOCAL char *
+static void
+fswarn(char const * op, char const * fname);
+
+static char *
 aprf(char const * pzFmt, ...);
 
-LOCAL void
-open_trace_file(char ** av, tOptDesc * odsc);
+static void
+process_ag_opts(int arg_ct, char ** arg_vec);
 
-LOCAL void
-doOptions(int arg_ct, char ** arg_vec);
+static char const *
+get_define_str(char const * de_name, bool check_env);
 
-LOCAL char const *
-getDefine(char const * pzDefName, ag_bool check_env);
+static char *
+span_quote(char * in_q);
 
-LOCAL char*
-spanQuote(char* pzQte);
+static char const *
+skip_scheme(char const * scan,  char const * end);
 
-LOCAL char const *
-skipScheme(char const * pzSrc,  char const * pzEnd);
-
-LOCAL int
-count_nl(char const * pz);
-
-LOCAL char const *
-skipExpression(char const * pzSrc, size_t len);
+static char const *
+skip_expr(char const * src, size_t len);
 
 /*
  *  Extracted from autogen.c
  */
-LOCAL void
-ag_abend_at(char const * pzMsg
+static _Noreturn void
+ag_abend_at(char const * msg
 #ifdef DEBUG_ENABLED
-            , char const * pzFile, int line
+            , char const * fname, int line
 #endif
     );
 
-LOCAL void *
+static void *
 ao_malloc (size_t sz);
 
-LOCAL void *
+static void *
 ao_realloc (void *p, size_t sz);
 
-LOCAL char *
+static char *
 ao_strdup (char const * str);
 
 /*
  *  Extracted from defDirect.c
  */
-LOCAL char*
-processDirective(char* pzScan);
+static char *
+processDirective(char * scan);
 
 /*
  *  Extracted from defFind.c
  */
-LOCAL int
-canonicalizeName(char* pzD, char const* pzS, int srcLen);
+static int
+canonical_name(char * pzD, char const * pzS, int srcLen);
 
-LOCAL tDefEntry*
-findDefEntry(char * pzName, ag_bool* pIsIndexed);
+static def_ent_t *
+find_def_ent(char * name, bool * indexed);
 
-LOCAL void
+static void
 print_used_defines(void);
 
-LOCAL tDefEntry**
-findEntryList(char* pzName);
+static def_ent_t **
+find_def_ent_list(char * name);
 
 /*
  *  Extracted from defLex.c
  */
-LOCAL te_dp_event
+static te_dp_event
 yylex(void);
 
-LOCAL void
+static void
 yyerror(char* s);
 
 /*
  *  Extracted from defLoad.c
  */
-LOCAL tDefEntry*
-getEntry(void);
+static def_ent_t *
+new_def_ent(void);
 
-LOCAL void
-print_def(tDefEntry * pDef);
+static void
+print_ent(def_ent_t * de);
 
-LOCAL tDefEntry*
-findPlace(char* name, char const * pzIndex);
+static void
+delete_ent(def_ent_t * de);
 
-LOCAL void
-readDefines(void);
+static def_ent_t *
+number_and_insert_ent(char * name, char const * idx_str);
 
-LOCAL void
-unloadDefs(void);
+static void
+read_defs(void);
+
+static void
+unload_defs(void);
+
+/*
+ *  Extracted from expExtract.c
+ */
+static char *
+load_file(char const * fname);
 
 /*
  *  Extracted from expGuile.c
  */
-LOCAL teGuileType
+static char *
+ag_scm2zchars(SCM s, const char * type);
+
+static teGuileType
 ag_scm_type_e(SCM typ);
 
-LOCAL SCM
+static SCM
 ag_scm_c_eval_string_from_file_line(
     char const * pzExpr, char const * pzFile, int line);
 
 /*
  *  Extracted from expOutput.c
  */
-LOCAL void
-make_readonly(int fd);
+static void
+make_readonly(void);
 
-LOCAL void
+static void
 open_output_file(char const * fname, size_t nmsz, char const * mode, int flags);
 
 /*
  *  Extracted from expPrint.c
  */
-LOCAL SCM
+static SCM
 run_printf(char const * pzFmt, int len, SCM alist);
 
 /*
  *  Extracted from expString.c
  */
-LOCAL void
-do_multi_subs(char ** ppzStr, size_t * pStrLen, SCM match, SCM repl);
+static void
+do_multi_subs(char ** ppzStr, ssize_t * pStrLen, SCM match, SCM repl);
 
 /*
  *  Extracted from funcDef.c
  */
-LOCAL void
-parseMacroArgs(tTemplate* pT, tMacro* pMac);
+static void
+parse_mac_args(templ_t * pT, macro_t * mac);
 
 /*
  *  Extracted from funcEval.c
  */
-LOCAL char const *
-resolveSCM(SCM s);
+static char const *
+scm2display(SCM s);
 
-LOCAL char const *
-evalExpression(ag_bool* pMustFree);
+static char const *
+eval_mac_expr(bool * allocated);
 
-LOCAL SCM
-eval(char const* pzExpr);
+static SCM
+eval(char const * expr);
+
+/*
+ *  Extracted from funcFor.c
+ */
+static void
+free_for_context(int pop_ct);
+
+/*
+ *  Extracted from functions.c
+ */
+static loop_jmp_type_t
+call_gen_block(jmp_buf jbuf, templ_t * tpl, macro_t * mac, macro_t * end_mac);
+
+static void
+gen_new_block(templ_t * tpl);
 
 /*
  *  Extracted from loadPseudo.c
  */
-LOCAL char const *
-do_suffix(char const * const pzData, char const * pzFileName, int lineNo);
+static char const *
+do_suffix(char const * const text, char const * fname, int lineNo);
 
-LOCAL char const *
-loadPseudoMacro(char const * pzData, char const * pzFileName);
-
-/*
- *  Extracted from scmStrings.c
- */
-LOCAL void
-ag_scribble_init(void);
-
-LOCAL void
-ag_scribble_deinit(void);
-
-LOCAL void
-ag_scribble_free(void);
-
-LOCAL char *
-ag_scribble(ssize_t size);
-
-LOCAL char *
-ag_scm2zchars(SCM s, const char * type);
+static char const *
+load_pseudo_mac(char const * text, char const * fname);
 
 /*
  *  Extracted from tpLoad.c
  */
-LOCAL tTemplate *
-findTemplate(char const * pzTemplName);
+static templ_t *
+find_tpl(char const * pzTemplName);
 
-LOCAL tSuccess
-findFile(char const * pzFName,
-         char * pzFullName,
-         char const * const * papSuffixList,
-         char const * pzReferrer);
+static tSuccess
+find_file(char const * in_name,
+          char *       res_name,
+          char const * const * sfx_list,
+          char const * referring_tpl);
 
-LOCAL void
-append_source_name(char const * pz);
+static templ_t *
+tpl_load(char const * fname, char const * referrer);
 
-LOCAL tTemplate *
-loadTemplate(char const * pzFileName, char const * referrer);
+static void
+tpl_unload(templ_t * tpl);
 
-LOCAL void
-unloadTemplate(tTemplate* pT);
-
-LOCAL void
-cleanup(tTemplate* pTF);
+static void
+cleanup(templ_t * tpl);
 
 /*
  *  Extracted from tpParse.c
  */
-LOCAL tMacro*
-parseTemplate(tMacro* pM, char const ** ppzText);
+static macro_t *
+parse_tpl(macro_t * mac, char const ** p_scan);
 
 /*
  *  Extracted from tpProcess.c
  */
-LOCAL void
-generateBlock(tTemplate * pT, tMacro * pMac, tMacro * pEnd);
+static void
+gen_block(templ_t * tpl, macro_t * mac, macro_t * emac);
 
-LOCAL tOutSpec *
-nextOutSpec(tOutSpec * pOS);
+static out_spec_t *
+next_out_spec(out_spec_t * os);
 
-LOCAL void
-processTemplate(tTemplate* pTF);
+static void
+process_tpl(templ_t * tpl);
 
-LOCAL void
-out_close(ag_bool purge);
+static void
+out_close(bool purge);
 
-#ifdef REDEF_LOCAL
-#  undef LOCAL
-#  define LOCAL
-#endif
 #endif /* AGEN5_PROTO_H_GUARD */

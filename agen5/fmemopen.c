@@ -23,9 +23,9 @@ typedef struct {
     _IOWR('m', FMEMC_GET_BUF_ADDR, fmemc_get_buf_addr_t)
 
 /**
- * @file /old-home/bkorb/tools/mine/lib/fmemopen/fmemopen.c
+ * @file fmemopen.c
  *
- * Copyright (c) 2004-2011 by Bruce Korb.  All rights reserved.
+ * Copyright (C) 2004-2014 by Bruce Korb.  All rights reserved.
  *
  * This code was inspired from software written by
  *   Hanno Mueller, kontakt@hanno.de
@@ -108,14 +108,6 @@ typedef struct {
     fmem_cookie_t * cookie;
 } cookie_fp_map_t;
 
-#ifndef AUTOGEN_BUILD
-/**
- * invent our own boolean rather than try to work around all the ways
- * different systems spell it.
- */
-typedef enum { AG_FALSE = 0, AG_TRUE = 1 } ag_bool;
-#endif
-
 static cookie_fp_map_t const * map    = NULL;
 static unsigned int            map_ct = 0;
 static unsigned int            map_alloc_ct = 0;
@@ -139,10 +131,10 @@ fmem_seek(void * cookie, seek_off_t offset, int dir);
 static int
 fmem_close(void * cookie);
 
-static ag_bool
+static bool
 fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len);
 
-static ag_bool
+static bool
 fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len);
 /* = = = END-STATIC-FORWARD = = = */
 
@@ -254,7 +246,7 @@ fmem_read(void *cookie, void *pBuf, size_t sz)
 
     pFMC->next_ix += sz;
 
-    return sz;
+    return (ssize_t)sz;
 }
 
 /**
@@ -264,7 +256,7 @@ static ssize_t
 fmem_write(void *cookie, const void *pBuf, size_t sz)
 {
     fmem_cookie_t *pFMC = cookie;
-    int add_nul_char;
+    size_t add_nul_char;
 
     /*
      *  In append mode, always seek to the end before writing.
@@ -280,12 +272,12 @@ fmem_write(void *cookie, const void *pBuf, size_t sz)
      *  * the last character to write is not already NUL
      */
     add_nul_char =
-           ((pFMC->mode & FLAG_BIT(binary)) != 0)
+        (  ((pFMC->mode & FLAG_BIT(binary)) != 0)
         && (sz > 0)
-        && (((char*)pBuf)[sz - 1] != NUL);
+        && (((char*)pBuf)[sz - 1] != NUL)) ? 1 : 0;
 
     {
-        size_t next_pos = pFMC->next_ix + sz + add_nul_char;
+        size_t next_pos = (size_t)pFMC->next_ix + sz + add_nul_char;
         if (next_pos > pFMC->buf_size) {
             if (fmem_extend(pFMC, next_pos) != 0) {
                 /*
@@ -315,7 +307,7 @@ fmem_write(void *cookie, const void *pBuf, size_t sz)
      */
     if (pFMC->next_ix > pFMC->eof) {
         pFMC->eof = pFMC->next_ix;
-        if (add_nul_char)
+        if (add_nul_char != 0)
             /*
              *  There is space for this NUL.  The "add_nul_char" is not part of
              *  the "sz" that was added to "next_ix".
@@ -323,7 +315,7 @@ fmem_write(void *cookie, const void *pBuf, size_t sz)
             pFMC->buffer[ pFMC->eof ] = NUL;
     }
 
-    return sz;
+    return (ssize_t)sz;
 }
 
 /**
@@ -340,9 +332,9 @@ fmem_seek(void * cookie, seek_off_t offset, int dir)
      *  GNU interface:  offset passed and returned by address.
      */
     switch (dir) {
-    case SEEK_SET: new_pos = *offset;  break;
-    case SEEK_CUR: new_pos = pFMC->next_ix  + *offset;  break;
-    case SEEK_END: new_pos = pFMC->eof - *offset;  break;
+    case SEEK_SET: new_pos = (size_t)*offset;  break;
+    case SEEK_CUR: new_pos = pFMC->next_ix  + (size_t)*offset; break;
+    case SEEK_END: new_pos = pFMC->eof - (size_t)*offset;      break;
 
     default:
         goto seek_oops;
@@ -415,7 +407,7 @@ fmem_close(void * cookie)
 /**
  * Configure the user supplied buffer.
  */
-static ag_bool
+static bool
 fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
 {
     /*
@@ -424,7 +416,7 @@ fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
     if (len == 0) {
         free(pFMC);
         errno = EINVAL;
-        return AG_FALSE;
+        return false;
     }
 
     pFMC->buffer = (buf_bytes_t*)buf;
@@ -436,13 +428,13 @@ fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
         /*
          *  "write" mode
          */
-        pFMC->eof = \
+        pFMC->eof =
             pFMC->next_ix = 0;
     }
 
     else if (pFMC->mode & FLAG_BIT(binary)) {
-        pFMC->eof = len;
-        pFMC->next_ix    = (pFMC->mode & FLAG_BIT(append)) ? len : 0;
+        pFMC->eof     = (size_t)len;
+        pFMC->next_ix = (pFMC->mode & FLAG_BIT(append)) ? (size_t)len : 0;
 
     } else {
         /*
@@ -452,7 +444,7 @@ fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
         buf_bytes_t *p = (buf_bytes_t*)buf;
 
         pFMC->eof = 0;
-        while ((*p != NUL) && (++(pFMC->eof) < len))  p++;
+        while ((*p != NUL) && (++(pFMC->eof) < (size_t)len))  p++;
         pFMC->next_ix =
             (pFMC->mode & FLAG_BIT(append)) ? pFMC->eof : 0;
     }
@@ -461,18 +453,18 @@ fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
      *  text mode - NUL terminate buffer, if it fits.
      */
     if (  ((pFMC->mode & FLAG_BIT(binary)) == 0)
-       && (pFMC->next_ix < len)) {
+       && (pFMC->next_ix < (size_t)len)) {
         pFMC->buffer[pFMC->next_ix] = NUL;
     }
 
-    pFMC->buf_size = len;
-    return AG_TRUE;
+    pFMC->buf_size = (size_t)len;
+    return true;
 }
 
 /**
  * Allocate an initial buffer for fmem.
  */
-static ag_bool
+static bool
 fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len)
 {
     /*
@@ -480,7 +472,7 @@ fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len)
      */
     pFMC->mode |= FLAG_BIT(allocated);
     if (len == 0)
-        len = pFMC->pg_size;
+        len = (ssize_t)pFMC->pg_size;
 
     /*
      *  Unallocated file space is set to NULs.  Emulate that.
@@ -489,7 +481,7 @@ fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len)
     if (pFMC->buffer == NULL) {
         errno = ENOMEM;
         free(pFMC);
-        return AG_FALSE;
+        return false;
     }
 
     /*
@@ -498,8 +490,8 @@ fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len)
      */
     pFMC->next_ix  = 0;
     pFMC->eof      = 0;
-    pFMC->buf_size = len;
-    return AG_TRUE;
+    pFMC->buf_size = (size_t)len;
+    return true;
 }
 
 /*=export_func ag_fmemopen
@@ -601,7 +593,7 @@ ag_fmemopen(void * buf, ssize_t len, char const * mode)
          *  We only need page size if we might extend an allocation.
          */
         len = -len;
-        pFMC->pg_size = getpagesize();
+        pFMC->pg_size = (size_t)getpagesize();
     }
 
     else {
@@ -698,7 +690,7 @@ ag_fmemioctl(FILE * fp, int req, ...)
     fmem_cookie_t * cookie;
     fmemc_get_buf_addr_t * gba;
 
-    if (req != IOCTL_FMEMC_GET_BUF_ADDR) {
+    if ((unsigned int)req != IOCTL_FMEMC_GET_BUF_ADDR) {
         /*
          *  It is not any of the IOCTL commands we know about.
          */
@@ -737,7 +729,7 @@ ag_fmemioctl(FILE * fp, int req, ...)
     gba->buf_size = cookie->buf_size;
     gba->eof      = cookie->eof;
     if (gba->own != FMEMC_GBUF_LEAVE_OWNERSHIP)
-        cookie->mode &= ~FLAG_BIT(allocated);
+        cookie->mode &= (unsigned long)~FLAG_BIT(allocated);
     return 0;
 }
 

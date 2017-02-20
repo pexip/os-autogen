@@ -2,12 +2,14 @@
 /**
  * @file funcIf.c
  *
- *  Time-stamp:        "2011-01-27 12:39:51 bkorb"
- *
  *  This module implements the _IF text function.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,28 +25,24 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static char const zNoIfEnd[]  = "%s ERROR:  cannot find ENDIF\n\t'%s'\n";
-static char const zNoIfExpr[] = "expressionless IF";
-
-
 typedef struct if_stack tIfStack;
 struct if_stack {
-    tMacro*  pIf;
-    tMacro*  pElse;
+    macro_t*  pIf;
+    macro_t*  pElse;
 };
 
 static tIfStack  current_if;
-static tLoadProc mLoad_Elif, mLoad_Else;
+static load_proc_t mLoad_Elif, mLoad_Else;
 
 /* = = = START-STATIC-FORWARD = = = */
-static ag_bool
+static bool
 eval_true(void);
 
-static tMacro*
-mLoad_Elif(tTemplate* pT, tMacro* pMac, char const ** ppzScan);
+static macro_t*
+mLoad_Elif(templ_t * pT, macro_t * pMac, char const ** ppzScan);
 
-static tMacro*
-mLoad_Else(tTemplate* pT, tMacro* pMac, char const ** ppzScan);
+static macro_t *
+mLoad_Else(templ_t * pT, macro_t * pMac, char const ** ppzScan);
 /* = = = END-STATIC-FORWARD = = = */
 
 /*
@@ -58,34 +56,34 @@ mLoad_Else(tTemplate* pT, tMacro* pMac, char const ** ppzScan);
  *  4.  For its length or its first five characters (whichever is less)
  *      it matches the string "false"
  */
-static ag_bool
+static bool
 eval_true(void)
 {
-    ag_bool needFree;
-    ag_bool res = AG_TRUE;
-    char const * pz = evalExpression(&needFree);
+    bool needFree;
+    bool res = true;
+    char const * pz = eval_mac_expr(&needFree);
 
     if (IS_DEC_DIGIT_CHAR(*pz))
-        res = (atoi(pz) == 0) ? AG_FALSE : AG_TRUE;
+        res = (atoi(pz) == 0) ? false : true;
 
     else switch (*pz) {
     case NUL:
-        res = AG_FALSE;
+        res = false;
         break;
 
     case '#':
         if ((pz[1] == 'f') || (pz[1] == 'F'))
-            res = AG_FALSE;
+            res = false;
         break;
 
     case 'f':
     case 'F':
     {
-        int len = strlen(pz);
+        int len = (int)strlen(pz);
         if (len > 5)
             len = 5;
-        if (strneqvcmp("false", pz, len) == 0)
-            res = AG_FALSE;
+        if (strneqvcmp(EVAL_TRUE_FALSE_STR, pz, len) == 0)
+            res = false;
         break;
     }
     }
@@ -142,49 +140,47 @@ eval_true(void)
  *    This macro ends the @code{IF} function template block.
  *    For a complete description @xref{IF}.
 =*/
-tMacro*
-mFunc_If(tTemplate* pT, tMacro* pMac)
+macro_t*
+mFunc_If(templ_t* pT, macro_t* pMac)
 {
-    static char const zIfFmt[] =
-        "IF expression `%s' on line %d yielded true\n";
-
-    tMacro* pRet = pT->aMacros + pMac->endIndex;
-    tMacro* pIf  = pMac;
+    macro_t* pRet = pT->td_macros + pMac->md_end_idx;
+    macro_t* pIf  = pMac;
 
     do  {
         /*
          *  The current macro becomes the 'ELIF' or 'ELSE' macro
          */
-        pCurMacro = pMac;
+        cur_macro = pMac;
 
         /*
          *  'ELSE' is equivalent to 'ELIF true'
          */
-        if (  (pMac->funcCode == FTYP_ELSE)
+        if (  (pMac->md_code == FTYP_ELSE)
            || eval_true()) {
 
             if (OPT_VALUE_TRACE >= TRACE_BLOCK_MACROS) {
-                fprintf(pfTrace, zIfFmt, (pMac->funcCode == FTYP_ELSE)
-                        ? "ELSE clause" : pT->pzTemplText + pMac->ozText,
-                        pMac->lineNo);
+                fprintf(trace_fp, TRACE_FN_IF, (pMac->md_code == FTYP_ELSE)
+                        ? FN_IF_ELSE : pT->td_text + pMac->md_txt_off,
+                        pMac->md_line);
 
                 if (OPT_VALUE_TRACE == TRACE_EVERYTHING)
-                    fprintf(pfTrace, zFileLine, pCurTemplate->pzTplFile,
-                            pIf->lineNo);
+                    fprintf(trace_fp, TAB_FILE_LINE_FMT,
+                            current_tpl->td_file, pIf->md_line);
             }
 
-            generateBlock(pT, pMac+1, pT->aMacros + pMac->sibIndex);
+            gen_block(pT, pMac+1, pT->td_macros + pMac->md_sib_idx);
             break;
         }
-        pMac = pT->aMacros + pMac->sibIndex;
+        pMac = pT->td_macros + pMac->md_sib_idx;
     } while (pMac < pRet);
 
     if ((OPT_VALUE_TRACE >= TRACE_BLOCK_MACROS) && (pMac >= pRet)) {
-        fprintf(pfTrace, "IF `%s' macro selected no clause\n",
-                pCurTemplate->pzTemplText + pCurMacro->ozText);
+        fprintf(trace_fp, TRACE_FN_IF_NOTHING,
+                current_tpl->td_text + cur_macro->md_txt_off);
 
         if (OPT_VALUE_TRACE == TRACE_EVERYTHING)
-            fprintf(pfTrace, zFileLine, pCurTemplate->pzTplFile, pIf->lineNo);
+            fprintf(trace_fp, TAB_FILE_LINE_FMT,
+                    current_tpl->td_file, pIf->md_line);
     }
 
     return pRet;
@@ -227,37 +223,39 @@ mFunc_If(tTemplate* pT, tMacro* pMac)
  *    This macro ends the @code{WHILE} function template block.
  *    For a complete description @xref{WHILE}.
 =*/
-tMacro*
-mFunc_While(tTemplate* pT, tMacro* pMac)
+macro_t*
+mFunc_While(templ_t* pT, macro_t* pMac)
 {
-    tMacro* pRet = pT->aMacros + pMac->endIndex;
-    int     ct   = 0;
+    macro_t * end = pT->td_macros + pMac->md_end_idx;
+    int       ct  = 0;
 
     if (OPT_VALUE_TRACE >= TRACE_BLOCK_MACROS)
-        fprintf(pfTrace, "WHILE `%s' loop in %s on line %d begins:\n",
-                pCurTemplate->pzTemplText + pCurMacro->ozText,
-                pT->pzTplFile, pMac->lineNo);
+        fprintf(trace_fp, TRACE_FN_WHILE_START,
+                current_tpl->td_text + cur_macro->md_txt_off,
+                pT->td_file, pMac->md_line);
 
     for (;;) {
-        pCurTemplate = pT;
-        pCurMacro    = pMac;
+        jmp_buf jbuf;
+
+        current_tpl = pT;
+        cur_macro    = pMac;
 
         if (! eval_true())
             break;
         ct++;
-        generateBlock(pT, pMac+1, pT->aMacros + pMac->sibIndex);
+        if (call_gen_block(jbuf, pT, pMac+1, end) == LOOP_JMP_BREAK)
+            break;
     }
 
     if (OPT_VALUE_TRACE >= TRACE_BLOCK_MACROS) {
-        fprintf(pfTrace, "WHILE macro repeated %d times\n", ct);
+        fprintf(trace_fp, TRACE_FN_WHILE_END, ct);
 
         if (OPT_VALUE_TRACE == TRACE_EVERYTHING)
-            fprintf(pfTrace, zFileLine, pT->pzTplFile, pMac->lineNo);
+            fprintf(trace_fp, TAB_FILE_LINE_FMT, pT->td_file, pMac->md_line);
     }
 
-    return pRet;
+    return end;
 }
-
 
 /*=macfunc ELIF
  *
@@ -271,17 +269,17 @@ mFunc_While(tTemplate* pT, tMacro* pMac)
  *    @code{IF} function.  Its expression argument is evaluated as are
  *    the arguments to @code{IF}.  For a complete description @xref{IF}.
 =*/
-static tMacro*
-mLoad_Elif(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+static macro_t*
+mLoad_Elif(templ_t * pT, macro_t * pMac, char const ** ppzScan)
 {
-    if ((int)pMac->res == 0)
-        AG_ABEND_IN(pT, pMac, zNoIfExpr);
+    if ((int)pMac->md_res == 0)
+        AG_ABEND_IN(pT, pMac, NO_IF_EXPR);
     /*
      *  Load the expression
      */
     (void)mLoad_Expr(pT, pMac, ppzScan);
 
-    current_if.pElse->sibIndex = pMac - pT->aMacros;
+    current_if.pElse->md_sib_idx = (int)(pMac - pT->td_macros);
     current_if.pElse = pMac;
     return pMac + 1;
 }
@@ -298,159 +296,186 @@ mLoad_Elif(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
  *    It denotes the start of an alternate template block for
  *    the @code{IF} function.  For a complete description @xref{IF}.
 =*/
-static tMacro*
-mLoad_Else(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+static macro_t *
+mLoad_Else(templ_t * pT, macro_t * pMac, char const ** ppzScan)
 {
     /*
      *  After processing an "ELSE" macro,
      *  we have a special handler function for 'ENDIF' only.
      */
-    static tpLoadProc apElseLoad[ FUNC_CT ] = { NULL };
+    static load_proc_p_t load_for_if_after_else_procs[ FUNC_CT ] = { NULL };
+    (void)ppzScan;
 
-    if (apElseLoad[0] == NULL) {
-        memcpy((void*)apElseLoad, apLoadProc, sizeof(apLoadProc));
-        apElseLoad[ FTYP_ENDIF ] = &mLoad_Ending;
+    if (load_for_if_after_else_procs[0] == NULL) {
+        memcpy((void*)load_for_if_after_else_procs, base_load_table,
+               sizeof(base_load_table));
+        load_for_if_after_else_procs[ FTYP_ENDIF ] = &mLoad_Ending;
     }
 
-    papLoadProc = apElseLoad;
+    load_proc_table = load_for_if_after_else_procs;
 
-    current_if.pElse->sibIndex = pMac - pT->aMacros;
+    current_if.pElse->md_sib_idx = (int)(pMac - pT->td_macros);
     current_if.pElse = pMac;
-    pMac->ozText = 0;
+    pMac->md_txt_off = 0;
 
     return pMac+1;
 }
 
 
-/*
- *  mLoad_Ending is the common block termination function.
- *  By returning NULL, it tells the macro parsing loop to return.
+/**
+ *  End any of the block macros.  It ends @code{ENDDEF},
+ *  @code{ENDFOR}, @code{ENDIF}, @code{ENDWHILE} and @code{ESAC}.  It
+ *  leaves no entry in the dispatch tables for itself.  By returning
+ *  NULL, it tells the macro parsing loop to return.
+ *
+ *  @param      tpl   ignored
+ *  @param[out] mac   zeroed out for re-use
+ *  @param      scan  ignored
  */
-tMacro*
-mLoad_Ending(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+macro_t *
+mLoad_Ending(templ_t * tpl, macro_t * mac, char const ** scan)
 {
-    memset((void*)pMac, 0, sizeof(*pMac));
+    (void) tpl;
+    (void) scan;
+    memset((void*)mac, 0, sizeof(*mac));
     return NULL;
 }
 
-
-tMacro*
-mLoad_If(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+/**
+ * Load template macros until matching @code{ENDIF} is found.
+ *
+ *  @param[in,out] tpl   Template we are filling in with macros
+ *  @param[in,out] mac   Linked into the "if" macro segments
+ *  @param[in,out] scan  pointer to scanning pointer.  We advance it
+ *                       past the ending @code{ENDIF} macro.
+ *
+ *  @returns the address of the next macro slot for insertion.
+ */
+macro_t *
+mLoad_If(templ_t * tpl, macro_t * mac, char const ** ppzScan)
 {
-    size_t              srcLen     = (size_t)pMac->res; /* macro len  */
+    size_t              srcLen     = (size_t)mac->md_res; /* macro len  */
     tIfStack            save_stack = current_if;
-    tpLoadProc const *  papLP      = papLoadProc;
-    tMacro *            pEndifMac;
+    load_proc_p_t const *  papLP      = load_proc_table;
+    macro_t *           pEndifMac;
 
     /*
      *  While processing an "IF" macro,
      *  we have handler functions for 'ELIF', 'ELSE' and 'ENDIF'
      *  Otherwise, we do not.  Switch the callout function table.
      */
-    static tpLoadProc apIfLoad[ FUNC_CT ] = { NULL };
+    static load_proc_p_t apIfLoad[ FUNC_CT ] = { NULL };
 
     /*
      *  IF there is no associated text expression
      *  THEN woops!  what are we to case on?
      */
     if (srcLen == 0)
-        AG_ABEND_IN(pT, pMac, zNoIfExpr);
+        AG_ABEND_IN(tpl, mac, NO_IF_EXPR);
 
     if (apIfLoad[0] == NULL) {
-        memcpy((void*)apIfLoad, apLoadProc, sizeof(apLoadProc));
+        memcpy((void*)apIfLoad, base_load_table, sizeof(base_load_table));
         apIfLoad[ FTYP_ELIF ]  = &mLoad_Elif;
         apIfLoad[ FTYP_ELSE ]  = &mLoad_Else;
         apIfLoad[ FTYP_ENDIF ] = &mLoad_Ending;
     }
 
-    papLoadProc = apIfLoad;
+    load_proc_table = apIfLoad;
 
     /*
      *  We will need to chain together the 'IF', 'ELIF', and 'ELSE'
      *  macros.  The 'ENDIF' gets absorbed.
      */
-    current_if.pIf = current_if.pElse = pMac;
+    current_if.pIf = current_if.pElse = mac;
 
     /*
      *  Load the expression
      */
-    (void)mLoad_Expr(pT, pMac, ppzScan);
+    (void)mLoad_Expr(tpl, mac, ppzScan);
 
     /*
      *  Now, do a nested parse of the template.
      *  When the matching 'ENDIF' macro is encountered,
-     *  the handler routine will cause 'parseTemplate()'
+     *  the handler routine will cause 'parse_tpl()'
      *  to return with the text scanning pointer pointing
      *  to the remaining text.
      */
-    pEndifMac = parseTemplate(pMac+1, ppzScan);
+    pEndifMac = parse_tpl(mac+1, ppzScan);
     if (*ppzScan == NULL)
-        AG_ABEND_IN(pT, pMac, "ENDIF not found");
+        AG_ABEND_IN(tpl, mac, LD_IF_NO_ENDIF);
 
-    current_if.pIf->endIndex   = \
-    current_if.pElse->sibIndex = pEndifMac - pT->aMacros;
+    current_if.pIf->md_end_idx   =
+        current_if.pElse->md_sib_idx = (int)(pEndifMac - tpl->td_macros);
 
     /*
      *  Restore the context of any encompassing block macros
      */
     current_if  = save_stack;
-    papLoadProc = papLP;
+    load_proc_table = papLP;
     return pEndifMac;
 }
 
-
-tMacro *
-mLoad_While(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
+/**
+ * load the @code{WHILE} macro.  Sets up the while loop parsing table, which
+ * is a copy of the global "base_load_table" with added entries for
+ * @code{ENDWHILE}, @code{NEXT} and @code{BREAK}.
+ *
+ *  @param[in,out] tpl   Template we are filling in with macros
+ *  @param[in,out] mac   Linked into the "if" macro segments
+ *  @param[in,out] scan  pointer to scanning pointer.  We advance it
+ *                       past the ending @code{ENDWHILE} macro.
+ *
+ *  @returns the address of the next macro slot for insertion.
+ */
+macro_t *
+mLoad_While(templ_t * pT, macro_t * mac, char const ** p_scan)
 {
-    size_t              srcLen = (size_t)pMac->res; /* macro len  */
-    tpLoadProc const *  papLP  = papLoadProc;
-    tMacro *            pEndMac;
-
     /*
-     *  While processing an "IF" macro,
-     *  we have handler functions for 'ELIF', 'ELSE' and 'ENDIF'
-     *  Otherwise, we do not.  Switch the callout function table.
+     *  While processing a "WHILE" macro,
+     *  we have handler a handler function for ENDWHILE, NEXT and BREAK.
      */
-    static tpLoadProc apWhileLoad[ FUNC_CT ] = { NULL };
+    static load_proc_p_t while_tbl[ FUNC_CT ] = { NULL };
+
+
+    load_proc_p_t const * lpt = load_proc_table; //!< save current table
 
     /*
      *  IF there is no associated text expression
      *  THEN woops!  what are we to case on?
      */
-    if (srcLen == 0)
-        AG_ABEND_IN(pT, pMac, "expressionless WHILE");
+    if ((size_t)mac->md_res == 0)
+        AG_ABEND_IN(pT, mac, LD_WHILE_NO_EXPR);
 
-    if (apWhileLoad[0] == NULL) {
-        memcpy((void*)apWhileLoad, apLoadProc, sizeof(apLoadProc));
-        apWhileLoad[ FTYP_ENDWHILE ] = &mLoad_Ending;
+    if (while_tbl[0] == NULL) {
+        memcpy((void*)while_tbl, base_load_table, sizeof(base_load_table));
+        while_tbl[ FTYP_ENDWHILE ] = &mLoad_Ending;
     }
 
-    papLoadProc = apWhileLoad;
+    load_proc_table = while_tbl;
 
     /*
      *  Load the expression
      */
-    (void)mLoad_Expr(pT, pMac, ppzScan);
+    (void)mLoad_Expr(pT, mac, p_scan);
 
     /*
      *  Now, do a nested parse of the template.  When the matching 'ENDWHILE'
-     *  macro is encountered, the handler routine will cause 'parseTemplate()'
+     *  macro is encountered, the handler routine will cause 'parse_tpl()'
      *  to return with the text scanning pointer pointing to the remaining
      *  text.
      */
-    pEndMac = parseTemplate(pMac+1, ppzScan);
-    if (*ppzScan == NULL)
-        AG_ABEND_IN(pT, pMac, "ENDWHILE not found");
+    {
+        macro_t * end = parse_tpl(mac+1, p_scan);
+        if (*p_scan == NULL)
+            AG_ABEND_IN(pT, mac, LD_WHILE_NO_ENDWHILE);
 
-    pMac->sibIndex = pMac->endIndex = pEndMac - pT->aMacros;
+        mac->md_sib_idx =
+            mac->md_end_idx = (int)(end - pT->td_macros);
 
-    /*
-     *  Restore the context of any encompassing block macros
-     */
-    papLoadProc = papLP;
-    return pEndMac;
+        load_proc_table = lpt; // restore context
+        return end;
+    }
 }
-
 
 /*=gfunc set_writable
  *
@@ -466,14 +491,11 @@ mLoad_While(tTemplate* pT, tMacro* pMac, char const ** ppzScan)
 SCM
 ag_scm_set_writable(SCM set)
 {
-    static char const zWarn[] =
-        "Warning: (set-writable) function in %s on line %d:\n"
-        "\toverridden by invocation option\n";
-
     switch (STATE_OPT(WRITABLE)) {
     case OPTST_DEFINED:
     case OPTST_PRESET:
-        fprintf(pfTrace, zWarn, pCurTemplate->pzTplFile, pCurMacro->lineNo);
+        fprintf(trace_fp, SET_WRITE_WARN, current_tpl->td_file,
+                cur_macro->md_line);
         break;
 
     default:
@@ -485,7 +507,9 @@ ag_scm_set_writable(SCM set)
 
     return SCM_UNDEFINED;
 }
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

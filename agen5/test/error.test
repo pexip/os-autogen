@@ -4,10 +4,9 @@
 # error.test --- test error functionality
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
-# Time-stamp:        "2011-01-24 15:02:12 bkorb"
 #
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by
@@ -28,26 +27,18 @@ verb_ok=true
 
 ag_err()
 {
-  (
-    set +x
-    if ${VERBOSE} && ${verb_ok}
-    then
-      AUTOGEN_TRACE=everything
-      AUTOGEN_TRACE_OUT=${testname}-task${seq}-aglog.txt
-      VERBOSE=false
-      export AUTOGEN_TRACE AUTOGEN_TRACE_OUT
-    else
-      unset AUTOGEN_TRACE AUTOGEN_TRACE_OUT
-    fi
+  if ${VERBOSE} && ${verb_ok}
+  then
+    AUTOGEN_TRACE=everything
+    AUTOGEN_TRACE_OUT='>>'${testname}-task${seq}-aglog.txt
+    export AUTOGEN_TRACE AUTOGEN_TRACE_OUT
+  else
+    unset AUTOGEN_TRACE AUTOGEN_TRACE_OUT
+  fi
 
-    seq=${1} ; shift
-    exec 2> ${testname}.err${seq}
-    touch ${testname}-task${seq}-running
-    run_ag x${seq} "$@"
-    res=$?
-    rm -f ${testname}-task${seq}-running
-    exit $res
-  ) && touch ${testname}-task${seq}-OK
+  seq=${1} ; shift
+  ${AGexe} ${agl_opts} "$@" 2> ${testname}.err${seq} && \
+    touch ${testname}-task${seq}-OK
 }
 
 # # # # # # # # # # # # # TEST 1 # # # # # # # # # # # #
@@ -80,21 +71,23 @@ _EOF_
 echo creating ${testname}.def
 cat > ${testname}.def <<'_EOF_'
 autogen definitions alist;
-#error The definitions file has a `#error' directive
+#error The definitions file has a '#error' directive
 _EOF_
 
 echo creating ${testname}.base1
 # this is the output we should expect to see
 cat > ${testname}.base1 <<'_EOF_'
 #error directive -- in error.def on line 3
-	The definitions file has a `#error' directive
+	The definitions file has a '#error' directive
 _EOF_
 
 ag_err 1 ${testname}.def
 test -f  ${testname}-task1-OK \
   && failure unexpected success for test-1
 
-${SED} '/Giving up in/d;/Failing Guile command:/,$d' ${testname}.err1 \
+${SED} '/Giving up in/d
+        /erasing the .* environment variable/d
+        /Failing Guile command:/,$d' ${testname}.err1 \
   > ${testname}.err
 cmp -s ${testname}.err ${testname}.base1 || \
   failure "expected->actual${nl}`diff -c ${testname}.base1 ${testname}.err`"
@@ -130,10 +123,12 @@ verb_ok=true
 
 if test ${GUILE_VERSION} -gt 107000
 then
-  ${EGREP} -v 'Giving up in | is deprecated\.' ${testname}.err2
+  omit_pat='Giving up in | is deprecated\.|erasing the .* environment variable'
 else
-  ${EGREP} -v 'Giving up in ' ${testname}.err2
-fi > ${testname}.res2
+  omit_pat='Giving up in '
+fi
+
+${EGREP} -v "$omit_pat" ${testname}.err2 > ${testname}.res2
 
 cmp -s ${testname}.base2 ${testname}.res2 || \
   failure "expected->actual${nl}`diff -c ${testname}.base2 ${testname}.res2`"
@@ -152,7 +147,7 @@ echo creating ${testname}.base4
 cat > ${testname}.base4 <<'_EOF_'
 FSM Error:  in state 5 (have_name), event 3 (var_name) is invalid
 invalid transition:  in error2.def on line 2
-	token in error:  var_name:  ``is broken;
+	token in error:  var_name:  ''is broken;
 ''
 
 	[[...<error-text>]]  broken;
@@ -166,7 +161,8 @@ ag_err 4 ${testname}2.def
 test -f ${testname}-task4-OK \
   && failure unexpected success for test-4
 
-${GREP} -v 'Giving up in' ${testname}.err4 > ${testname}.res4
+${EGREP} -v "$omit_pat" ${testname}.err4 | \
+  ${SED} -n '/Failing Guile command:/q;p' > ${testname}.res4
 cmp -s  ${testname}.res4 ${testname}.base4 \
   || failure "expected->actual${nl}`diff -c ${testname}.base4 ${testname}.res4`"
 
@@ -183,7 +179,7 @@ ag_err 5 -T ${testname}.tpl5 ${agopts}5 > /dev/null
 test -f ${testname}-task5-OK \
   && failure unexpected success for test-5
 
-${EGREP} -v 'Giving up in .*functions\.c' ${testname}.err5 > ${testname}.res5
+${EGREP} -v "$omit_pat" ${testname}.err5 > ${testname}.res5
 cat > ${testname}.base5 <<'EOF'
 Error in template error.tpl5, line 3
 	Unknown macro or invalid context in error.tpl5 line 3:
@@ -232,7 +228,7 @@ EOF
 # print file and line, but it was made just too hard.  Strip out all
 # the Guile library error messages.  :(
 #
-${SED} -n '/^Scheme evaluation error./,$p' ${testname}.err6 | \
+${SED} -n '/^Scheme evaluation error./,/^==========/p' ${testname}.err6 | \
   ${SED} "/^${testname}\.tpl6:7:4:/d" > ${testname}.res6
 
 cmp -s  ${testname}.base6  ${testname}.res6 || \

@@ -1,4 +1,4 @@
-usr/share/pkgconfig/autoopts.pc
+usr/lib/*/pkgconfig/autoopts.pc
 usr/share/info/autogen.info*
 usr/share/aclocal/autoopts.m4
 usr/share/autogen/*

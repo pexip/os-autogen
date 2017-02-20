@@ -1,10 +1,8 @@
 ##  -*- Mode: Makefile -*-
 ## Makefile.am --- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-06-11 12:02:49 bkorb"
-##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -21,8 +19,9 @@
 
 DISTCLEANFILES  = autogen.lsm
 LIBOPTS_FILES   = \
-    libopts/libopts-add.m4 libopts/COPYING.lgplv3 libopts/COPYING.gplv3 \
-    libopts/COPYING.mbsd   libopts/mklibsrc.sh    libopts/README
+    libopts/COPYING.gplv3  libopts/COPYING.lgplv3 libopts/COPYING.mbsd \
+    libopts/README         libopts/libopts-add.m4 libopts/mklibsrc.sh \
+    libopts/stdnoreturn.mk
 
 TPL_FILES       = lsm.tpl spec.tpl gnudir.tpl gnudoc.tpl
 PKG_FILES       = mkpkg.linux mkpkg.sh mkpkg.sun pkg-env.in

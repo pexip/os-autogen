@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -51,12 +50,15 @@ struct stream
 static int
 stream_not_readable (STREAM *stream)
 {
+  (void)stream;
   return -1;
 }
 
 static int
 stream_not_writable (int ch, STREAM *stream)
 {
+  (void)stream;
+  (void)ch;
   return -1;
 }
 
@@ -185,7 +187,7 @@ stream_puts (char *s, STREAM *stream)
   for (num = 0; *s; num++, s++)
     {
       if (stream->limit < 1)
-        return num + strlen (s);
+        return (int)((size_t)num + strlen (s));
 
       stream->limit -= 1;
       ch_or_errorcode = (*stream->put_func) ((unsigned char) *s, stream);

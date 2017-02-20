@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -180,7 +179,7 @@ stream_puts (char *s, STREAM *stream);
 extern int
 stream_get (STREAM *stream);
 
-#line 88 "stream.in"
+#line 87 "stream.in"
 #ifdef __cplusplus
 #if 0
 /* This brace is so that emacs can still indent properly: */

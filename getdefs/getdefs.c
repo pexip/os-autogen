@@ -1,13 +1,16 @@
+
 /**
- * \file getdefs.c
+ *  @file getdefs.c
+ *  @addtogroup getdefs
+ *  @{
+ */
+/*
+ *  getdefs Copyright (C) 1999-2014 by Bruce Korb - all rights reserved
  *
- *  getdefs Copyright (c) 1999-2011 by Bruce Korb - all rights reserved
- *
- *  Time-stamp:        "2011-01-31 13:06:12 bkorb"
  *  Author:            Bruce Korb <bkorb@gnu.org>
  *
  *  This file is part of AutoGen.
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -43,7 +46,7 @@ static void
 buildDefinition(char * pzDef, char const * pzFile, int line, char * pzOut);
 
 static tSuccess
-buildPreamble(char ** ppzDef, char ** ppzOut, char const * pzFile, int line);
+buildPreamble(char ** ppzDef, char ** ppzOut, char const * fname, int line);
 
 static int
 compar_defname(const void* p1, const void* p2);
@@ -58,7 +61,7 @@ static void
 printEntries(FILE* fp);
 
 static void
-processFile(char const * pzFile);
+processFile(char const * fname);
 
 static void
 set_first_idx(void);
@@ -76,11 +79,15 @@ static FILE*
 startAutogen(void);
 
 static void
-updateDatabase(void);
+update_db(void);
 /* END-STATIC-FORWARD */
 
 #ifndef HAVE_STRSIGNAL
 #  include "compat/strsignal.c"
+#endif
+
+#ifndef HAVE_CHMOD
+#  include "compat/chmod.c"
 #endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -124,6 +131,9 @@ main(int argc, char ** argv)
         qsort((void*)papzBlocks, blkUseCt, sizeof(char*), &compar_text);
 
     printEntries(outFp);
+#ifdef HAVE_FCHMOD
+    fchmod(fileno(outFp), S_IRUSR|S_IRGRP|S_IROTH);
+#endif
     fclose(outFp);
 
     /*
@@ -136,7 +146,9 @@ main(int argc, char ** argv)
         tbuf.actime  = time((time_t*)NULL);
         tbuf.modtime = modtime + 1;
         utime(OPT_ARG(OUTPUT), &tbuf);
+#ifndef HAVE_CHMOD
         chmod(OPT_ARG(OUTPUT), S_IRUSR|S_IRGRP|S_IROTH);
+#endif
     }
 
     /*
@@ -145,7 +157,7 @@ main(int argc, char ** argv)
      *  THEN append the new entries to the file.
      */
     if ((pzIndexText != NULL) && (pzEndIndex != pzIndexEOF))
-        updateDatabase();
+        update_db();
 
     if (agPid != -1)
         return awaitAutogen();
@@ -186,10 +198,10 @@ assignIndex(char*  pzOut,  char*  pzDef)
      *  We have a new entry.  Make sure we have room for it
      *  in our in-memory string
      */
-    if (((pzEndIndex - pzIndexText) + len + 64 ) > indexAlloc) {
-        char* pz;
+    if (((size_t)(pzEndIndex - pzIndexText) + len + 64 ) > indexAlloc) {
+        char * pz;
         indexAlloc +=  0x1FFF;
-        indexAlloc &= ~0x0FFF;
+        indexAlloc &= (unsigned long)~0x0FFFUL;
         pz = (char*)realloc((void*)pzIndexText, indexAlloc);
         if (pz == NULL) {
             fputs("Realloc of index text failed\n", stderr);
@@ -212,7 +224,7 @@ assignIndex(char*  pzOut,  char*  pzDef)
      *  THEN use default index.
      */
     if (pzEndIndex == pzIndexText)
-        idx = OPT_VALUE_FIRST_INDEX;
+        idx = (int)OPT_VALUE_FIRST_INDEX;
     else do {
         char* pz = strrchr(pzDef, ' ');
         *pz = NUL;
@@ -226,7 +238,7 @@ assignIndex(char*  pzOut,  char*  pzDef)
             /*
              *  No entries for this category.  Use default index.
              */
-            idx = OPT_VALUE_FIRST_INDEX;
+            idx = (int)OPT_VALUE_FIRST_INDEX;
             *pz = ' ';
             break;
         }
@@ -244,8 +256,8 @@ assignIndex(char*  pzOut,  char*  pzDef)
          */
         *pz = ' ';
         pzMatch = strchr(pzMatch + len, '[');
-        idx = strtol(pzMatch+1, (char**)NULL, 0)+1;
-    } while (0);
+        idx = (int)strtol(pzMatch+1, (char**)NULL, 0)+1;
+    } while (false);
 
     /*
      *  Add the new entry to our text database and
@@ -297,14 +309,14 @@ buildDefinition(char * pzDef, char const * pzFile, int line, char * pzOut)
     static char const zSrcFile[] = "    %s = '%s';\n";
     static char const zLineNum[] = "    %s = '%d';\n";
 
-    ag_bool    these_are_global_defs;
+    bool    these_are_global_defs;
     tSuccess   preamble;
     int        re_res;
     char*      pzNextDef = NULL;
     regmatch_t match[2];
 
     if (*pzDef == '*') {
-        these_are_global_defs = AG_TRUE;
+        these_are_global_defs = true;
         strcpy(pzOut, zGlobal);
         pzOut += sizeof(zGlobal)-1;
         pzOut += sprintf(pzOut, zLineId, line, pzFile);
@@ -313,7 +325,7 @@ buildDefinition(char * pzDef, char const * pzFile, int line, char * pzOut)
         preamble = PROBLEM;
 
     } else {
-        these_are_global_defs = AG_FALSE;
+        these_are_global_defs = false;
         preamble = buildPreamble(&pzDef, &pzOut, pzFile, line);
         if (FAILED(preamble)) {
             *pzOut = NUL;
@@ -404,57 +416,60 @@ buildDefinition(char * pzDef, char const * pzFile, int line, char * pzOut)
  *  buildPreamble
  */
 static tSuccess
-buildPreamble(char ** ppzDef, char ** ppzOut, char const * pzFile, int line)
+buildPreamble(char ** ppzDef, char ** ppzOut, char const * fname, int line)
 {
     char * pzDef      = *ppzDef;
     char * pzOut      = *ppzOut;
 
-    char   zDefText[ MAXNAMELEN ];
-    char * pzDefText  = zDefText;
-    char   zNameText[ MAXNAMELEN ];
-    char * pzNameText = zNameText;
+    char   def_bf[  MAXNAMELEN ];
+    char   name_bf[ MAXNAMELEN ];
+    char * def_str    = def_bf;
     char * pzIfText   = NULL;
 
     /*
      *  Copy out the name of the entry type
      */
-    *pzDefText++ = '`';
+    *def_str++ = '`';
     while (isalnum(*pzDef) || (*pzDef == '_') || (*pzDef == '.')
           || (*pzDef == '[') || (*pzDef == ']'))
-        *pzDefText++ = *pzDef++;
+        *def_str++ = *pzDef++;
 
-    *pzDefText = NUL;
+    *def_str = NUL;
 
-    pzDef += strspn(pzDef, "* \t");
+    pzDef += (int)strspn(pzDef, "* \t");
 
     /*
      *  Copy out the name for this entry of the above entry type.
      */
-    while (isalnum(*pzDef) || (*pzDef == '_'))
-        *pzNameText++ = *pzDef++;
-    *pzNameText = NUL;
+    {
+        char * name_str = name_bf;
+        while (isalnum(*pzDef) || (*pzDef == '_'))
+            *name_str++ = *pzDef++;
+        *name_str = NUL;
+    }
 
-    if (  (zDefText[1]  == NUL)
-       || (zNameText[0] == NUL) )  {
-        fprintf(stderr, zNoData, pzFile, line);
+    if (  (def_bf[1]  == NUL)
+       || (name_bf[0] == NUL) )  {
+        fprintf(stderr, zNoData, fname, line);
         return FAILURE;
     }
 
-    pzDef += strspn(pzDef, " \t");
+    pzDef += (int)strspn(pzDef, " \t");
 
     /*
      *  IF these names are followed by a comma and an "if" clause,
      *  THEN we emit the definition with "#if..."/"#endif" around it
      */
     if (*pzDef == ',') {
-        pzDef += strspn(pzDef+1, " \t")+1;
+        pzDef++;
+        pzDef += strspn(pzDef, " \t");
         if ((pzDef[0] == 'i') && (pzDef[1] == 'f'))
             pzIfText = pzDef;
     }
 
     pzDef = strchr(pzDef, '\n');
     if (pzDef == NULL) {
-        fprintf(stderr, zNoData, pzFile, line);
+        fprintf(stderr, zNoData, fname, line);
         return FAILURE;
     }
 
@@ -465,11 +480,11 @@ buildPreamble(char ** ppzDef, char ** ppzOut, char const * pzFile, int line)
      *  then any "#ifdef..." line and finally put the
      *  entry type name into the output.
      */
-    pzOut += sprintf(pzOut, zLineId, line, pzFile);
+    pzOut += sprintf(pzOut, zLineId, line, fname);
     if (pzIfText != NULL)
         pzOut += sprintf(pzOut, "#%s\n", pzIfText);
     {
-        char*  pz = zDefText+1;
+        char * pz = def_bf+1;
         while (*pz != NUL)
             *pzOut++ = *pz++;
     }
@@ -480,15 +495,15 @@ buildPreamble(char ** ppzDef, char ** ppzOut, char const * pzFile, int line)
      *       and insert the index into the output.
      */
     if (pzIndexText != NULL) {
-        sprintf(pzDefText, "  %s'", zNameText);
-        pzOut = assignIndex(pzOut, zDefText);
+        sprintf(def_str, "  %s'", name_bf);
+        pzOut = assignIndex(pzOut, def_bf);
     }
 
     /*
      *  Now insert the name with a consistent name string prefix
      *  that we use to locate the sort key later.
      */
-    pzOut  += sprintf(pzOut, "%s%s';\n", zNameTag, zNameText);
+    pzOut  += sprintf(pzOut, "%s%s';\n", zNameTag, name_bf);
     *ppzOut = pzOut;
     *ppzDef = pzDef;
     *pzDef  = '\n';  /* restore the newline.  Used in pattern match */
@@ -669,10 +684,10 @@ doPreamble(FILE* outFp)
 LOCAL char*
 loadFile(char const * pzFname)
 {
-    FILE*  fp = fopen(pzFname, "r" FOPEN_BINARY_FLAG);
+    FILE * fp = fopen(pzFname, "r" FOPEN_BINARY_FLAG);
     int    res;
-    char*  pzText;
-    char*  pzRead;
+    char * pzText;
+    char * pzRead;
     size_t rdsz;
 
     if (fp == (FILE*)NULL)
@@ -692,7 +707,7 @@ loadFile(char const * pzFname)
                     pzFname);
             exit(EXIT_FAILURE);
         }
-        rdsz = stb.st_size;
+        rdsz = (size_t)stb.st_size;
         if (rdsz < 16)
             die("Error file %s only contains %d bytes.\n"
                 "\tit cannot contain autogen definitions\n",
@@ -731,17 +746,17 @@ loadFile(char const * pzFname)
 static void
 printEntries(FILE* fp)
 {
-    int     ct  = blkUseCt;
-    char**  ppz = papzBlocks;
+    size_t  ct  = blkUseCt;
+    char ** ppz = papzBlocks;
 
     if (ct == 0)
         exit(EXIT_FAILURE);
 
     for (;;) {
-        char* pz = *(ppz++);
+        char * pz = *(ppz++);
         fputs(pz, fp);
         free((void*)pz);
-        if (--ct <= 0)
+        if (--ct == 0)
             break;
         fputc('\n', fp);
     }
@@ -753,9 +768,9 @@ printEntries(FILE* fp)
  *  processFile
  */
 static void
-processFile(char const * pzFile)
+processFile(char const * fname)
 {
-    char* pzText = loadFile(pzFile); /* full text */
+    char* pzText = loadFile(fname); /* full text */
     char* pzScan;  /* Scanning Pointer  */
     char* pzDef;   /* Def block start   */
     char* pzNext;  /* start next search */
@@ -765,7 +780,7 @@ processFile(char const * pzFile)
     regmatch_t  matches[MAX_SUBMATCH+1];
 
     if (pzText == NULL)
-        fserr_die("read opening %s\n", pzFile);
+        fserr_die("read opening %s\n", fname);
 
     processEmbeddedOptions(pzText);
     pzNext = pzText;
@@ -794,7 +809,7 @@ processFile(char const * pzFile)
                 *pz = NUL;
             }
 
-            fprintf(stderr, zNoSubexp, lineNo, pzFile, pzDef);
+            fprintf(stderr, zNoSubexp, lineNo, fname, pzDef);
             if (pz != NULL)
                 *pz = ch;
             continue;
@@ -803,7 +818,7 @@ processFile(char const * pzFile)
         pzDef = pzScan + matches[0].rm_so + sizeof("/*=") - 1;
         pzNext = strstr(pzDef, "=*/");
         if (pzNext == NULL)
-            die(zNoEnd, pzFile, lineNo);
+            die(zNoEnd, fname, lineNo);
 
         *pzNext = NUL;
         pzNext += 3;
@@ -837,7 +852,7 @@ processFile(char const * pzFile)
          *  OK.  We are done figuring out where the boundaries of the
          *  definition are and where we will resume our processing.
          */
-        buildDefinition(pzDef, pzFile, lineNo, pzOut);
+        buildDefinition(pzDef, fname, lineNo, pzOut);
         pzDta   = (char*)realloc((void*)pzDta, strlen(pzDta) + 1);
         lineNo += linesInDef;
 
@@ -866,16 +881,16 @@ static void
 set_first_idx(void)
 {
     char    zNm[ 128 ] = { NUL };
-    int     nmLn = 1;
-    int     ct   = blkUseCt;
-    char**  ppz  = papzBlocks;
+    size_t  nmLn = 1;
+    int     ct   = (int)blkUseCt;
+    char ** ppz  = papzBlocks;
 
     if (ct == 0)
         exit(EXIT_FAILURE);
 
     for (; --ct >= 0; ppz++) {
         char *  pzOld = *ppz;
-        int     changed = (strneqvcmp(pzOld, zNm, nmLn) != 0);
+        int     changed = (strneqvcmp(pzOld, zNm, (int)nmLn) != 0);
         char *  pzNew;
 
         /*
@@ -1016,7 +1031,7 @@ exec_autogen(char ** pzBase)
      *  ELSE insert each one into the arg list.
      */
     if (! HAVE_OPT(AGARG)) {
-        paparg = pparg = (char const **)malloc(argCt * sizeof(char*));
+        paparg = pparg = malloc((size_t)argCt * sizeof(char*));
         *pparg++ = pzAutogen;
 
     } else {
@@ -1024,7 +1039,7 @@ exec_autogen(char ** pzBase)
         char const ** ppz = STACKLST_OPT(AGARG);
 
         argCt += ct;
-        paparg = pparg = (char const **)malloc(argCt * sizeof(char*));
+        paparg = pparg = malloc((size_t)argCt * sizeof(char*));
         *pparg++ = pzAutogen;
 
         do  {
@@ -1149,10 +1164,10 @@ startAutogen(void)
 
 
 /*
- *  updateDatabase
+ *  update_db
  */
 static void
-updateDatabase(void)
+update_db(void)
 {
     FILE* fp;
 
@@ -1169,11 +1184,17 @@ updateDatabase(void)
         fserr_die("opening %s for write/append\n", OPT_ARG(ORDERING));
 
     fwrite(pzIndexEOF, (size_t)(pzEndIndex - pzIndexEOF), (size_t)1, fp);
+#ifdef HAVE_FCHMOD
+    fchmod(fileno(fp), 0444);
+    fclose(fp);
+#else
     fclose(fp);
     chmod(OPT_ARG(ORDERING), 0444);
+#endif
 }
 
-/* emacs
+/** @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

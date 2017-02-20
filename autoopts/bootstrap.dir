@@ -1,9 +1,7 @@
 #! /bin/echo This_file_must_be_sourced,_not_executed
-# Time-stamp:      "2011-06-06 08:50:27 bkorb"
-#
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -15,32 +13,24 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
 burn_aover() {
     agvars=$(egrep '^A[GO]_' ../VERSION)
     eval "${agvars}"
     vers_curr=$(expr '(' $AO_CURRENT   '*' 4096 ')' + $AO_REVISION)
 
-    sedcmd="s=@CONFIG_SHELL@=$(which bash)=
-	s=@AO_TEMPLATE_VERSION@=${vers_curr}=
-	s=@bindir@=$(dirname $(which columns))="
-    for f in $(echo "${agvars}" | sed 's/=.*//')
-    do
-        eval v=\${$f}
-        sedcmd="${sedcmd}${nl}s%@${f}@%${v}%g"
-    done
-
     cd tpl
-    sed "${sedcmd}" tpl-config-tlib.in > tpl-config.tlib
-    for f in *.sh *.pl
+    for f in *.sh *.pl *.pm
     do  g=${f%.sh} ; g=${g%.pl}
-        cat $f > $g
-        chmod +x $g
+        test "$f" = "$g" || {
+            cat $f > $g
+            chmod +x $g
+        }
     done
     cd -
 }
@@ -69,7 +59,7 @@ add_files_to_mf() {
         pdta="autoopts.m4${nl}tpl/usage.tlib${nl}"
         edta="bootstrap.dir${nl}autoopts-config.in${nl}autogen.map${nl}"
         edta="${edta}mk-tpl-config.sh${nl}mk-autoopts-pc.in${nl}"
-        edta="${edta}install-options-h${nl}po${nl}tpl/usage-txt.tpl${nl}"
+        edta="${edta}install-hook.sh${nl}po${nl}"
 
         for f in tpl/*.*
         do
@@ -82,7 +72,7 @@ add_files_to_mf() {
 
             ( *tpl-config.tlib | *tpl/usage* ) : ;;
 
-            ( *.tlib | *.tpl | *.def | *.lic )
+            ( *.tlib | *.tpl | *.def | *.lic | *.pm )
                 pdta=${pdta}${f}${nl} ;; # installed & distributed file
             esac
         done
@@ -95,50 +85,77 @@ add_files_to_mf() {
 
     eval "$tmpl"
 
-    sedcmd=$'/^GENMAN /a\\\n'"$(
+    {
         ls -1 *.3 | \
             sed '/^pathfind.3$/d' | \
-            columns -I4 --spread=1 --line=' \\\'
+            columns -I4 --spread=1 --line=' \'
 
-    )"$'\\\n\\\nnodist_pkgdata_DATA = \$(libsrc) \\\\\\\n'"$(
-        echo "${ndst}" | sort -u | columns -I4 --spread=1 --line=' \\\'
+        printf '\nnodist_pkgdata_DATA = $(libsrc) \\\n'
+        echo "${ndst}" | sort -u | columns -I4 --spread=1 --line=' \'
 
-    )"$'\\\n\\\npkgdata_DATA    = \\\\\\\n'"$(
-        echo "${pdta}" | sort -u | columns -I4 --spread=1 --line=' \\\'
+        printf '\npkgdata_DATA    = \\\n'
+        echo "${pdta}" | sort -u | columns -I4 --spread=1 --line=' \'
 
-    )"$'\\\n\\\nEXTRA_DATA      = \$(pkgdata_DATA) \\\\\\\n'"$(
-        echo "${edta}" | sort -u | columns -I4 --spread=1 --line=' \\\'
+        printf '\nEXTRA_DATA      = $(pkgdata_DATA) \\\n'
+        echo "${edta}" | sort -u | columns -I4 --spread=1 --line=' \'
 
-    )"$'\\\n\\\nGENSCRIPTS      = \$(srcdir)/funcs.def \\\\\\\n'"$(
-        echo "${sfil}" | columns -I4 --spread=1 --line=' \\\'
-    )"
+        printf '\nGENSCRIPTS      = $(srcdir)/funcs.def \\\n'
+        echo "${sfil}" | columns -I4 --spread=1 --line=' \'
+        echo
 
-    rm -f *.3
-    sed -i "${sedcmd}" Makefile.am
+        sed -n '/^## begin/,/^## end/{
+		s/^##.*//
+		/^$/d
+		p
+	    }' gnulib.mk
+
+    } > Makefile.lists
+
+    sed '/^GENMAN /r Makefile.lists' Makefile.am > Makefile.tmp
+    mv -f Makefile.tmp Makefile.am
+
+    rm -f Makefile.lists gnulib.mk *.3
 }
 
 make_funcs_def()
 {
     $noag && exit 1
-    s2enum=`which mk-str2enum` 2>/dev/null || :
-    test -x "${s2enum}" || \
-        s2enum="bash ${top_srcdir}/add-on/char-mapper/mk-str2enum.sh"
-
     ${char_mapper:-char-mapper} autogen.map || die "FAILED: char-mapper"
+    ${AGexe} ao-strs.def || die "cannot make strings - exited $?"
 
-    ${s2enum} --base-name=xat-attribute -n \
-        type words members cooked uncooked keep || \
-        die "FAILED: ${s2enum} --base-name=xat-attribute"
+    declare cmd_list=$(
+        sed -n '/case *XAT_CMD_/{;s/.*XAT_CMD_/cmd = /;s/:/;/;p;}' \
+            configfile.c | tr '[A-Z_]' '[a-z-]')
 
-    ${s2enum} --base-name=value-type --prefix=vtp -n string integer \
-        boolean bool keyword set set-membership nested hierarchy || \
-        die "FAILED: ${s2enum} --base-name=value-type"
+    ${AGexe} <<- _EOF_
+	AutoGen Definitions str2enum;
+	base-name = option-xat-attribute;
+	prefix    = xat;
+	no-name;
+	$cmd_list
+	_EOF_
+    test $? -eq 0 || \
+        die "FAILED: option-xat-attribute enumeration"
+
+    cmd_list=$(
+        sed -n '/case *VTP_CMD_/{;s/.*VTP_CMD_/cmd = /;s/:/;/;p;}' \
+            configfile.c | tr '[A-Z_]' '[a-z-]')
+    ${AGexe} <<- _EOF_
+	AutoGen Definitions str2enum;
+	base-name = option-value-type;
+	prefix    = vtp;
+	no-name;
+	$cmd_list
+	_EOF_
+    test $? -eq 0 || \
+        die "FAILED: ${s2enum} --base-name=option-value-type"
     burn_aover
 
     test -d autoopts || mkdir autoopts
     test -d po       || mkdir po
     ${AGexe} genshell.def  || \
         die "FAILED: ${AGexe} genshell.def"
+
     ${AGexe} usage-txt.def || \
         die "FAILED: ${AGexe} usage-txt.def"
     mv usage-txt.h   autoopts/.
@@ -146,15 +163,17 @@ make_funcs_def()
 
     files=$(sed -n '/^CSRC/,/\.c$/p' Makefile.am | \
         sed '/^CSRC/d;s/[=\\]//'
-        echo  ../compat/pathfind.c)
+    )
+
     getdefs linenum srcfile template=options_h output=funcs.def $files
     chmod u+w funcs.def
-    vers_min=$( expr '(' $AO_CURRENT - $AO_AGE ')' '*' 4096)
+    vers_min=$(expr '(' $AO_CURRENT - $AO_AGE ')' '*' 4096)
     cat >> funcs.def <<-  _END_VERS_INFO_
 	vers-curr       = "${vers_curr}";
 	vers-min        = "${vers_min}";
 	vers-min-str    = "$(expr $AO_CURRENT - $AO_AGE):0:0";
 	vers-sovers     = "${AO_SOVERS}";
+	display-ver     = "${AO_CURRENT}.${AO_REVISION}";
 	library         = opts;
 
 	/*
@@ -165,10 +184,12 @@ make_funcs_def()
 	 *  this.  It should be constructed after all binaries are built.
 	 */
 	_END_VERS_INFO_
+
     ${AGexe} funcs.def || die "FAILED: ${AGexe} funcs.def"
     test -f options.h || die "options.h not created"
     mv options.h autoopts/.
     cp project.h autoopts/.
+
     add_files_to_mf
     make_proto
 
@@ -176,11 +197,13 @@ make_funcs_def()
 }
 
 test "X${mainpid}" = X && {
+    echo SOURCING BOOTSTRAP.SHLIB
     \cd ${top_srcdir-..}
     top_srcdir=`pwd`
     . config/bootstrap.shlib
     cd autoopts
     free_trap=true
+    echo DONE SOURCING BOOTSTRAP.SHLIB
 } || {
     free_trap=false
 }

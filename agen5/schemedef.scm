@@ -1,8 +1,6 @@
 
-;;; Time-stamp:        "2011-05-05 11:05:08 bkorb"
-;;;
 ;;; This file is part of AutoGen.
-;;; AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+;;; AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ;;;
 ;;; AutoGen is free software: you can redistribute it and/or modify it
 ;;; under the terms of the GNU General Public License as published by the
@@ -20,6 +18,11 @@
 ;;; This module defines all the scheme initialization for AutoGen.
 ;;; It gets sucked up into directives.h as a single ANSI-C string.
 ;;; Comments, blank lines and leading white space are omitted.
+;;;
+;;; The contents of this file get converted to a C language static string
+;;; and is then fed to the guile library at start up time.
+;;; Blank lines, commends, leading and trailing white space and spaces
+;;; before closing parentheses are all stripped.
 ;;;
 (use-modules (ice-9 common-list))
 
@@ -100,6 +103,10 @@
 (define-macro (defined-as predicate symbol)
   `(and (defined? ',symbol) (,predicate ,symbol)))
 
+(catch #t
+  (lambda () (read-enable 'curly-infix))
+  (lambda args #f))
+
 ;;; /*=gfunc   html_escape_encode
 ;;;  *
 ;;;  * what:   encode html special characters
@@ -123,6 +130,19 @@
 (define stt-idx-tbl stt-table)
 (define stt-idx     0)
 
+;;; /*=gfunc   insert_suspended
+;;;  *
+;;;  * what:   insert a named suspension in current output
+;;;  *
+;;;  * exparg: susp-name , the name of the suspended output
+;;;  *
+;;;  * doc:    Emit into the current output the output suspended under a
+;;;  *         given diversion name.
+;;; =*/
+;;;
+(define insert-suspended (lambda (susp-name) (begin
+   (out-resume susp-name) (out-pop #t) )))
+
 ;;; /*=gfunc   string_table_new
 ;;;  *
 ;;;  * what:   create a string table
@@ -132,9 +152,10 @@
 ;;;  *
 ;;;  * doc:
 ;;;  *   This function will create an array of characters.  The companion
-;;;  *   functions, (@xref{SCM string-table-add}, and @pxref{SCM
-;;;  *   emit-string-table}) will insert text and emit the populated table,
-;;;  *   respectively.
+;;;  *   functions, (@xref{SCM string-table-add},
+;;;  *   @xref{SCM string-table-add-ref}, and
+;;;  *   @pxref{SCM emit-string-table}) will insert text and emit the
+;;;  *   populated table.
 ;;;  *
 ;;;  *   With these functions, it should be much easier to construct
 ;;;  *   structures containing string offsets instead of string pointers.
@@ -146,22 +167,20 @@
 ;;;  *
 ;;;  *   @example
 ;;;  *      [+ (string-table-new "scribble")
-;;;  *    `'   (out-push-new)
-;;;  *    `'   (define ix 0)
+;;;  *    `'   (out-push-new) ;; redirect output to temporary
 ;;;  *    `'   (define ct 1)  +][+
 ;;;  *
 ;;;  *      FOR str IN that was the week that was +][+
 ;;;  *    `'  (set! ct (+ ct 1))
-;;;  *    `'  (set! ix (string-table-add "scribble" (get "str")))
 ;;;  *      +]
-;;;  *    `'    scribble + [+ (. ix) +],[+
+;;;  *    `'    [+ (string-table-add-ref "scribble" (get "str")) +],[+
 ;;;  *      ENDFOR  +]
-;;;  *    `'    NULL @};
 ;;;  *      [+ (out-suspend "main")
 ;;;  *    `'   (emit-string-table "scribble")
 ;;;  *    `'   (ag-fprintf 0 "\nchar const *ap[%d] = @{" ct)
 ;;;  *    `'   (out-resume "main")
-;;;  *    `'   (out-pop #t) +]
+;;;  *    `'   (out-pop #t) ;; now dump out the redirected output +]
+;;;  *    `'    NULL @};
 ;;;  *   @end example
 ;;;  *
 ;;;  *   @noindent
@@ -189,17 +208,21 @@
 ;;;  *    `'    "that\0" "was\0"  "the\0"  "week\0";
 ;;;  *
 ;;;  *      char const *ap[7] = @{
-;;;  *    `'    scribble + 0,
-;;;  *    `'    scribble + 5,
-;;;  *    `'    scribble + 9,
-;;;  *    `'    scribble + 13,
-;;;  *    `'    scribble + 0,
-;;;  *    `'    scribble + 5,
+;;;  *    `'    scribble+0,
+;;;  *    `'    scribble+5,
+;;;  *    `'    scribble+9,
+;;;  *    `'    scribble+13,
+;;;  *    `'    scribble+0,
+;;;  *    `'    scribble+5,
 ;;;  *    `'    NULL @};
 ;;;  *   @end example
 ;;;  *
 ;;;  *   These functions use the global name space @code{stt-*} in addition to
 ;;;  *   the function names.
+;;;  *
+;;;  *   If you utilize this in your programming, it is recommended that you
+;;;  *   prevent printf format usage warnings with the GCC option
+;;;  *   @code{-Wno-format-contains-nul}
 ;;; =*/
 ;;;
 (define string-table-new (lambda (st-name) (begin
@@ -214,6 +237,7 @@
 )))
 
 ;;; /*=gfunc   string_table_add
+;;;  * general-use:
 ;;;  *
 ;;;  * what:   Add an entry to a string table
 ;;;  *
@@ -240,8 +264,9 @@
    (set! stt-idx     (hash-ref stt-idx-tbl str-val))
    (if (not (number? stt-idx))
        (begin
-          (ag-fprintf st-name "%s \"\\0\"\n" (c-string str-val))
           (set! stt-idx (hash-ref stt-curr "current-index"))
+          (ag-fprintf st-name "/* %5d */ %s \"\\0\"\n"
+                      stt-idx (c-string str-val))
           (hash-create-handle! stt-idx-tbl str-val stt-idx)
           (hash-set! stt-curr "current-index"
                     (+ stt-idx (string-length str-val) 1)  )
@@ -289,10 +314,13 @@
    ;; End the last line with a semi-colon
    ;;
    (emit (shell (string-append
-      "(sed 's/^ *//;s/\" \"\\\\0\"/\\\\0\"/' | \
-      columns -I4 --spread=1
-      ) <<\\_EndStringTable_\n" (out-pop #t) "_EndStringTable_")))
-   (emit ";\n")
+     "sed 's/^ /      /
+	$s/\" \"\\\\0\"/\";/
+	s/\" \"\\\\0/\\\\0/
+	' <<\\_EOF_\n"
+     (out-pop #t)
+     "_EOF_")))
+   (emit "\n")
 )))
 
 ;;; /*=gfunc   string_table_size
@@ -356,10 +384,6 @@
   gp-name
 )))
 
-(use-modules (ice-9 debug))
-
-(read-enable 'positions)
-
 ;;; /*=gfunc   stack_join
 ;;;  *
 ;;;  * what:   stack values then join them
@@ -376,4 +400,5 @@
 (define stack-join (lambda (j-str ag-name)
   (join j-str (stack ag-name))))
 
+(version)
 ;;; end of agen5/schemedef.scm

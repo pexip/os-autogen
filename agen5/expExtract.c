@@ -1,12 +1,14 @@
 /**
  * @file expExtract.c
  *
- *  Time-stamp:        "2011-01-28 10:22:33 bkorb"
- *
  *  This module implements a file extraction function.
  *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,28 +25,75 @@
  */
 
 /* = = = START-STATIC-FORWARD = = = */
-static char const*
-load_extract_file(char const* pzNewFile);
+static char const *
+load_extract_file(char const * new_fil);
 
 static SCM
-mk_empty_text(char const* pzStart, char const* pzEnd, SCM def);
+mk_empty_text(char const * start, char const * end, SCM def);
 
 static SCM
-get_text(char const* pzText, char const* pzStart, char const* pzEnd, SCM def);
+get_text(char const * text, char const * start, char const * end, SCM def);
 /* = = = END-STATIC-FORWARD = = = */
+
+LOCAL char *
+load_file(char const * fname)
+{
+    char * res = NULL;
+    FILE * fp  = fopen(fname, "r");
+    size_t fsz;
+
+    if (fp == NULL)
+        return NULL;
+
+    {
+        struct stat stbf;
+        if (fstat(fileno(fp), &stbf) != 0) {
+            int err = errno;
+            fclose(fp);
+            errno = err;
+            return NULL;
+        }
+
+        fsz = stbf.st_size;
+        res = (char*)AGALOC(fsz + 1, "load_file");
+        if (outfile_time < stbf.st_mtime)
+            outfile_time = stbf.st_mtime;
+    }
+
+    {
+        char * scan = res;
+        do  {
+            size_t sz = fread(scan, 1, fsz, fp);
+            if (sz == 0)
+                fserr(AUTOGEN_EXIT_FS_ERROR, "fread", fname);
+
+            scan += sz;
+            fsz  -= sz;
+        } while (fsz > 0);
+
+        *scan = NUL;
+    }
+
+    fclose(fp);
+
+    if (dep_fp != NULL)
+        add_source_file(fname);
+    return res;
+}
 
 /**
  *  Load a file into memory.  Keep it in memory and try to reuse it
  *  if we get called again.  Likely, there will be several extractions
  *  from a single file.
+ *
+ * @param[in] new_fil  name of extraction file to load
+ * @returns the contents of the file or NULL
  */
-static char const*
-load_extract_file(char const* pzNewFile)
+static char const *
+load_extract_file(char const * new_fil)
 {
-    static char const * pzFile = NULL;
-    static char const * pzText = NULL;
-    struct stat  sbuf;
-    char* pzIn;
+    static char const * last_fname = NULL;
+    static char const * file_text  = NULL;
 
     /*
      *  Make sure that we:
@@ -61,75 +110,43 @@ load_extract_file(char const* pzNewFile)
      *  based on its contents, but since it is always optional input, it cannot
      *  be made to be required by make.
      */
-    if (pzNewFile == NULL)
+    if (new_fil == NULL)
         return NULL;
 
-    if (  (pzFile != NULL)
-       && (strcmp(pzFile, pzNewFile) == 0))
-        return pzText;
+    if (  (last_fname != NULL)
+       && (strcmp(last_fname, new_fil) == 0))
+        return file_text;
 
-    if (  (stat(pzNewFile, &sbuf) != 0)
-       || (! S_ISREG(sbuf.st_mode))
-       || (sbuf.st_size < 10) )
-        return NULL;
-
-    if (pzFile != NULL) {
-        AGFREE((void*)pzFile);
-        AGFREE((void*)pzText);
-        pzFile = pzText = NULL;
+    {
+        struct stat sbuf;
+        if (  (stat(new_fil, &sbuf) != 0)
+           || (! S_ISREG(sbuf.st_mode))
+           || (sbuf.st_size < 10) )
+            return NULL;
     }
 
-    AGDUPSTR(pzFile, pzNewFile, "extract file name");
-    pzIn = (char*)AGALOC(sbuf.st_size + 1, "Extraction File Text");
+    if (last_fname != NULL) {
+        AGFREE((void*)last_fname);
+        AGFREE((void*)file_text);
+        last_fname = file_text = NULL;
+    }
+
+    AGDUPSTR(last_fname, new_fil, "extract file");
 
     if (! HAVE_OPT(WRITABLE))
         SET_OPT_WRITABLE;
 
-    pzText = (char const*)pzIn;
+    file_text = load_file(last_fname);
+    if (file_text != NULL)
+        return file_text;
 
-    /*
-     *  Suck up the file.  We must read it all.
-     */
-    {
-        struct stat stbf;
-        FILE* fp = fopen(pzNewFile, "r");
-        if (fp == NULL)
-            goto bad_return;
-
-        if (fstat(fileno(fp), &stbf) != 0) {
-            fclose(fp);
-            goto bad_return;
-        }
-
-        if (outTime <= stbf.st_mtime)
-            outTime = stbf.st_mtime + 1;
-
-        do  {
-            size_t sz = fread(pzIn, (size_t)1, (size_t)sbuf.st_size, fp);
-            if (sz == 0) {
-                fprintf(stderr, "Error %d (%s) reading %d bytes of %s\n",
-                        errno, strerror(errno), (int)sbuf.st_size, pzFile);
-                AG_ABEND("read failure");
-            }
-
-            pzIn += sz;
-            sbuf.st_size -= sz;
-        } while (sbuf.st_size > 0);
-
-        *pzIn = NUL;
-        fclose(fp);
+    AGFREE((void*)last_fname);
+    last_fname = NULL;
+    if (file_text != NULL) {
+        AGFREE((void*)file_text);
+        file_text = NULL;
     }
-
-    return pzText;
-
- bad_return:
-
-    AGFREE((void*)pzFile);
-    pzFile = NULL;
-    AGFREE((void*)pzText);
-    pzText = NULL;
-
-    return pzText;
+    return NULL;
 }
 
 
@@ -138,20 +155,20 @@ load_extract_file(char const* pzNewFile)
  *  Either way, emit an empty enclosure.
  */
 static SCM
-mk_empty_text(char const* pzStart, char const* pzEnd, SCM def)
+mk_empty_text(char const * start, char const * end, SCM def)
 {
-    size_t mlen = strlen(pzStart) + strlen(pzEnd) + 3;
-    char* pzOut;
+    ssize_t mlen = (ssize_t)(strlen(start) + strlen(end) + 3);
+    char * pzOut;
 
     if (! AG_SCM_STRING_P(def)) {
-        pzOut = ag_scribble(mlen);
-        sprintf(pzOut, "%s\n%s", pzStart, pzEnd);
+        pzOut = scribble_get(mlen);
+        sprintf(pzOut, LINE_CONCAT3_FMT+3, start, end);
 
     } else {
-        char const * pzDef = ag_scm2zchars(def, "default extract string");
-        mlen += AG_SCM_STRLEN(def) + 1;
-        pzOut = ag_scribble(mlen);
-        sprintf(pzOut, "%s\n%s\n%s", pzStart, pzDef, pzEnd);
+        char const * pzDef = ag_scm2zchars(def, "dft extr str");
+        mlen += (ssize_t)AG_SCM_STRLEN(def) + 1;
+        pzOut = scribble_get(mlen);
+        sprintf(pzOut, LINE_CONCAT3_FMT, start, pzDef, end);
     }
 
     return AG_SCM_STR02SCM(pzOut);
@@ -162,19 +179,19 @@ mk_empty_text(char const* pzStart, char const* pzEnd, SCM def)
  *  If we got it, emit it.
  */
 static SCM
-get_text(char const* pzText, char const* pzStart, char const* pzEnd, SCM def)
+get_text(char const * text, char const * start, char const * end, SCM def)
 {
-    char const* pzS = strstr(pzText, pzStart);
+    char const* pzS = strstr(text, start);
     char const* pzE;
 
     if (pzS == NULL)
-        return mk_empty_text(pzStart, pzEnd, def);
+        return mk_empty_text(start, end, def);
 
-    pzE = strstr(pzS, pzEnd);
+    pzE = strstr(pzS, end);
     if (pzE == NULL)
-        return mk_empty_text(pzStart, pzEnd, def);
+        return mk_empty_text(start, end, def);
 
-    pzE += strlen(pzEnd);
+    pzE += strlen(end);
 
     return AG_SCM_STR2SCM(pzS, (size_t)(pzE - pzS));
 }
@@ -273,35 +290,35 @@ get_text(char const* pzText, char const* pzStart, char const* pzEnd, SCM def)
 SCM
 ag_scm_extract(SCM file, SCM marker, SCM caveat, SCM def)
 {
-    char const * pzStart;
-    char const * pzEnd;
-    char const * pzText;
+    char const * start;
+    char const * end;
+    char const * text;
 
     if (! AG_SCM_STRING_P(file) || ! AG_SCM_STRING_P(marker))
         return SCM_UNDEFINED;
 
-    pzText = load_extract_file(ag_scm2zchars(file, "extract file"));
+    text = load_extract_file(ag_scm2zchars(file, "extr"));
 
     {
-        char const * pzMarker = ag_scm2zchars(marker, "marker");
-        char const * pzCaveat = "DO NOT CHANGE THIS COMMENT";
+        char const * mark    = ag_scm2zchars(marker, "mark");
+        char const * careful = EXTRACT_CAVEAT;
 
         if (AG_SCM_STRING_P(caveat) && (AG_SCM_STRLEN(caveat) > 0))
-            pzCaveat = ag_scm2zchars(caveat, "extract caveat");
+            careful = ag_scm2zchars(caveat, "caveat");
 
-        pzStart = aprf(pzMarker, "START", pzCaveat);
-        pzEnd   = aprf(pzMarker, "END  ", pzCaveat);
+        start = aprf(mark, EXTRACT_START, careful);
+        end   = aprf(mark, EXTRACT_END,   careful);
     }
 
     {
         SCM res;
 
-        if (pzText == NULL)
-             res = mk_empty_text(pzStart, pzEnd, def);
-        else res = get_text(pzText, pzStart, pzEnd, def);
+        if (text == NULL)
+             res = mk_empty_text(start, end, def);
+        else res = get_text(text, start, end, def);
 
-        AGFREE((void*)pzStart);
-        AGFREE((void*)pzEnd);
+        AGFREE((void*)start);
+        AGFREE((void*)end);
         return res;
     }
 }
@@ -322,11 +339,10 @@ ag_scm_extract(SCM file, SCM marker, SCM caveat, SCM def)
 SCM
 ag_scm_find_file(SCM file, SCM suffix)
 {
-    static char const zFun[] = "find-file";
     SCM res = SCM_UNDEFINED;
 
     if (! AG_SCM_STRING_P(file))
-        scm_wrong_type_arg(zFun, 1, file);
+        scm_wrong_type_arg(FIND_FILE_NAME, 1, file);
 
     {
         char z[ AG_PATH_MAX+1 ];
@@ -339,17 +355,19 @@ ag_scm_find_file(SCM file, SCM suffix)
             char* apz[2];
             apz[0] = (char *)ag_scm2zchars(suffix, "file suffix");
             apz[1] = NULL;
-            if (SUCCESSFUL(findFile(pz, z, (char const **)apz, NULL)))
+            if (SUCCESSFUL(find_file(pz, z, (char const **)apz, NULL)))
                 res = AG_SCM_STR02SCM(z);
 
-        } else if (SUCCESSFUL(findFile(pz, z, NULL, NULL)))
+        } else if (SUCCESSFUL(find_file(pz, z, NULL, NULL)))
             res = AG_SCM_STR02SCM(z);
     }
 
     return res;
 }
 
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

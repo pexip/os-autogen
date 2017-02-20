@@ -9,7 +9,7 @@ Standards-Version: 3.8.3
 Homepage: http://www.gnu.org/software/autogen/
 Vcs-Git: http://git.brad-smith.co.uk/git/debian/pkg-autogen.git
 Vcs-Browser: http://git.brad-smith.co.uk/?p=debian/pkg-autogen.git
-XS-Pexip-Upstream: http://archive.ubuntu.com/ubuntu/ precise
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: autogen
 Architecture: any

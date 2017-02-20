@@ -1,10 +1,8 @@
 ##  -*- Mode: Makefile -*-
 ## Makefile.am --- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-05-05 10:04:15 bkorb"
-##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -41,14 +39,16 @@ endif
 
 pkgdata_DATA   = config/conftest.tpl config/confmacs.tlib config/liboptschk.m4
 misc_extra     = \
-    VERSION                   NOTES \
-    config/bootstrap          config/bootstrap.local \
-    config/bootstrap.shlib    config/ag_macros.m4 \
-    config/extensions.m4      config/libopts.m4 \
+    VERSION                   autoopts/gettext.h \
+    autoopts/parse-duration.c autoopts/parse-duration.h \
+    config/ag_macros.m4       config/bootstrap \
+    config/bootstrap.local    config/bootstrap.shlib \
+    config/config.rpath       config/gnulib-cache.m4 \
+    config/gnulib-cache.m4    config/gnulib-comp.m4 \
+    config/guile.m4           config/install-defs.sh \
+    config/lib-link.m4        config/libopts.m4 \
     config/liboptschk.m4      config/snprintfv.m4 \
-    config/unlocked-io.m4     autoopts/parse-duration.c \
-    autoopts/parse-duration.h doc/gendocs.sh \
-    doc/gendocs_template
+    config/unlocked-io.m4
 EXTRA_DIST     = $(misc_extra) $(pkgdata_DATA)
 DISTCLEANFILES = stamp-h
 
@@ -61,14 +61,22 @@ pkg         : package
 package     :
 	cd pkg && $(MAKE) $@ pkgtype="$(pkgtype)"
 
-docs        : gnudocs
+docs        : gnudocs doxydocs
 gnudoc      : gnudocs
 gnudocs     :
 	cd doc && $(MAKE) gnudocs
 
+doxydocs    :
+	test -f Doxyfile || cp ~/.Doxyfile ./Doxyfile ; \
+	doxygen
+
 usage-txt.po: gettext
 gettext     :
 	cd autoopts && $(MAKE) usage-txt.po
+
+all         : config/shdefs
+config/shdefs: config/mk-shdefs
+	$(SHELL) $< $@
 
 if HAVE_XML_LIB
 release     : distcheck

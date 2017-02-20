@@ -3,14 +3,14 @@
    h=%s-temp.h
    c=%s-temp.c  +][+
 
-`stamp=\`sed 's,.*stamp:,,' <<\_EOF_
-  Time-stamp:        "2011-06-09 11:34:53 bkorb"
+`stamp=\`sed 's,.*stamp: *",,;s,".*,,' <<\_EOF_
+  Time-stamp:        "2013-10-06 15:55:21 bkorb"
 _EOF_
 \` `            +][+
 
 ;;  This file is part of AutoOpts, a companion to AutoGen.
 ;;  AutoOpts is free software.
-;;  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+;;  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ;;
 ;;  AutoOpts is available under any one of two licenses.  The license
 ;;  in use must be one of these two and the choice is under the control
@@ -22,14 +22,16 @@ _EOF_
 ;;   The Modified Berkeley Software Distribution License
 ;;      See the file "COPYING.mbsd"
 ;;
-;;  These files have the following md5sums:
+;;  These files have the following sha256 sums:
 ;;
-;;  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
-;;  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3
-;;  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd
+;;  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+;;  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+;;  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
   (if (not (exist? "settable"))
       (error "'settable' must be specified globally for getopt_long\n"))
+  (if (not (exist? "no-libopts"))
+      (error "'no-libopts' must be specified globally to use getopt\n"))
   (define prog-name (string->c-name! (get "prog-name")))
   (define PROG-NAME (string-upcase prog-name))
   (out-move (string-append "getopt-" prog-name "." (suffix)))
@@ -51,20 +53,118 @@ _EOF_
  *  Last template edit: [+ `echo $stamp` +]
  */[+
 CASE (suffix) +][+
-== h +]
-[+   (make-header-guard "autoopts") +]
+== h          +][+
+ (define header-file (out-name))
+ (out-push-new) \+]
+{
+[+ # START-BUILDTREE-ISMS:
 
-extern int process_[+(. prog-name)+]_opts (int argc, char** argv);
+#  The following code is sedded away in install-hook.sh.
+#  The goal is to ensure we use build tree templates in testing mode, and
+#  remove them when installing this file.
 
-#endif /* [+ (. header-guard) +] */
+\+]
+    aobdir=`echo ${AGexe} | sed 's@/agen5/.*$@@'`/autoopts
+    agopts=-L`dirname [+ (tpl-file #t) +]`' '
+    test "X-L$aobdir/tpl " = "X$agopts" || \
+        agopts="-L${aobdir}/tpl $agopts"
+    tarfile=`set -- ${aobdir}/libopts*.tar.*
+        test -f $1 || {
+            cd ${aobdir}
+            ${MAKE:-make} libsrc || exit 1
+            cd -
+            set -- ${aobdir}/libopts*.tar.*
+            test -f $1 || die 'libopts tarball not built'
+        } >&2
+        echo $1`[+
+
+# END-BUILDTREE-ISMS the following code is for installed version:
+    agopts=
+    aocfg=`echo ${AGexe} | sed 's@/[^/]*$@@'`/autoopts-config
+    test -x "${aocfg}" || aocfg=`which autoopts-config`
+    tarfile=`${aocfg} libsrc`
+
+# END-INSTALL-ONLY-CODE +]
+    if test -n "${AG_Tracing}"
+    then
+        AG_Dep_File=`dirname "${AG_Tracing}"`/ao-[+ (base-name) +].dep
+        agopts="${agopts}-MF${AG_Dep_File} -MT${AG_Dep_File%.dep}.targ"
+    fi
+    cmd="${AGexe} -b[+(base-name)+] ${agopts} -Toptions.tpl [+(def-file)+]"
+    $cmd || die "COMMAND FAIL: $cmd"
+    def_hdr=[+ (base-name) +].h
+    sed 's@<autoopts/options.h>@"[+ (. header-file)
+        +]"@' $def_hdr > XXX-$$
+    mv -f XXX-$$ $def_hdr
+    hdrfile=`gunzip -c $tarfile | tar tf - | fgrep /autoopts/options.h`
+    gunzip -c $tarfile | tar xf - $hdrfile
+    exec 3< $hdrfile
+    untardir=`echo $hdrfile | sed 's@/.*@@'`
+} >&2
+
+while :
+do
+    IFS= read -r -u3 line || die "no header guard in $hdrfile"
+    case "$line" in
+    *AUTOOPTS_OPTIONS_H_GUARD ) break ;;
+    esac
+done
+echo
+
+echo "$line"
+IFS= read -r -u3 line || die "short $hdrfile"
+case "$line" in
+'#define AUTOOPTS_OPTIONS_H_GUARD'* ) : ;;
+*) die "invalid header guard in $hdrfile" ;;
+esac
+echo "$line"
+echo '#include "[+
+(if (exist? "config-header")
+    (get "config-header")
+    (error "getopt template requires a \"config-header\" attribute")
+)   +]"'
+
+while :
+do
+    IFS= read -r -u3 line || die "no CPLUSPLUS_CLOSER in $hdrfile"
+    case "$line" in
+    *'Versions where in various fields first appear'* ) break ;;
+    esac
+    echo "$line"
+done
+
+cat <<- _EOF_
+	 * option loop function
+	 */
+	#ifdef  __cplusplus
+	#define CPLUSPLUS_OPENER extern "C" {
+	CPLUSPLUS_OPENER
+	#define CPLUSPLUS_CLOSER }
+	#else
+	#define CPLUSPLUS_CLOSER
+	#endif
+
+	extern int process_[+(. prog-name)+]_opts(int argc, char ** argv);
+	extern void optionPrintVersion(tOptions * opts, tOptDesc * od);
+	extern void optionUsage(tOptions * opts, int exit_code);
+
+	CPLUSPLUS_CLOSER
+	_EOF_
+
+sed '1,/^CPLUSPLUS_CLOSER/d' <&3
+exec 3<&-
+rm -rf $untardir
+[+ (shell (out-pop #t)) +]
 [+ == c +]
+#include "[+ (. header-file) +]"
+
 #include <sys/types.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <[+ (if (exist? "long-opts") "getopt" "unistd") +].h>
 #include "[+ (base-name) +].h"
-#include "[+ (. header-file) +]"
 
 #ifndef DIRCH
 #  if defined(_WIN32) && !defined(__CYGWIN__)
@@ -151,7 +251,7 @@ static char z_opts[] = "[+ # close quote for emacs " +][+
  *  AutoOpts library replacement routines:
  */
 void
-optionUsage (tOptions* pOptions, int status)
+optionUsage (tOptions * pOptions, int status)
 {
   if (status != 0)
     fprintf (stderr, _("Try `%s [+(. help-opt)+]' for more information.\n"),
@@ -166,9 +266,7 @@ optionUsage (tOptions* pOptions, int status)
 }
 
 void
-optionPrintVersion(
-    tOptions*   pOptions,
-    tOptDesc*   pOptDesc )
+optionPrintVersion (tOptions * pOptions, tOptDesc * pOptDesc)
 {
   char const * pz_by =
     _("[+ # " +][+
@@ -179,10 +277,10 @@ optionPrintVersion(
          "" )
      (get "version") ) +]\n\
 Written by [+(join ", " (stack "copyright.author"))+].\n\n\
-copyright (c) [+ copyright.date +] [+ copyright.owner +]\n[+
+Copyright (C) [+ copyright.date +] [+ copyright.owner +]\n[+
 
 CASE copyright.type +][+
-*= gpl    +]\
+*~ [l]*gpl    +]\
 This is free software; see the source for copying conditions.  There is NO\n\
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.[+
 
@@ -301,7 +399,7 @@ ENDIF +]) {
     case VALUE_OPT_[+ (. OPT-NAME) +]:[+
 
       IF (not (exist? "max")) +]
-      if (HAVE_OPT( [+(. OPT-NAME)+] ))
+      if (HAVE_OPT([+(. OPT-NAME)+]))
         usage_too_many (&DESC([+(. OPT-NAME) +]));[+
 
       ELIF (not (= (get "max") "nolimit"))  +]
@@ -333,16 +431,16 @@ FOR flag +][+
      (define check-have-opt (or (exist? "flags-cant") (exist? "flags-must")))
      check-have-opt
 +]
-  if (HAVE_OPT( [+ (. OPT-NAME) +] )) {[+
+  if (HAVE_OPT([+ (. OPT-NAME) +])) {[+
 
     FOR flags-cant      +]
-    if (HAVE_OPT( [+ (string-upcase! (string->c-name! (get "flags-cant"))) +] ))
+    if (HAVE_OPT([+ (string-upcase! (string->c-name! (get "flags-cant"))) +]))
       usage_cannot (DESC([+ (. OPT-NAME) +]).pz_Name, DESC([+
         (string-upcase! (string->c-name! (get "flags-cant"))) +]).pz_Name);[+
     ENDFOR cant         +][+
 
     FOR flags-must      +]
-    if (! HAVE_OPT( [+(string-upcase! (string->c-name! (get "flags-must")))+] ))
+    if (! HAVE_OPT([+(string-upcase! (string->c-name! (get "flags-must")))+]))
       usage_must (DESC([+ (. OPT-NAME) +]).pz_Name, DESC([+
         (string-upcase! (string->c-name! (get "flags-must"))) +]).pz_Name);[+
     ENDFOR must         +][+
@@ -376,7 +474,7 @@ FOR flag +][+
        have kept the occurrence count.  Check that against the limit. +][+
 
       IF (not (exist? "max"))
-        +]! HAVE_OPT( [+ (. OPT-NAME) +] )[+
+        +]! HAVE_OPT([+ (. OPT-NAME) +])[+
       ELSE  max ct exists
         +]DESC([+(. OPT-NAME)+]).optOccCt < DESC([+(. OPT-NAME)+]).optMinCt[+
       ENDIF +])[+
@@ -394,12 +492,18 @@ DEFINE emit-usage-string    +][+
 
   (out-push-new)            +][+
   INCLUDE "usage.tlib"      +][+
-  (kr-string (string-append (shell (string-append
-  "sed -e '/version information/s/ -v \\[arg\\]/ -v      /' \
-       -e '/: illegal option --/d' \
-       -e 's/ --version\\[=arg\\]/ --version      /' <<_EOF_\n"
-  (out-pop #t) "\n_EOF_"
-  )) "\n" ))  +][+
+  (out-suspend "use-text")
+  (out-push-new)           \+]
+sed -e '/version information/s/ -v \[arg\]/ -v      /' \
+    -e '/: illegal option --/d' \
+    -e 's/ --version\[=arg\]/ --version      /' <<_EOF_
+[+ (out-resume "use-text") (out-pop #t) +]
+_EOF_[+
+
+ (kr-string (string-append (shell (out-pop #t)) "\n" )
+ )
+
++][+
 
 ENDDEF
 

@@ -2,16 +2,18 @@
 /**
  * \file environment.c
  *
- * Time-stamp:      "2011-04-06 09:35:55 bkorb"
- *
  *  This file contains all of the routines that must be linked into
  *  an executable to use the generated option processing.  The optional
  *  routines are in separately compiled modules so that they will not
  *  necessarily be linked in.
  *
+ * @addtogroup autoopts
+ * @{
+ */
+/*
  *  This file is part of AutoOpts, a companion to AutoGen.
  *  AutoOpts is free software.
- *  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoOpts is available under any one of two licenses.  The license
  *  in use must be one of these two and the choice is under the control
@@ -23,52 +25,52 @@
  *   The Modified Berkeley Software Distribution License
  *      See the file "COPYING.mbsd"
  *
- *  These files have the following md5sums:
+ *  These files have the following sha256 sums:
  *
- *  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
- *  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
- *  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+ *  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+ *  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+ *  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
  */
 
 /* = = = START-STATIC-FORWARD = = = */
 static void
 do_env_opt(tOptState * os, char * env_name,
-            tOptions* pOpts, teEnvPresetType type);
+            tOptions * pOpts, teEnvPresetType type);
 /* = = = END-STATIC-FORWARD = = = */
 
 /*
  *  doPrognameEnv - check for preset values from the ${PROGNAME}
  *  environment variable.  This is accomplished by parsing the text into
  *  tokens, temporarily replacing the arg vector and calling
- *  doImmediateOpts and/or doRegularOpts.
+ *  immediate_opts and/or regular_opts.
  */
 LOCAL void
-doPrognameEnv(tOptions* pOpts, teEnvPresetType type)
+doPrognameEnv(tOptions * pOpts, teEnvPresetType type)
 {
-    char const*   pczOptStr = getenv(pOpts->pzPROGNAME);
-    token_list_t* pTL;
-    int           sv_argc;
-    tAoUI         sv_flag;
-    char**        sv_argv;
+    char const *        env_opts = getenv(pOpts->pzPROGNAME);
+    token_list_t*       pTL;
+    int                 sv_argc;
+    proc_state_mask_t   sv_flag;
+    char **             sv_argv;
 
     /*
      *  No such beast?  Then bail now.
      */
-    if (pczOptStr == NULL)
+    if (env_opts == NULL)
         return;
 
     /*
      *  Tokenize the string.  If there's nothing of interest, we'll bail
      *  here immediately.
      */
-    pTL = ao_string_tokenize(pczOptStr);
+    pTL = ao_string_tokenize(env_opts);
     if (pTL == NULL)
         return;
 
     /*
      *  Substitute our $PROGNAME argument list for the real one
      */
-    sv_argc = pOpts->origArgCt;
+    sv_argc = (int)pOpts->origArgCt;
     sv_argv = pOpts->origArgVect;
     sv_flag = pOpts->fOptSet;
 
@@ -78,8 +80,11 @@ doPrognameEnv(tOptions* pOpts, teEnvPresetType type)
      *  The option scanning code will skip the "program name" at the start
      *  of this list of tokens, so we accommodate this way ....
      */
-    pOpts->origArgVect = (char**)(pTL->tkn_list - 1);
-    pOpts->origArgCt   = pTL->tkn_ct   + 1;
+    {
+        uintptr_t v = (uintptr_t)(pTL->tkn_list);
+        pOpts->origArgVect = (void *)(v - sizeof(char *));
+    }
+    pOpts->origArgCt   = (unsigned int)pTL->tkn_ct   + 1;
     pOpts->fOptSet    &= ~OPTPROC_ERRSTOP;
 
     pOpts->curOptIdx   = 1;
@@ -87,17 +92,17 @@ doPrognameEnv(tOptions* pOpts, teEnvPresetType type)
 
     switch (type) {
     case ENV_IMM:
-        (void)doImmediateOpts(pOpts);
+        (void)immediate_opts(pOpts);
         break;
 
     case ENV_ALL:
-        (void)doImmediateOpts(pOpts);
+        (void)immediate_opts(pOpts);
         pOpts->curOptIdx = 1;
         pOpts->pzCurOpt  = NULL;
         /* FALLTHROUGH */
 
     case ENV_NON_IMM:
-        (void)doRegularOpts(pOpts);
+        (void)regular_opts(pOpts);
     }
 
     /*
@@ -105,13 +110,13 @@ doPrognameEnv(tOptions* pOpts, teEnvPresetType type)
      */
     free(pTL);
     pOpts->origArgVect = sv_argv;
-    pOpts->origArgCt   = sv_argc;
+    pOpts->origArgCt   = (unsigned int)sv_argc;
     pOpts->fOptSet     = sv_flag;
 }
 
 static void
 do_env_opt(tOptState * os, char * env_name,
-            tOptions* pOpts, teEnvPresetType type)
+            tOptions * pOpts, teEnvPresetType type)
 {
     os->pzOptArg = getenv(env_name);
     if (os->pzOptArg == NULL)
@@ -124,6 +129,8 @@ do_env_opt(tOptState * os, char * env_name,
        && (streqvcmp(os->pzOptArg, os->pOD->pz_DisablePfx) == 0)) {
         os->flags |= OPTST_DISABLED;
         os->pzOptArg = NULL;
+        handle_opt(pOpts, os);
+        return;
     }
 
     switch (type) {
@@ -177,11 +184,11 @@ do_env_opt(tOptState * os, char * env_name,
 }
 
 /*
- *  doEnvPresets - check for preset values from the envrionment
+ *  env_presets - check for preset values from the envrionment
  *  This routine should process in all, immediate or normal modes....
  */
 LOCAL void
-doEnvPresets(tOptions* pOpts, teEnvPresetType type)
+env_presets(tOptions * pOpts, teEnvPresetType type)
 {
     int        ct;
     tOptState  st;
@@ -203,7 +210,7 @@ doEnvPresets(tOptions* pOpts, teEnvPresetType type)
 
     pzFlagName = zEnvName
         + snprintf(zEnvName, sizeof(zEnvName), "%s_", pOpts->pzPROGNAME);
-    spaceLeft = AO_NAME_SIZE - (pzFlagName - zEnvName) - 1;
+    spaceLeft = AO_NAME_SIZE - (unsigned long)(pzFlagName - zEnvName) - 1;
 
     for (;ct-- > 0; st.pOD++) {
         size_t nln;
@@ -241,7 +248,7 @@ doEnvPresets(tOptions* pOpts, teEnvPresetType type)
             return;
 
         nln = strlen(st.pOD->pz_NAME) + 1;
-            
+
         if (nln > spaceLeft)
             return;
 
@@ -250,7 +257,8 @@ doEnvPresets(tOptions* pOpts, teEnvPresetType type)
     }
 }
 
-/*
+/** @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

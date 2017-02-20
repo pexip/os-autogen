@@ -1,46 +1,36 @@
 /* -*- buffer-read-only: t -*- vi: set ro:
  *
  * Prototypes for getdefs
- * Generated Sun Jun 26 07:39:59 PDT 2011
+ * Generated Sat Aug 30 10:36:48 PDT 2014
  */
 #ifndef GETDEFS_PROTO_H_GUARD
 #define GETDEFS_PROTO_H_GUARD 1
 
-#ifndef LOCAL
-#  define LOCAL extern
-#  define REDEF_LOCAL 1
-#else
-#  undef  REDEF_LOCAL
-#endif
 /*
  *  Extracted from gdemit.c
  */
-LOCAL char*
+static char*
 emitDefinition(char* pzDef, char* pzOut);
 
 /*
  *  Extracted from gdinit.c
  */
-LOCAL void
+static void
 die(char const * fmt, ...);
 
-LOCAL void
+static void
 fserr_die(char const * fmt, ...);
 
-LOCAL void
-processEmbeddedOptions( char* pzText );
+static void
+processEmbeddedOptions(char* pzText);
 
-LOCAL void
-validateOptions( void );
+static void
+validateOptions(void);
 
 /*
  *  Extracted from getdefs.c
  */
-LOCAL char*
+static char*
 loadFile(char const * pzFname);
 
-#ifdef REDEF_LOCAL
-#  undef LOCAL
-#  define LOCAL
-#endif
 #endif /* GETDEFS_PROTO_H_GUARD */

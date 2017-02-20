@@ -2,11 +2,10 @@
 ##
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Time-stamp:      "2011-04-20 14:56:07 bkorb"
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -24,13 +23,14 @@
 SHELL_TESTS = define.test directives.test error.test expr.test extract.test \
 	include.test opts.test output.test snarf.test suffix.test shell.test
 
-NOSHELL_TESTS = \
-    alist.test    case.test     debug.test   defref.test dynref.test \
-    endmac.test   for.test      forfrom.test forin.test  format.test \
-    get.test      gperf.test    heredef.test html.test   in.test \
-    license.test  line.test     loop.test    make.test   match.test \
-    pseudo.test   reorder.test  stack.test   stress.test string.test \
-    strtable.test strxform.test time.test    columns.test
+NOSHELL_TESTS = return.test \
+    alist.test  case.test   columns.test  debug.test    defref.test \
+    dynref.test endmac.test for.test      forfrom.test  forin.test  \
+    format.test get.test    gperf.test    heredef.test  html.test   \
+    in.test     leave.test  license.test  line.test     loop.test   \
+    make.test   match.test  pseudo.test   reorder.test  stack.test  \
+    stress.test string.test strtable.test strxform.test time.test   \
+    str2m.test
 
 UNREADY_TESTS   = daemon.test
 TESTS       	= @AGEN5_TESTS@
@@ -40,26 +40,30 @@ EXPRLIST    	= expFormat.c expGuile.c expOutput.c  expPrint.c  expState.c \
 	    	  expString.c expGperf.c expExtract.c $(FUNCLIST)
 
 TESTS_ENVIRONMENT = TERM='' \
-	COMPILE='$(COMPILE)' CFLAGS='$(CFLAGS)' LDFLAGS='$(LDFLAGS)' \
-	EXPRLIST="$(EXPRLIST)" SHELL="$(POSIX_SHELL)" srcdir="$(srcdir)"
+	CFLAGS='$(CFLAGS)' \
+	COMPILE='$(COMPILE)' \
+	EXPRLIST="$(EXPRLIST)" \
+	LDFLAGS='$(LDFLAGS)' \
+	SHELL="$(POSIX_SHELL)" \
+	srcdir="$(srcdir)" \
+	top_builddir="$(top_builddir)" \
+	top_srcdir="$(top_srcdir)"
 
 distclean-local:
-	-rm -rf testdir FAILURES
+	-rm -rf *-testd FAILURES defs
 
 $(TESTS)    : defs
 
 defs        : ${top_builddir}/autoopts/test/defs
-	@set -x ; \
-	$(SED) -e '/^ *srcdir=/s@".*"@"$(srcdir)"@' \
-	    -e '/^ *top_srcdir=/s@".*"@"$(top_srcdir)"@' \
-	   ${top_builddir}/autoopts/test/defs > $@ ; \
-	cd $(srcdir) ; chmod +x *.test || :
+	$(TESTS_ENVIRONMENT) $(SHELL) \
+		$(top_srcdir)/config/install-defs.sh \
+			$(top_builddir)/autoopts/test/defs
 
 ${top_builddir}/autoopts/test/defs :
 	cd ${top_builddir}/autoopts/test ; $(MAKE) defs
 
 verbose     : defs
-	rm -rf FAILURES testdir ; \
+	rm -rf FAILURES *-testd ; \
 	VERBOSE=true $(MAKE) check TESTS="$(TESTS)"
 
-# Makefile.am ends here
+# end of Makefile.am

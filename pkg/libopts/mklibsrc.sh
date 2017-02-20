@@ -2,10 +2,8 @@
 ##  -*- Mode: shell-script -*-
 ## mklibsrc.sh --   make the libopts tear-off library source tarball
 ##
-## Time-stamp:      "2011-03-06 15:24:16 bkorb"
-##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -20,7 +18,8 @@
 ##  You should have received a copy of the GNU General Public License along
 ##  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -ex
+exec 2> /tmp/mklibsrc-log.tx
 
 top_builddir=`cd $top_builddir ; pwd`
 top_srcdir=`cd $top_srcdir ; pwd`
@@ -41,14 +40,12 @@ tagd=`pwd`/${tag}
 #  WORKING IN SOURCE DIRECTORY
 #
 cd ${top_builddir}/autoopts
-files=`fgrep '#include' libopts.c | \
-       sed -e 's,"$,,;s,#.*",,' \
-           -e '/^compat\/compat\.h$/d' `
+files='libopts.c gettext.h parse-duration.c parse-duration.h
+	stdnoreturn.in.h '$(
+    fgrep '#include' libopts.c | \
+       sed -e 's,"$,,;s,#.*",,' )
 
-egrep "#define HAVE_PARSE_DURATION" ${top_builddir}/config.h >/dev/null || \
-  files="${files} parse-duration.c parse-duration.h"
-
-for f in libopts.c ${files}
+for f in ${files} intprops.h
 do
   test -f ${f} &&
     cp -f ${f} ${tagd}/${f} && continue
@@ -64,7 +61,7 @@ cp -f ${top_srcdir}/pkg/libopts/COPYING.* ${tagd}/.
 
 cd ${top_srcdir}/compat
 cp windows-config.h compat.h pathfind.c snprintf.c strdup.c strchr.c \
-   ${tagd}/compat/.
+   ../config/snippet/_Noreturn.h ${tagd}/compat/.
 #
 #  END WORK IN SOURCE DIRECTORY
 #
@@ -72,7 +69,7 @@ cp windows-config.h compat.h pathfind.c snprintf.c strdup.c strchr.c \
 
 cd ${tagd}
 
-cp ${top_srcdir}/config/libopts*.m4 m4/.
+cp ${top_srcdir}/config/libopts*.m4 ${top_srcdir}/config/stdnoret*.m4 m4/.
 chmod u+w m4/libopts.m4
 cat ${top_srcdir}/pkg/libopts/libopts-add.m4 >> m4/libopts.m4
 test ! -f Makefile.am || rm -f Makefile.am
@@ -82,8 +79,8 @@ sed s,'\${tag}',"${tag}",g ${top_srcdir}/pkg/libopts/README > README
 touch MakeDefs.inc
 
 vers=${AO_CURRENT}:${AO_REVISION}:${AO_AGE}
-exec 3> Makefile.am
-cat >&3 <<- EOMakefile
+{
+  sed $'s/^\t//' << EOMakefile
 	## LIBOPTS Makefile
 	MAINTAINERCLEANFILES    = Makefile.in
 	if INSTALL_LIBOPTS
@@ -92,24 +89,28 @@ cat >&3 <<- EOMakefile
 	noinst_LTLIBRARIES      = libopts.la
 	endif
 	libopts_la_SOURCES      = libopts.c
-	libopts_la_CPPFLAGS     = -I\$(top_srcdir)
+	libopts_la_CPPFLAGS     = -I\$(srcdir)
 	libopts_la_LDFLAGS      = -version-info ${AM_LDFLAGS} ${vers}
-	EXTRA_DIST              = \\
-	EOMakefile
+	EXTRA_DIST		=
+	BUILT_SOURCES		=
+	MOSTLYCLEANFILES	=
 
-find $(ls -A) -type f \
-  | egrep -v '^(libopts\.c|Makefile\.am)$' \
-  | ${CLexe} -I4 --spread=1 --line-sep="  \\" >&3
-exec 3>&-
+	libopts.c:		\$(BUILT_SOURCES)
+		@: do-nothing rule to avoid default SCCS get
 
-if gzip --version > /dev/null 2>&1
-then
-  gz='gzip --best'
-  sfx=tar.gz
-else
-  gz=compress
-  sfx=tar.Z
-fi
+EOMakefile
+
+  printf '\n# Makefile fragment from gnulib-s stdnoreturn module:\n#\n'
+  sed '/^#/d;/^$/d;s/top_srcdir/srcdir/' \
+    ${top_srcdir}/pkg/libopts/stdnoreturn.mk
+  printf '\nEXTRA_DIST += \\\n'
+  find $(ls -A) -type f \
+    | egrep -v '^(libopts\.c|Makefile\.am)$' \
+    | ${CLexe} -I4 --spread=1 --line-sep="  \\"
+} > Makefile.am
+
+gz='gzip --best'
+sfx=tar.gz
 
 cd ..
 echo ! cd `pwd`
@@ -123,10 +124,5 @@ rm -rf ${tag}
 ## sh-indentation: 2
 ## sh-basic-offset: 2
 ## End:
-
-# eval: (add-hook 'write-file-hooks 'time-stamp)
-# time-stamp-start: "timestamp='"
-# time-stamp-format: "%:y-%02m-%02d"
-# time-stamp-end: "'"
 
 ## end of mklibsrc.sh

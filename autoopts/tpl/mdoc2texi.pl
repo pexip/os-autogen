@@ -1,206 +1,162 @@
-#!/usr/bin/perl
+#! /usr/bin/perl
 
+### To Do:
+
+# the Bl -column command needs work:
+# - support for "-offset" 
+# - support for the header widths
+
+# written by Harlan Stenn
+
+###
+
+package mdoc2texi;
 use strict;
+use warnings;
+use File::Basename qw(dirname);
+use lib dirname(__FILE__);
+use Mdoc qw(ns pp hs mapwords gen_encloser nl);
 
-my ($optlist,$oldoptlist);
-my ($literal);
-my ($line);
-my ($count,$tableitemcount);
+# Ignore commments
+Mdoc::def_macro( '.\"',  sub { () } );
 
-$optlist = 0;       ### 1 = bullet, 2 = enum, 3 = tag, 4 = item
-$oldoptlist = 0;
+# Enclosers
+Mdoc::def_macro( '.An',  sub { @_, ns, '@*' } );
+Mdoc::def_macro( '.Aq',  gen_encloser(qw(< >)),   greedy => 1);
+Mdoc::def_macro( '.Bq',  gen_encloser(qw([ ])),   greedy => 1);
+Mdoc::def_macro( '.Brq', gen_encloser(qw(@{ @})), greedy => 1);
+Mdoc::def_macro( '.Pq',  gen_encloser(qw/( )/),   greedy => 1);
+Mdoc::def_macro( '.Qq',  gen_encloser(qw(" ")),   greedy => 1);
+Mdoc::def_macro( '.Op',  gen_encloser(qw(@code{[ ]})), greedy => 1);
+Mdoc::def_macro( '.Ql',  gen_encloser(qw(@quoteleft{} @quoteright{})),
+    greedy => 1);
+Mdoc::def_macro( '.Sq',  gen_encloser(qw(@quoteleft{} @quoteright{})),
+    greedy => 1);
+Mdoc::def_macro( '.Dq',  gen_encloser(qw(@quotedblleft{} @quotedblright{})), 
+    greedy => 1);
+Mdoc::def_macro( '.Eq', sub { 
+        my ($o, $c) = (shift, pop); 
+        gen_encloser($o, $c)->(@_) 
+},  greedy => 1);
+Mdoc::def_macro( '.D1', sub { "\@example\n", ns, @_, ns, "\n\@end example" },
+    greedy => 1);
+Mdoc::def_macro( '.Dl', sub { "\@example\n", ns, @_, ns, "\n\@end example" },
+    greedy => 1);
 
-while ($line = <STDIN>)
+Mdoc::def_macro( '.Oo',  gen_encloser(qw(@code{[ ]})), concat_until => '.Oc');
+Mdoc::def_macro( 'Oo',   sub { '@code{[', ns, @_ } );
+Mdoc::def_macro( 'Oc',   sub { @_, ns, pp(']}') } );
+
+Mdoc::def_macro( '.Bro', gen_encloser(qw(@code{@{ @}})), concat_until => '.Brc');
+Mdoc::def_macro( 'Bro',  sub { '@code{@{', ns, @_ } );
+Mdoc::def_macro( 'Brc',  sub { @_, ns, pp('@}}') } );
+
+Mdoc::def_macro( '.Po',  gen_encloser(qw/( )/), concat_until => '.Pc');
+Mdoc::def_macro( 'Po',   sub { '(', @_     } );
+Mdoc::def_macro( 'Pc',   sub { @_, ')' } );
+
+Mdoc::def_macro( '.Ar', sub { mapwords {"\@kbd{$_}"} @_ } );
+Mdoc::def_macro( '.Fl', sub { mapwords {"\@code{-$_}"} @_ } );
+Mdoc::def_macro( '.Cm', sub { mapwords {"\@code{-$_}"} @_ } );
+Mdoc::def_macro( '.Ic', sub { mapwords {"\@code{$_}"} @_ } );
+Mdoc::def_macro( '.Cm', sub { mapwords {"\@code{$_}"} @_ } );
+Mdoc::def_macro( '.Li', sub { mapwords {"\@code{$_}"} @_ } );
+Mdoc::def_macro( '.Va', sub { mapwords {"\@code{$_}"} @_ } );
+Mdoc::def_macro( '.Em', sub { mapwords {"\@emph{$_}"} @_ } );
+Mdoc::def_macro( '.Fn', sub { '@code{'.(shift).'()}' } );
+Mdoc::def_macro( '.Ss', sub { "\@subsubsection", hs, @_ });
+Mdoc::def_macro( '.Sh', sub { 
+        my $name = "@_"; 
+        "\@node", hs, "$name\n", ns, "\@subsection", hs, $name
+    });
+Mdoc::def_macro( '.Ss', sub { "\@subsubsection", hs, @_ });
+Mdoc::def_macro( '.Xr', sub { '@code{'.(shift).'('.(shift).')}', @_ } );
+Mdoc::def_macro( '.Sx', gen_encloser(qw(@ref{ })) );
+Mdoc::def_macro( '.Ux', sub { '@sc{unix}', @_ } );
+Mdoc::def_macro( '.Fx', sub { '@sc{freebsd}', @_ } );
 {
-    if ($line !~ /^\./)
-    {
-        print $line;
-        print ".br\n"
-            if ($literal);
-        next;
-    }
+    my $name;
+    Mdoc::def_macro('.Nm', sub {
+        $name = shift || $ENV{AG_DEF_PROG_NAME} || 'XXX' if (!$name);
+        "\@code{$name}"
+    } );
+}
+Mdoc::def_macro( '.Pa', sub { mapwords {"\@file{$_}"} @_ } );
+Mdoc::def_macro( '.Pp', sub { '' } );
 
-    $line =~ s/^\.//;
+# Setup references
 
-    next
-        if ($line =~ /\\"/);
+Mdoc::def_macro( '.Rs', sub { "\@*\n", @_ } );
+Mdoc::set_Re_callback(sub {
+        my ($reference) = @_;
+        "@*\n", ns, $reference->{authors}, ',', "\@emph{$reference->{title}}",
+        ',', $reference->{optional}
+    });
 
-    $line = ParseMacro($line);
-    print($line)
-        if (defined $line);
+# Set up Bd/Ed
+
+my %displays = (
+    literal => [ '@verbatim', '@end verbatim' ],
+);
+
+Mdoc::def_macro( '.Bd', sub {
+        (my $type = shift) =~ s/^-//;
+        die "Not supported display type <$type>" 
+            if not exists $displays{ $type };
+
+        my $orig_ed = Mdoc::get_macro('.Ed');
+        Mdoc::def_macro('.Ed', sub {
+                Mdoc::def_macro('.Ed', delete $orig_ed->{run}, %$orig_ed);
+                $displays{ $type }[1];
+            });
+        $displays{ $type }[0]
+    });
+Mdoc::def_macro('.Ed', sub { die '.Ed used but .Bd was not seen' });
+
+# Set up Bl/El
+
+my %lists = (
+    bullet => [ '@itemize @bullet', '@end itemize' ],
+    tag    => [ '@table @asis', '@end table' ],
+    column => [ '@table @asis', '@end table' ],
+);
+
+Mdoc::set_Bl_callback(sub {
+        my $type = shift;
+        die "Specify a list type"             if not defined $type;
+        $type =~ s/^-//;
+        die "Not supported list type <$type>" if not exists $lists{ $type };
+        Mdoc::set_El_callback(sub { $lists{ $type }[1] });
+        $lists{ $type }[0]
+    });
+Mdoc::def_macro('.It', sub { '@item', hs, @_ });
+
+for (qw(Aq Bq Brq Pq Qq Ql Sq Dq Eq Ar Fl Ic Pa Op Cm Li Fx Ux Va)) {
+    my $m = Mdoc::get_macro(".$_");
+    Mdoc::def_macro($_, delete $m->{run}, %$m);
 }
 
-sub ParseMacro #line
-{
-    my ($line) = @_;
-    my (@words, $retval,$columnline);
+sub print_line {
+    my $s = shift;
+    $s =~ s/\\&//g;
+    print "$s\n";
+}
 
-    @words = split(/\s+/, $line);
-    $retval = '';
+sub preprocess_args {
+    $_ =~ s/([{}])/\@$1/g for @_;
+}
 
-#   print('@words = ', scalar(@words), ': ', join(' ', @words), "\n");
-
-    while ($_ = shift @words)
-    {
-        if (/^Bl$/)
-        {
-            if ($words[0] eq '-bullet')
-            {
-                if (!$optlist)
-                {
-                    $optlist = 1; #bullet
-                    $retval .= "\@itemize \@bullet\n" ;
-                    print "$retval";
-                    last;
-                }
-                else
-                {
-                    $retval .= "\@itemize \@minus\n";
-                    print $retval;
-                    $oldoptlist = 1;
-                    last;
-                }
-            }
-            if ($words[0] eq '-enum')
-            {
-                if (!$optlist)
-                {
-                    $optlist = 2; #enum
-                    $retval .= "\@enumerate\n" ;
-                    print "$retval";
-                    last;
-                }
-                else
-                {
-                    $retval .= "\@enumerate\n";
-                    print $retval;
-                    $oldoptlist = 2;
-                    last;
-                }
-            }
-            if ($words[0] eq '-tag')
-            {
-                    $optlist = 3; #tag
-                    $retval .= "\@table \@samp\n";
-                    print "$retval";
-                    last;
-            }
-            if ($words[0] eq '-column')
-            {
-                $optlist = 4; #column
-                $retval = "\@multitable \@columnfractions ";#\.20 \.20 \.20\n";
-                #print $retval;
-                $columnline = "\@headitem ";
-                #print $retval;
-                foreach(@words)
-                {
-                    if (!/^"./ && !/-column/ && !/indent/ && !/-offset/)
-                    {
-                        $_ =~ s/\"//g;
-
-                        $retval .= "\.20 ";
-                        if (!$count)
-                        {
-                            $columnline .= $_;
-                        }
-                        else
-                        {
-                            $columnline .= " \@tab ".$_;
-                        }
-                        $count++;
-                    }
-                }
-                print $retval."\n";
-                print $columnline;
-                last;
-            }
-        }
-        if ($optlist && /^It$/)
-        {
-            if ($optlist == 3)
-            {
-                $retval .= "\@item ".$words[0]."\n";
-                print $retval;
-                last;
-            }
-            elsif ($optlist == 4 )
-            {
-                if (!$tableitemcount)
-                {
-                    $tableitemcount = 1;
-                    last;
-                }
-                else
-                {
-                    foreach(@words)
-                    {
-                        if (/^Li$/)
-                        {
-                            print "\n\@item ";
-                            next;
-                        }
-                        elsif (/^Ta$/)
-                        {
-                            print "\n\@tab ";
-                            next;
-                        }
-                        else
-                        {
-                            print $_;
-                            next;
-                        }
-                    }
-                    last;
-                }
-            }
-            else
-            {
-                print "\@item\n";
-            }
-        }
-        if (/^El$/)
-        {
-            if ($oldoptlist)
-            {
-                if ($oldoptlist == 1)
-                {
-                    $oldoptlist = 0;
-                    $retval .= "\@end itemize\n";
-                    print $retval;
-                }
-                elsif ($oldoptlist == 2)
-                {
-                    $oldoptlist = 0;
-                    $retval .= "\@end enumerate\n";
-                    print $retval;
-                }
-            }
-            else
-            {
-                if ($optlist == 1)
-                {
-                    $oldoptlist = 0;
-                    $retval .= "\@end itemize\n";
-                    print $retval;
-                }
-                elsif ($optlist == 2)
-                {
-                    $oldoptlist = 0;
-                    $retval .= "\@end enumerate\n";
-                    print $retval;
-                }
-                elsif ($optlist = 4)
-                {
-                    $count = 0;
-                    $columnline = '';
-                    $oldoptlist = 0;
-                    $optlist = 0;
-                    $tableitemcount = 0;
-                    $retval .= "\n\@end multitable\n";
-                    print $retval;
-                }
-                $optlist = 0;
-            }
+sub run {
+    while (my ($macro, @args) = Mdoc::parse_line(\*STDIN, \&print_line, 
+            \&preprocess_args)
+    ) {
+        my @ret = Mdoc::call_macro($macro, @args);
+        if (@ret) {
+            my $s = Mdoc::to_string(@ret);
+            print_line($s);
         }
     }
+    return 0;
 }
+
+exit run(@ARGV) unless caller;

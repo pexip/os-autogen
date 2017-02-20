@@ -4,18 +4,16 @@ autogen definitions options;
 /**
  * \file genshell.def
  *
- * Time-stamp:      "2011-04-20 09:44:27 bkorb"
- *
  *  This module generates shell scripts with AutoOpts supported command line
  *  option processing.  This program is licensed separately from the AutoOpts
  *  library and is _only_ available under the terms of the GNU General
  *  Public License.
  *
- *  Genshell Copyright (c) 1999-2011 by Bruce Korb - all rights reserved
+ *  Genshell Copyright (C) 1999-2014 by Bruce Korb - all rights reserved
  *  Genshell is free software.
  *  This file is part of AutoGen.
  *
- *  AutoGen copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -32,10 +30,10 @@ autogen definitions options;
  */
 
 copyright = {
-    date  = "1999-2011";
+    date  = "1999-2014";
     owner = "Bruce Korb";
     eaddr = "autogen-users@lists.sourceforge.net";
-    type  = gpl;
+    type  = lgplv2;
 };
 
 owner          = "Bruce Korb";

@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -115,9 +114,9 @@ fildelete (Filament *fil);
  * for the prospective contents.
  */
 extern void
-_fil_extend (Filament *fil, size_t len, snv_bool_t copy);
+_fil_extend (Filament *fil, size_t len, bool copy);
 
-#line 61 "filament.in"
+#line 60 "filament.in"
 
 /* Save the overhead of a function call in the great majority of cases. */
 #define fil_maybe_extend(fil, len, copy)  \
@@ -171,7 +170,7 @@ fillen (Filament *fil)
 SNV_INLINE int
 filelt (Filament *fil, ssize_t n)
 {
-  if ((n >= 0) && (n < fil->length))
+  if ((n >= 0) && (n < (ssize_t)fil->length))
     return (int) fil->value[n];
   else
     return -1;
@@ -194,7 +193,7 @@ filelt (Filament *fil, ssize_t n)
 SNV_INLINE char *
 filncat (Filament *fil, const char *str, size_t n)
 {
-  fil_maybe_extend (fil, n + fil->length, SNV_TRUE);
+  fil_maybe_extend (fil, n + fil->length, true);
   memcpy (fil->value + fil->length, str, n);
   fil->length += n;
   return fil->value;
@@ -239,8 +238,8 @@ filcat (Filament *fil, const char *str)
 SNV_INLINE char *
 filccat (Filament *fil, int c)
 {
-  fil_maybe_extend (fil, 1 + fil->length, SNV_TRUE);
-  fil->value[fil->length++] = c;
+  fil_maybe_extend (fil, 1 + fil->length, true);
+  fil->value[fil->length++] = (char)(c & 0xFF);
   return fil->value;
 }
 

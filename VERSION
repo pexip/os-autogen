@@ -1,13 +1,11 @@
-#! /bin/echo AutoGen_Version_5.6,_but_this_should_be_sourced
+#! /bin/echo this_should_be_sourced
 # -*- Mode: sh -*-
 # VERSION --- Set version info for GNU-ish tool use
-#
-# Time-stamp:        "2011-06-25 09:05:57 bkorb"
 
-         MAINTAINER='Bruce Korb <bkorb@gnu.org>'
-##
+MAINTAINER='Bruce Korb <bkorb@gnu.org>'
+
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -23,9 +21,9 @@
 ## with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 AG_MAJOR_VERSION=5
-AG_MINOR_VERSION=12
+AG_MINOR_VERSION=18
 AG_REVISION=$AG_MAJOR_VERSION.$AG_MINOR_VERSION
-AG_PATCHLEVEL=""
+AG_PATCHLEVEL=".4"
 AG_VERSION=$AG_REVISION$AG_PATCHLEVEL
 
 # Making releases:
@@ -41,9 +39,9 @@ AG_VERSION=$AG_REVISION$AG_PATCHLEVEL
 #             is capable of handling.
 #
 AO_LIBRARY=libopts.la
-AO_CURRENT=35
+AO_CURRENT=41
 AO_REVISION=0
-AO_AGE=10
+AO_AGE=16
 
 # For automake
 #
@@ -57,8 +55,7 @@ AO_SOVERS=${AO_CURRENT}:${AO_REVISION}:${AO_AGE}
 AO_SONAME=${AO_LIBRARY}-${AO_SOVERS}
 w=`expr \( ${COLUMNS:-80} - 1 \) / 2`
 h=`expr $w \* 2`
-h=`printf "*%${h}s" ''`
-h=`echo "$h"|sed 's/  /-*/g'`
+h=`printf "*%${h}s" '' | sed 's/  /-*/g'`
 ag=`echo AUTOGEN | sed 's/\(.\)/\1    /g;s/ *$//'`
 ag_off=`printf "$ag"|wc -c`
 ag_off=`expr $w - \( $ag_off / 2 \)`

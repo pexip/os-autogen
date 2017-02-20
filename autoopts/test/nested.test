@@ -3,12 +3,11 @@
 # ----------------------------------------------------------------------
 # nested.test ---  test nested option values
 #
-# Time-stamp:        "2011-02-02 11:55:41 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -20,11 +19,11 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 #
 # ----------------------------------------------------------------------
 
@@ -141,17 +140,17 @@ compile "-?"
 
 basehelp=${testname}-base.help
 echo creating ${basehelp}
-cat > ${basehelp} <<_EOF_
+clean_help > ${basehelp} <<_EOF_
 test_${testname} - Test AutoOpts for ${testname}
-USAGE:  ${testname} [ -<flag> [<val>] ]...
+Usage:  ${testname} [ -<flag> [<val>] ]...
   Flg Arg Option-Name    Description
    -s Cpx struct         structured argument val
 				- may appear multiple times
-   -? no  help           Display extended usage information and exit
-   -! no  more-help      Extended usage information passed thru pager
-   -> opt save-opts      Save the option state to a config file
-   -< Str load-opts      Load options from a config file
-				- disabled as --no-load-opts
+   -? no  help           display extended usage information and exit
+   -! no  more-help      extended usage information passed thru pager
+   -> opt save-opts      save the option state to a config file
+   -< Str load-opts      load options from a config file
+				- disabled as '--no-load-opts'
 				- may appear multiple times
 
 
@@ -188,7 +187,7 @@ cmp -s ${testname}-res1.* || \
 
 # # # # # # # # # # DOUBLE ARG TEST # # # # # # # # #
 
-arg1="stumble, <foo>foo${tabch}lish</foo>, <bar type=integer>1234</bar>, able"
+arg1="stumble, <foo>foo${ht}lish</foo>, <bar type=integer>1234</bar>, able"
 arg2='foo, <bar type=integer>4321</bar> <gr type=nested>one, two=2, three</gr>'
 (./${testname} -s "${arg1}" -s "${arg2}" \
     | ${SED} '/ nested:/s/ 0x.*/ 0xXXXXXXXX/' ) > ${testname}-res2.out || \

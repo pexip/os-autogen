@@ -1,9 +1,7 @@
 [= AutoGen5 Template  -*- Mode: Scheme -*-
 
-#; Time-stamp:        "2011-04-22 07:48:18 bkorb"
-#;
 #; This file is part of AutoGen.
-#; AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+#; AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 #;
 #; AutoGen is free software: you can redistribute it and/or modify it
 #; under the terms of the GNU General Public License as published by the
@@ -110,8 +108,8 @@ static int [=(. pfx)=]_invalid_transition( te_[=(. pfx)=]_state st, te_[=
 [=
 
   IF (not (exist? "handler-file")) =]
-/* * * * * * * * * THE CODE STARTS HERE * * * * * * * *
- *
+/* * * * * * * * * THE CODE STARTS HERE * * * * * * * */
+/**
  *  Print out an invalid transition message and return EXIT_FAILURE
  */
 static int
@@ -150,10 +148,10 @@ DEFINE build-callback     =][=
   =  noop      =][=
   *            =]
 static te_[=(. pfx)=]_state
-[=cb_prefix=]_[=cb_name=]([= emit-cookie-args =]
+[=cb_prefix=]_[=cb_name=]([= INVOKE emit-cookie-args =]
     te_[=(. pfx)=]_state initial,
     te_[=(. pfx)=]_state maybe_next,
-    te_[=(. pfx)=]_event trans_evt )
+    te_[=(. pfx)=]_event trans_evt)
 {
 [= (extract fsm-source (string-append
 "/*  %s == " (string-tr! (get "cb_name") "a-z_-" "A-Z  ") " == %s  */" )
@@ -172,7 +170,7 @@ ENDDEF build-callback
 
 DEFINE callbacks     =][=
 
-  `set -- \`sed 's/,//' .fsm.xlist\`` =][=
+  `set -- \`sed 's/,//' ${tmp_dir}/xlist\`` =][=
 
   WHILE `echo $#`       =][=
 
@@ -227,11 +225,11 @@ DEFINE run-switch         =][=
 (define example-code "")  =]
 
     switch (trans) {[=
-  `set -- \`sed 's/,//' .fsm.xlist\`` =][=
+  `set -- \`sed 's/,//' ${tmp_dir}/xlist\`` =][=
 
   WHILE `echo $#`         =][=
 
-    invoke build-switch
+    INVOKE build-switch
       cb_prefix = (string-append PFX "_TR")
       cb_name   = (shell "echo $1 ; shift") =][=
 
@@ -272,6 +270,8 @@ ELSE                           =][=
 ENDIF  =]
  *
  *  Automated Finite State Machine
+ *
+ *  [=(. cright-years)=]
  *
 [=(license-description "mbsd" "AutoFSM" " * " "Bruce Korb")=]
  */[=
@@ -390,8 +390,8 @@ ENDFOR   transition           =][=
   (shellf
     "env | egrep '^FSM_TRANS_' | \
     sed '/, NULL }/d;s/^.*%s//;s/ .*$/,/' | \
-    sort -u > .fsm.xlist
-    echo `wc -l < .fsm.xlist` "
+    sort -u > ${tmp_dir}/xlist
+    echo `wc -l < ${tmp_dir}/xlist` "
     (if (=* (get "method") "call")
         (string-append pfx "_do_")
         (string-append PFX "_TR_"))

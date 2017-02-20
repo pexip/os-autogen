@@ -3,9 +3,9 @@
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
 ## Author:          Bruce Korb <bkorb@gnu.org>
-## Time-stamp:      "2010-07-18 09:05:44 bkorb"
+##
 ## This file is part of AutoGen.
-## AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -22,20 +22,26 @@
 
 TESTS      = cfg.test index.test option.test subblock.test
 EXTRA_DIST = defs $(TESTS)
-testsubdir = ./testdir
 
 TESTS_ENVIRONMENT = top_srcdir=$(top_srcdir) \
-	testsubdir=$(testsubdir) srcdir=$(srcdir) \
+	srcdir=$(srcdir) top_builddir=$(top_builddir) \
 	GDexe=$(GDexe) AGexe=$(AGexe) CLexe=$(CLexe)
 
 distclean-local:
-	-rm -rf $(testsubdir) FAILURES
+	-rm -rf *-testd FAILURES defs
 
-check : perm-stamp
+$(TESTS)    : defs
 
-$(TESTS) : perm-stamp
+defs        : ${top_builddir}/autoopts/test/defs
+	$(TESTS_ENVIRONMENT) $(SHELL) \
+		$(top_srcdir)/config/install-defs.sh \
+			$(top_builddir)/autoopts/test/defs
 
-perm-stamp :
-	cd $(srcdir) ; chmod +x *.test
+${top_builddir}/autoopts/test/defs :
+	cd ${top_builddir}/autoopts/test ; $(MAKE) defs
 
-# Makefile.am ends here
+verbose     : defs
+	rm -rf FAILURES *-testd ; \
+	VERBOSE=true $(MAKE) check TESTS="$(TESTS)"
+
+# end of Makefile.am

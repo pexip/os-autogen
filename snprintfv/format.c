@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -485,6 +484,8 @@ static int
 printf_flag_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 {
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
+  (void)n;
+  (void)argtypes;
 
   if (!(pinfo->state & (SNV_STATE_BEGIN | SNV_STATE_FLAG)))
     {
@@ -499,7 +500,7 @@ printf_flag_info (struct printf_info *const pinfo, size_t n, int *argtypes)
       switch (*pinfo->format)
 	{
 	case '#':
-	  pinfo->alt = SNV_TRUE;
+	  pinfo->alt = true;
 	  pinfo->format++;
 	  break;
 
@@ -511,22 +512,22 @@ printf_flag_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 
 	case '-':
 	  pinfo->pad = ' ';
-	  pinfo->left = SNV_TRUE;
+	  pinfo->left = true;
 	  pinfo->format++;
 	  break;
 
 	case ' ':
-	  pinfo->space = SNV_TRUE;
+	  pinfo->space = true;
 	  pinfo->format++;
 	  break;
 
 	case '+':
-	  pinfo->showsign = SNV_TRUE;
+	  pinfo->showsign = true;
 	  pinfo->format++;
 	  break;
 
 	case '\'':
-	  pinfo->group = SNV_TRUE;
+	  pinfo->group = true;
 	  pinfo->format++;
 	  break;
 
@@ -555,7 +556,7 @@ printf_numeric_param_info (struct printf_info *const pinfo, size_t n, int *argty
 {
   const char *pEnd = NULL;
   int found = 0, allowed_states, new_state;
-  int position = 0, skipped_args = 0;
+  unsigned int position = 0, skipped_args = 0;
   long value;
 
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
@@ -593,13 +594,13 @@ printf_numeric_param_info (struct printf_info *const pinfo, size_t n, int *argty
   /* And finally a dollar sign. */
   if (*pinfo->format == '$')
     {
-      if (value == 0)
+      if (value <= 0)
 	{
           PRINTF_ERROR (pinfo, "invalid position specifier");
           return -1;
 	}
 
-      position = value;
+      position = (unsigned int)value;
       pinfo->format++;
       found |= 8;
     }
@@ -619,13 +620,13 @@ printf_numeric_param_info (struct printf_info *const pinfo, size_t n, int *argty
 
     /* We found a *n$ specification */
     case 14:
-      if (n + pinfo->argindex > position - 1)
-	argtypes[position - 1 - pinfo->argindex] = PA_INT;
+        if ((unsigned int)n + (unsigned int)pinfo->argindex > (position - 1))
+          argtypes[(unsigned)position - 1 - (unsigned)pinfo->argindex] = PA_INT;
 
       /* Else there is not enough space, reallocate and retry please...
          ... but we must say how much to skip.  */
-      if (position >= pinfo->argindex)
-        skipped_args = position - pinfo->argindex;
+      if (position >= (unsigned)pinfo->argindex)
+        skipped_args = position - (unsigned)pinfo->argindex;
 
       if (pinfo->args)
 	value = pinfo->args[position - 1].pa_int;
@@ -644,25 +645,25 @@ printf_numeric_param_info (struct printf_info *const pinfo, size_t n, int *argty
       if (value < 0)
 	{
 	  pinfo->pad = ' ';
-	  pinfo->left = SNV_TRUE;
+	  pinfo->left = true;
 	  value = -value;
 	}
 
-      pinfo->width = value;
+      pinfo->width = (int)value;
       break;
 
     /* We must have read a precision specification. */
     case 5:
       allowed_states = SNV_STATE_PRECISION | SNV_STATE_BEGIN;
       new_state = SNV_STATE_MODIFIER | SNV_STATE_SPECIFIER;
-      pinfo->prec = value;
+      pinfo->prec = (int)value;
       break;
 
     /* We must have read a position specification. */
     case 12:
       allowed_states = SNV_STATE_BEGIN;
       new_state = ~SNV_STATE_BEGIN;
-      pinfo->dollar = position;
+      pinfo->dollar = (int)position;
       break;
 
     /* We must have read something bogus. */
@@ -679,13 +680,15 @@ printf_numeric_param_info (struct printf_info *const pinfo, size_t n, int *argty
 
   pinfo->state = new_state;
   pinfo->format--;
-  return skipped_args;
+  return (int)skipped_args;
 }
 
 static int
 printf_modifier_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 {
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
+  (void)n;
+  (void)argtypes;
 
   /* Check for valid pre-state. */
   if (!(pinfo->state & (SNV_STATE_BEGIN | SNV_STATE_MODIFIER)))
@@ -701,28 +704,28 @@ printf_modifier_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 	case 'h':
 	  if (*++pinfo->format != 'h')
 	    {
-	      pinfo->is_short = SNV_TRUE;
+	      pinfo->is_short = true;
 	      break;
 	    }
 
-	  pinfo->is_char = SNV_TRUE;
+	  pinfo->is_char = true;
 	  pinfo->format++;
 	  break;
 
 	case 'z':
 	  if (sizeof (size_t) > sizeof (char *))
-	    pinfo->is_long_double = SNV_TRUE;
+	    pinfo->is_long_double = true;
 	  else
-	    pinfo->is_long = SNV_TRUE;
+	    pinfo->is_long = true;
 
 	  pinfo->format++;
 	  break;
 
 	case 't':
 	  if (sizeof (ptrdiff_t) > sizeof (char *))
-	    pinfo->is_long_double = SNV_TRUE;
+	    pinfo->is_long_double = true;
 	  else
-	    pinfo->is_long = SNV_TRUE;
+	    pinfo->is_long = true;
 
 	  pinfo->format++;
 	  break;
@@ -730,7 +733,7 @@ printf_modifier_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 	case 'l':
 	  if (*++pinfo->format != 'l')
 	    {
-	      pinfo->is_long = SNV_TRUE;
+	      pinfo->is_long = true;
 	      break;
 	    }
 	 /*FALLTHROUGH*/
@@ -738,7 +741,7 @@ printf_modifier_info (struct printf_info *const pinfo, size_t n, int *argtypes)
 	case 'j':
 	case 'q':
 	case 'L':
-	  pinfo->is_long_double = SNV_TRUE;
+	  pinfo->is_long_double = true;
 	  pinfo->format++;
 	  break;
 
@@ -758,7 +761,7 @@ static int
 printf_char (STREAM *stream, struct printf_info *const pinfo, union printf_arg const *args)
 {
   int count_or_errorcode = SNV_OK;
-  char ch = '\0';
+  unsigned char ch = '\0';
 
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
 
@@ -876,20 +879,22 @@ printf_float (STREAM *stream,
 static int
 printf_count (STREAM *stream, struct printf_info *const pinfo, union printf_arg const *args)
 {
+  (void)stream;
+
   if (pinfo->is_char)
-    *(char *) (args->pa_pointer) = pinfo->count;
+    *(char *) (args->pa_pointer)     = (char)pinfo->count;
 
   else if (pinfo->is_short)
-    *(short *) (args->pa_pointer) = pinfo->count;
+    *(short *) (args->pa_pointer)    = (short)pinfo->count;
 
   else if (pinfo->is_long)
-    *(long *) (args->pa_pointer) = pinfo->count;
+    *(long *) (args->pa_pointer)     = (long)pinfo->count;
 
   else if (pinfo->is_long_double)
-    *(intmax_t *) (args->pa_pointer) = pinfo->count;
+    *(intmax_t *) (args->pa_pointer) = (intmax_t)pinfo->count;
 
   else
-    *(int *) (args->pa_pointer) = pinfo->count;
+    *(int *) (args->pa_pointer)      = (int)pinfo->count;
 
   return 0;
 }
@@ -901,11 +906,11 @@ printf_integer (STREAM *stream, struct printf_info *const pinfo, union printf_ar
   static const char digits_upper[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const char *digits;
 
-  unsigned base = SNV_POINTER_TO_ULONG (pinfo->extra);
+  unsigned base = (unsigned int)SNV_POINTER_TO_ULONG (pinfo->extra);
   uintmax_t value = 0L;
   int type, count_or_errorcode = SNV_OK;
   char buffer[256], *p, *end;
-  snv_bool_t is_negative = SNV_FALSE;
+  bool is_negative = false;
 
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
 
@@ -936,8 +941,8 @@ printf_integer (STREAM *stream, struct printf_info *const pinfo, union printf_ar
   if (type & PA_FLAG_UNSIGNED)
     {
       value = fetch_uintmax (pinfo, args);
-      is_negative = SNV_FALSE;
-      pinfo->showsign = pinfo->space = SNV_FALSE;
+      is_negative = false;
+      pinfo->showsign = pinfo->space = false;
     }
   else
     {
@@ -960,8 +965,8 @@ printf_integer (STREAM *stream, struct printf_info *const pinfo, union printf_ar
 	value /= base;
       }
 
-  pinfo->width -= end - p;
-  pinfo->prec -= end - p;
+  pinfo->width -= (int)(end - p);
+  pinfo->prec  -= (int)(end - p);
 
   /* Octal numbers have a leading zero in alterate form. */
   if (pinfo->alt && base == 8)
@@ -1091,7 +1096,8 @@ printf_pointer (STREAM *stream, struct printf_info *const pinfo, union printf_ar
 static int
 printf_string (STREAM *stream, struct printf_info *const pinfo, union printf_arg const *args)
 {
-  int len = 0, count_or_errorcode = SNV_OK;
+  size_t len = 0;
+  int count_or_errorcode = SNV_OK;
   const char *p = NULL;
 
   return_val_if_fail (pinfo != NULL, SNV_ERROR);
@@ -1117,24 +1123,25 @@ printf_string (STREAM *stream, struct printf_info *const pinfo, union printf_arg
   if (p != NULL)
     {
       len = strlen (p);
-      if (pinfo->prec && pinfo->prec < len)
-	len = pinfo->prec;
+      if (pinfo->prec && ((size_t)pinfo->prec < len))
+          len = (size_t)pinfo->prec;
     }
 
-  if ((len < pinfo->width) && !pinfo->left)
+  if ((len < (size_t)pinfo->width) && !pinfo->left)
     {
-      int padwidth = pinfo->width - len;
+      int padwidth = pinfo->width - (int)len;
       while ((count_or_errorcode >= 0) && (count_or_errorcode < padwidth))
-	SNV_EMIT (pinfo->pad, stream, count_or_errorcode);
+          SNV_EMIT (pinfo->pad, stream, count_or_errorcode);
     }
 
   /* Fill the buffer with as many characters from the format argument
      as possible without overflowing or exceeding the precision.  */
   if ((count_or_errorcode >= 0) && (p != NULL))
     {
-      int mark = count_or_errorcode;
-      while ((count_or_errorcode >= 0) && *p != '\0'
-	     && ((pinfo->prec == 0) || (count_or_errorcode - mark < len)))
+      int mark = (int)count_or_errorcode;
+      while (  (*p != '\0')
+            && (  (pinfo->prec == 0)
+               || (count_or_errorcode - mark < (int)len)))
 	SNV_EMIT (*p++, stream, count_or_errorcode);
     }
 
@@ -1266,4 +1273,10 @@ spec_entry snv_default_spec_table[] = {
   {'\0', 0, PA_LAST, NULL, NULL, NULL}
 };
 
-/* format.c ends here */
+/*
+ * Local Variables:
+ * mode: C
+ * c-file-style: "gnu"
+ * indent-tabs-mode: nil
+ * End:
+ * end of snprintfv/format.c */

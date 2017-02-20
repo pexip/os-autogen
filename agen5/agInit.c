@@ -5,10 +5,12 @@
  *  Do all the initialization stuff.  For daemon mode, only
  *  children will return.
  *
- *  Time-stamp:      "2011-06-03 12:13:40 bkorb"
- *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,7 +26,12 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+static char const * ld_lib_path = NULL;
+
 /* = = = START-STATIC-FORWARD = = = */
+static void
+init_scm(void);
+
 static char const *
 make_quote_str(char const * str);
 
@@ -32,14 +39,11 @@ static void
 dep_usage(char const * fmt, ...);
 
 static void
-add_sys_env(char* pzEnvName);
-
-static void
-add_env_vars(void);
+add_sys_env(char * env_name);
 /* = = = END-STATIC-FORWARD = = = */
 
 #ifdef DAEMON_ENABLED
- static ag_bool evalProto(char const ** ppzS, uint16_t* pProto);
+ static bool evalProto(char const ** ppzS, uint16_t* pProto);
  static void spawnPipe(char const* pzFile);
  static void spawnListens(char const * pzPort, sa_family_t af);
  static void daemonize(char const *, char const *, char const *,
@@ -49,34 +53,32 @@ add_env_vars(void);
 #include "expr.ini"
 
 /**
- * Various initializations
+ * Various initializations.
+ *
+ * @param arg_ct  the count of program arguments, plus 1.
+ * @param arg_vec the program name plus its arguments
  */
 LOCAL void
-initialize(int arg_ct, char** arg_vec)
+initialize(int arg_ct, char ** arg_vec)
 {
-    ag_scribble_init();
+    putenv(C(char *, ld_lib_path));
+
+    scribble_init();
 
     /*
      *  Initialize all the Scheme functions.
      */
     ag_init();
-    pzLastScheme = zSchemeInit;
-    ag_scm_c_eval_string_from_file_line(
-        zSchemeInit, SCHEME_INIT_FILE, schemeLine);
-#ifndef scm_t_port
-    SCM_EVAL_CONST("(add-hook! before-error-hook error-source-line)\n"
-                   "(use-modules (ice-9 stack-catch))");
-#endif
+    init_scm();
 
-    pzLastScheme = NULL;
-    procState = PROC_STATE_OPTIONS;
-    add_env_vars();
+    last_scm_cmd = NULL;
+    processing_state = PROC_STATE_OPTIONS;
 
-    doOptions(arg_ct, arg_vec);
-    exit_code = AUTOGEN_EXIT_LOAD_ERROR;
+    process_ag_opts(arg_ct, arg_vec);
+    ag_exit_code = AUTOGEN_EXIT_LOAD_ERROR;
 
     if (OPT_VALUE_TRACE > TRACE_NOTHING)
-        SCM_EVAL_CONST("(debug-enable 'backtrace)");
+        SCM_EVAL_CONST(INIT_SCM_DEBUG_FMT);
 
 #ifdef DAEMON_ENABLED
 
@@ -89,7 +91,7 @@ initialize(int arg_ct, char** arg_vec)
         daemonize("/", logf, logf, logf);
     }
 #else
-    daemonize("/", zDevNull, zDevNull, zDevNull);
+    daemonize("/", DEV_NULL, DEV_NULL, DEV_NULL);
 #endif /* DEBUG_ENABLED */
 
     {
@@ -104,8 +106,53 @@ initialize(int arg_ct, char** arg_vec)
 #endif /* DAEMON_ENABLED */
 }
 
+static void
+init_scm(void)
+{
+    last_scm_cmd = SCHEME_INIT_TEXT;
+
+    {
+        SCM ini_res = ag_scm_c_eval_string_from_file_line(
+            SCHEME_INIT_TEXT, AG_TEXT_STRTABLE_FILE, SCHEME_INIT_TEXT_LINENO);
+        AGDUPSTR(libguile_ver, scm2display(ini_res), "ini res");
+    }
+
+    {
+        unsigned int maj, min, mic;
+        switch (sscanf(libguile_ver, "%u.%u.%u", &maj, &min, &mic)) {
+        case 2:
+        case 3: break;
+        default:
+            AG_ABEND(aprf(GUILE_VERSION_BAD, libguile_ver));
+            /* NOT_REACHED */
+        }
+        maj = min + (100 * maj);
+        if ((GUILE_VERSION / 1000) != maj)
+            AG_ABEND(aprf(GUILE_VERSION_WRONG, libguile_ver,
+                          MK_STR(GUILE_VERSION)));
+    }
+
+    {
+#       if GUILE_VERSION >= 200000
+#         define SCHEME_INIT_DEBUG SCHEME_INIT_DEBUG_2_0
+#       else
+#         define SCHEME_INIT_DEBUG SCHEME_INIT_DEBUG_1_6
+#       endif
+        char * p = aprf(INIT_SCM_ERRS_FMT, SCHEME_INIT_DEBUG);
+#       undef  SCHEME_INIT_DEBUG
+
+        last_scm_cmd = p;
+        ag_scm_c_eval_string_from_file_line(p, __FILE__, __LINE__);
+        AGFREE(p);
+    }
+}
+
 /**
  * make a name resilient to machinations made by 'make'.
+ * Basically, dollar sign characters are doubled.
+ *
+ * @param str the input string
+ * @returns a newly allocated string with the '$' characters doubled
  */
 static char const *
 make_quote_str(char const * str)
@@ -122,7 +169,7 @@ make_quote_str(char const * str)
         scan = scan + 1;
     }
 
-    res  = AGALOC(sz, "make target name");
+    res  = AGALOC(sz, "q name");
     scan = res;
 
     for (;;) {
@@ -130,7 +177,7 @@ make_quote_str(char const * str)
 
         if (p == NULL)
             break;
-        sz = (p - str) + 1;
+        sz = (size_t)(p - str) + 1;
         memcpy(res, str, sz);
         res += sz;
         str += sz;
@@ -143,6 +190,8 @@ make_quote_str(char const * str)
 
 /**
  * Error in dependency specification
+ *
+ * @param fmt the error message format
  */
 static void
 dep_usage(char const * fmt, ...)
@@ -156,49 +205,60 @@ dep_usage(char const * fmt, ...)
         va_end(ap);
     }
 
-    usage_message("invalid make dependency option:  %s", msg);
+    usage_message(USAGE_INVAL_DEP_OPT_FMT, msg);
     /* NOTREACHED */
 }
 
 /**
- * Configure dependency option
+ * Configure a dependency option.
+ * Handles any of these letters:  MFQTPGD as the first part of the option
+ * argument.
+ *
+ * @param opts the autogen options data structure
+ * @param pOptDesc the option descriptor for this option.
  */
 LOCAL void
-config_dep(tOptions * pOptions, tOptDesc * pOptDesc)
+config_dep(tOptions * opts, tOptDesc * od)
 {
-    static char const dup_targ[] = "duplicate make target";
-
-    char const * popt = pOptDesc->optArg.argString;
+    char const * opt_arg = od->optArg.argString;
+    (void)opts;
 
     /*
      *  The option argument is optional.  Make sure we have one.
      */
-    if (popt == NULL)
+    if (opt_arg == NULL)
         return;
 
-    while (*popt == 'M')  popt++;
+    while (*opt_arg == 'M')  opt_arg++;
+    opt_arg = SPN_WHITESPACE_CHARS(opt_arg);
 
-retry:
+    switch (*opt_arg) {
+    case 'F':
+        if (dep_file != NULL)
+            dep_usage(CFGDEP_DUP_TARGET_MSG);
 
-    switch (*popt) {
-    case ' ': case TAB: case '\r': case NL:
-        while (IS_WHITESPACE_CHAR((int)*(++popt)))  ;
-        goto retry;
-
-    case 'Q':
-        if (pzDepTarget != NULL)
-            dep_usage(dup_targ);
-
-        while (IS_WHITESPACE_CHAR((int)*(++popt)))  ;
-        pzDepTarget = make_quote_str(popt);
+        opt_arg = SPN_WHITESPACE_CHARS(opt_arg + 1);
+        AGDUPSTR(dep_file, opt_arg, "f name");
         break;
 
+    case 'Q':
     case 'T':
-        if (pzDepTarget != NULL)
-            dep_usage(dup_targ);
+    {
+        bool quote_it = (*opt_arg == 'Q');
 
-        while (IS_WHITESPACE_CHAR((int)*(++popt)))  ;
-        AGDUPSTR(pzDepTarget, popt, "make target name");
+        if (dep_target != NULL)
+            dep_usage(CFGDEP_DUP_TARGET_MSG);
+
+        opt_arg = SPN_WHITESPACE_CHARS(opt_arg + 1);
+        if (quote_it)
+            dep_target = make_quote_str(opt_arg);
+        else
+            AGDUPSTR(dep_target, opt_arg, "t name");
+        break;
+    }
+
+    case 'P':
+        dep_phonies = true;
         break;
 
     case 'D':
@@ -206,40 +266,34 @@ retry:
     case NUL:
         /*
          *  'D' and 'G' make sense to GCC, not us.  Ignore 'em.  If we
-         *  found a NUL byte, then we found -MM on the command line.
+         *  found a NUL byte, then act like we found -MM on the command line.
          */
         break;
 
-    case 'F':
-        if (pzDepFile != NULL)
-            dep_usage(dup_targ);
-
-        while (IS_WHITESPACE_CHAR((int)*(++popt)))  ;
-        pzDepFile = aprf("%s-XXXXXX", popt);
-        break;
-
-    case 'P':
-        dep_phonies = AG_TRUE;
-        break;
-
     default:
-        dep_usage("unknown dependency type:  %s", popt);
+        dep_usage(CFGDEP_UNKNOWN_DEP_FMT, opt_arg);
     }
 }
 
+/**
+ * Add a system name to the environment.  The input name is up-cased and
+ * made to conform to environment variable names.  If not already in the
+ * environment, it is added with the string value "1".
+ *
+ * @param env_name in/out: system name to export
+ */
 static void
-add_sys_env(char* pzEnvName)
+add_sys_env(char * env_name)
 {
-    static char const zFmt[] = "%s=1";
     int i = 2;
 
     for (;;) {
-        if (IS_UPPER_CASE_CHAR(pzEnvName[i]))
-            pzEnvName[i] = tolower(pzEnvName[i]);
-        else if (! IS_ALPHANUMERIC_CHAR(pzEnvName[i]))
-            pzEnvName[i] = '_';
+        if (IS_UPPER_CASE_CHAR(env_name[i]))
+            env_name[i] = (char)tolower(env_name[i]);
+        else if (! IS_ALPHANUMERIC_CHAR(env_name[i]))
+            env_name[i] = '_';
 
-        if (pzEnvName[ ++i ] == NUL)
+        if (env_name[ ++i ] == NUL)
             break;
     }
 
@@ -247,27 +301,61 @@ add_sys_env(char* pzEnvName)
      *  If the user already has something in the environment, do not
      *  override it.
      */
-    if (getenv(pzEnvName) == NULL) {
-        char* pz;
+    if (getenv(env_name) == NULL) {
+        char * pz;
 
         if (OPT_VALUE_TRACE > TRACE_DEBUG_MESSAGE)
-            fprintf(pfTrace, "Adding ``%s'' to environment\n", pzEnvName);
-        pz = aprf(zFmt, pzEnvName);
-        TAGMEM(pz, "Added environment var");
+            fprintf(trace_fp, TRACE_ADD_TO_ENV_FMT, env_name);
+
+        pz = aprf(ADD_SYS_ENV_VAL_FMT, env_name);
         putenv(pz);
     }
 }
 
-static void
-add_env_vars(void)
+/**
+ * Prepare the raft of environment variables.
+ * This runs before Guile starts and grabs the value for LD_LIBRARY_PATH.
+ * Guile likes to fiddle that.  When we run initialize(), we will force it
+ * to match what we currently have.  Additionally, force our environment
+ * to be "C" and export all the variables that describe our system.
+ */
+LOCAL void
+prep_env(void)
 {
+    /*
+     *  as of 2.0.2, Guile will fiddle with strings all on its own accord.
+     *  Coerce the environment into being POSIX ASCII strings so it keeps
+     *  its bloody stinking nose out of our data.
+     */
+    putenv(C(char *, LC_ALL_IS_C));
+
+    /*
+     *  If GUILE_WARN_DEPRECATED has not been defined, then likely we are
+     *  not in a development environment and likely we don't want to give
+     *  our users any angst.
+     */
+    if (getenv(GUILE_WARN_DEP_STR) == NULL)
+        putenv(C(char *, GUILE_WARN_NO_ENV));
+
+    ld_lib_path = getenv(LD_LIB_PATH_STR);
+    if (ld_lib_path == NULL) {
+        ld_lib_path = LD_LIB_PATH_PFX;
+
+    } else {
+        size_t psz = strlen(ld_lib_path) + 1;
+        char * p = AGALOC(LD_LIB_PATH_PFX_LEN + psz, "lp");
+        memcpy(p, LD_LIB_PATH_PFX, LD_LIB_PATH_PFX_LEN);
+        memcpy(p + LD_LIB_PATH_PFX_LEN, ld_lib_path, psz);
+        ld_lib_path = p;
+    }
+
     /*
      *  Set the last resort search directories first (lowest priority)
      *  The lowest of the low is the config time install data dir.
      *  Next is the *current* directory of this executable.
      */
-    SET_OPT_TEMPL_DIRS("$@");
-    SET_OPT_TEMPL_DIRS("$$/../share/autogen");
+    SET_OPT_TEMPL_DIRS(DFT_TPL_DIR_DATA);
+    SET_OPT_TEMPL_DIRS(DFT_TPL_DIR_RELATIVE);
 
     {
         char z[ SCRIBBLE_SIZE ] = "__autogen__";
@@ -287,7 +375,7 @@ add_env_vars(void)
             if (sz > 0) {
                 sz += 2;
                 while (z[sz-1] == NUL)  sz--;
-                strcpy(z + sz, "__");
+                strcpy(z + sz, ADD_ENV_VARS_SUFFIX_FMT+2);
                 add_sys_env(z);
             }
         }
@@ -297,15 +385,15 @@ add_env_vars(void)
 
         add_sys_env(z);
         if (uname(&unm) != 0)
-            AG_CANT("uname(2)", "syscall");
+            AG_CANT(UNAME_CALL_NAME, SYSCALL_NAME);
 
-        sprintf(z+2, "%s__", unm.sysname);
+        sprintf(z+2, ADD_ENV_VARS_SUFFIX_FMT, unm.sysname);
         add_sys_env(z);
 
-        sprintf(z+2, "%s__", unm.machine);
+        sprintf(z+2, ADD_ENV_VARS_SUFFIX_FMT, unm.machine);
         add_sys_env(z);
 
-        sprintf(z+2, "%s__", unm.nodename);
+        sprintf(z+2, ADD_ENV_VARS_SUFFIX_FMT, unm.nodename);
         add_sys_env(z);
 #else
 
@@ -323,7 +411,7 @@ add_env_vars(void)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #ifdef DAEMON_ENABLED
 
-  static ag_bool
+  static bool
 evalProto(char const ** ppzS, uint16_t* pProto)
 {
     char const * pzS = *ppzS;
@@ -334,7 +422,7 @@ evalProto(char const ** ppzS, uint16_t* pProto)
             if (strncmp(pzS, pMap->pz_name, pMap->nm_len) == 0) {
                 *pProto = pMap->family;
                 *ppzS += pMap->nm_len;
-                return AG_TRUE;
+                return true;
             }
         } while ((++pMap)->pz_name != NULL);
     }
@@ -342,11 +430,10 @@ evalProto(char const ** ppzS, uint16_t* pProto)
     return IS_DEC_DIGIT_CHAR(*pzS);
 }
 
-
   LOCAL void
 handleSighup(int sig)
 {
-    redoOptions = AG_TRUE;
+    redoOptions = true;
 }
 
   static void
@@ -354,33 +441,32 @@ spawnPipe(char const * pzFile)
 {
 #   define S_IRW_ALL \
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH
-    tFdPair fdpair;
+    fd_pair_t fdpair;
     char* pzIn;
     char* pzOut;
 
     {
         size_t len = 2 * (strlen(pzFile) + 5);
-        pzIn = AGALOC(len + 5, "fifo file name");
-        pzOut = pzIn + sprintf(pzIn, "%s-in", pzFile) + 1;
+        pzIn = AGALOC(len + 5, "fifo name");
+        pzOut = pzIn + sprintf(pzIn, PIPE_FIFO_IN_NAME_FMT, pzFile) + 1;
     }
 
     unlink(pzIn);
     if ((mkfifo(pzIn, S_IRW_ALL) != 0) && (errno != EEXIST))
-        AG_CANT("mkfifo",    pzIn);
+        AG_CANT(PIPE_MKFIFO_NAME,    pzIn);
 
-    (void)sprintf(pzOut, "%s-out", pzFile);
+    (void)sprintf(pzOut, PIPE_FIFO_OUT_NAME_FMT, pzFile);
     unlink(pzOut);
     if ((mkfifo(pzOut, S_IRW_ALL) != 0) && (errno != EEXIST))
-        AG_CANT("mkfifo",    pzOut);
+        AG_CANT(PIPE_MKFIFO_NAME,    pzOut);
 
-    fdpair.readFd = open(pzIn, O_RDONLY);
-    if (fdpair.readFd < 0)
-        AG_CANT("open fifo", pzIn);
-
+    fdpair.fd_read = open(pzIn, O_RDONLY);
+    if (fdpair.fd_read < 0)
+        AG_CANT(PIPE_FIFO_OPEN, pzIn);
 
     {
         struct pollfd polls[1];
-        polls[0].fd     = fdpair.readFd;
+        polls[0].fd     = fdpair.fd_read;
         polls[0].events = POLLIN | POLLPRI;
 
         for (;;) {
@@ -391,12 +477,12 @@ spawnPipe(char const * pzFile)
             switch (ct) {
             case -1:
                 if ((errno != EINTR) || (! redoOptions))
-                    goto no_fattach_finish;
+                    goto spawnpipe_finish;
 
                 optionRestore(&autogenOptions);
-                doOptions(autogenOptions.origArgCt,
+                process_ag_opts(autogenOptions.origArgCt,
                           autogenOptions.origArgVect);
-                SET_OPT_DEFINITIONS("-");
+                SET_OPT_DEFINITIONS(PIPE_DEFS_STDIN_STR);
                 break;
 
             case 1:
@@ -410,46 +496,45 @@ spawnPipe(char const * pzFile)
                     continue;
 
                 case -1:
-                    AG_CANT("fork", zNil);
+                    AG_CANT(PIPE_FORK_NAME, zNil);
 
                 case 0:
                 }
 
-                if (dup2(fdpair.readFd, STDIN_FILENO) != STDIN_FILENO)
-                    AG_CANT("dup2", "stdin");
+                if (dup2(fdpair.fd_read, STDIN_FILENO) != STDIN_FILENO)
+                    AG_CANT(PIPE_DUP2_NAME_STR, PIPE_DEFS_STDIN_NAME);
 
-                fdpair.writeFd = open(pzOut, O_WRONLY);
-                if (fdpair.writeFd < 0)
-                    AG_CANT("open fifo", pzOut);
+                fdpair.fd_write = open(pzOut, O_WRONLY);
+                if (fdpair.fd_write < 0)
+                    AG_CANT(PIPE_FIFO_OPEN, pzOut);
 
-                polls[0].fd = fdpair.writeFd;
+                polls[0].fd = fdpair.fd_write;
                 polls[0].events = POLLOUT;
                 if (poll(polls, 1, -1) != 1)
-                    AG_CANT("poll", "write pipe");
+                    AG_CANT(PIPE_POLL_NAME_STR, PIPE_WRITE_NAME_STR);
 
-                if (dup2(fdpair.writeFd, STDOUT_FILENO) != STDOUT_FILENO)
-                    AG_CANT("dup2", pzOut);
+                if (dup2(fdpair.fd_write, STDOUT_FILENO) != STDOUT_FILENO)
+                    AG_CANT(PIPE_DUP2_NAME_STR, pzOut);
 
                 return;
             }
         }
     }
 
- no_fattach_finish:
+ spawnpipe_finish:
     unlink(pzIn);
     unlink(pzOut);
     AGFREE(pzIn);
 
 #   undef S_IRW_ALL
 
-    exit(EXIT_SUCCESS);
+    exit(AUTOGEN_EXIT_SUCCESS);
 }
 
 
   static void
 spawnListens(char const * pzPort, sa_family_t addr_family)
 {
-    static char const zPortFmt[] = "to port %s with %d type address";
     int socket_fd = socket(addr_family, SOCK_STREAM, 0);
     union {
         struct sockaddr     addr;
@@ -469,7 +554,7 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
         uint32_t p_len = strlen(pzPort);
 
         if (p_len > sizeof(sa.un_addr.sun_path))
-            AG_ABEND(aprf("AF_UNIX path exceeds %d", p_len));
+            AG_ABEND(aprf(PATH_TOO_BIG, p_len));
         sa.un_addr.sun_family  = AF_UNIX;
         strncpy(sa.un_addr.sun_path, pzPort, p_len);
         addr_len = sizeof(sa.un_addr) - sizeof(sa.un_addr.sun_path) + p_len;
@@ -490,7 +575,7 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
 
         port = (uint16_t)strtol(pzPort, &pz, 0);
         if ((errno != 0) || (*pz != NUL))
-            AG_ABEND(aprf("Invalid port number:  '%s'", pzPort));
+            AG_ABEND(aprf(PORT_NUM_BAD, pzPort));
 
         sa.in_addr.sin_port = htons((short)port);
         addr_len = sizeof(sa.in_addr);
@@ -498,12 +583,11 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
     break;
 
     default:
-        AG_ABEND(aprf("The '%d' address family cannot be handled",
-                      addr_family));
+        AG_ABEND(aprf(ADDR_FAMILY_BAD, addr_family));
     }
 
     if (bind(socket_fd, &sa.addr, addr_len) < 0) {
-        char* pz = aprf(zPortFmt, pzPort, addr_family);
+        char* pz = aprf(LISTEN_PORT_FMT, pzPort, addr_family);
         AG_CANT("bind", pz);
     }
 
@@ -511,7 +595,7 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
         AG_CANT("socket-fcntl", "FNDELAY");
 
     if (listen(socket_fd, 5) < 0)
-        AG_CANT("listen", aprf(zPortFmt, pzPort));
+        AG_CANT("listen", aprf(LISTEN_PORT_FMT, pzPort));
 
     for (;;) {
         fd_set fds;
@@ -528,11 +612,11 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
 
             if (! redoOptions) {
                 unlink(pzPort);
-                exit(EXIT_SUCCESS);
+                exit(AUTOGEN_EXIT_SUCCESS);
             }
 
             optionRestore(&autogenOptions);
-            doOptions(autogenOptions.origArgCt,
+            process_ag_opts(autogenOptions.origArgCt,
                       autogenOptions.origArgVect);
             SET_OPT_DEFINITIONS("-");
 
@@ -583,7 +667,6 @@ spawnListens(char const * pzPort, sa_family_t addr_family)
 daemonize(char const * pzStdin, char const * pzStdout, char const * pzStderr,
           char const * pzDaemonDir)
 {
-    static char const zNoFork[] = "Error %d while forking:  %s\n";
     /*
      *  Become a daemon process by exiting the current process
      *  and allowing the child to continue.  Also, change stdin,
@@ -595,9 +678,11 @@ daemonize(char const * pzStdin, char const * pzStdout, char const * pzStderr,
 
         switch (ret) {
         case -1:
-            fprintf(stderr, zNoFork, errno, strerror(errno));
+            fserr(AUTOGEN_EXIT_FS_ERROR, "fork", "");
+            /* NOTREACHED */
+
         default:
-            exit(ret);
+            exit(AUTOGEN_EXIT_SUCCESS);
 
         case 0:
             break;
@@ -607,11 +692,8 @@ daemonize(char const * pzStdin, char const * pzStdout, char const * pzStderr,
     /*
      *  Now, become a process group and session group leader.
      */
-    if (setsid() == -1) {
-        fprintf(stderr, "Error %d setting session ID:  %s\n",
-                errno, strerror(errno));
-        exit(99);
-    }
+    if (setsid() == -1)
+        fserr(AUTOGEN_EXIT_FS_ERROR, "setsid", "");
 
     /*
      *  There is now no controlling terminal.  However, if we open anything
@@ -621,14 +703,13 @@ daemonize(char const * pzStdin, char const * pzStdout, char const * pzStderr,
      */
     switch (fork()) {
     case -1:
-        fprintf(stderr, zNoFork, errno, strerror(errno));
-        exit(99);
+        fserr(AUTOGEN_EXIT_FS_ERROR, "fork", "");
+
+    default:
+        exit(AUTOGEN_EXIT_SUCCESS);  /* parent process - silently go away */
 
     case 0:
         break;
-
-    default:
-        exit(EXIT_SUCCESS);  /* parent process - silently go away */
     }
 
     umask(0);
@@ -652,7 +733,9 @@ daemonize(char const * pzStdin, char const * pzStdout, char const * pzStderr,
     /* We are a daemon now */
 }
 #endif /* DAEMON_ENABLED */
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

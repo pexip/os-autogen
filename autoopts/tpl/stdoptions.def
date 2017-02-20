@@ -1,11 +1,9 @@
 
 /* -*- Mode: Text -*-
  *
- * Time-stamp:      "2010-02-24 08:40:14 bkorb"
- *
  *  This file is part of AutoOpts, a companion to AutoGen.
  *  AutoOpts is free software.
- *  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+ *  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
  *
  *  AutoOpts is available under any one of two licenses.  The license
  *  in use must be one of these two and the choice is under the control
@@ -17,11 +15,11 @@
  *   The Modified Berkeley Software Distribution License
  *      See the file "COPYING.mbsd"
  *
- *  These files have the following md5sums:
+ *  These files have the following sha256 sums:
  *
- *  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
- *  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3
- *  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd
+ *  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+ *  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+ *  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
  */
 
 #ifndef NO_STD_OPT_DOC
@@ -31,8 +29,8 @@ flag = {
     name        = autoopts_std_options;
     documentation;
     descrip = <<- _EOF_
-	The following options are commonly used and are provided and supported
-	by AutoOpts:
+	The following options are commonly used and are
+	provided and supported by AutoOpts
 	_EOF_;
 };
 # endif
@@ -64,6 +62,90 @@ flag = {
 #define SILENT_FLAG
 #define VERBOSE_FLAG
 #define WARN_FLAG
+#endif
+
+#ifdef STD_EXITS
+exit-name[64]   = usage;
+exit-desc[64]   =<<-  _EOExit_
+	The command was used incorrectly, e.g., with the wrong number of
+	arguments, a bad flag, a bad syntax in a parameter.
+	_EOExit_;
+
+exit-name[65]   = dataerr;
+exit-desc[65]   =<<-  _EOExit_
+	The input data was incorrect in some way.
+	_EOExit_;
+
+exit-name[66]   = noinput;
+exit-desc[66]   =<<-  _EOExit_
+	An input file (not a system file) did not exist or was not readable.
+	_EOExit_;
+
+exit-name[67]   = nouser;
+exit-desc[67]   =<<-  _EOExit_
+	The user specified did not exist.
+	_EOExit_;
+
+exit-name[68]   = nohost;
+exit-desc[68]   =<<-  _EOExit_
+	The host specified did not exist.
+	_EOExit_;
+
+exit-name[69]   = unavailable;
+exit-desc[69]   =<<-  _EOExit_
+	A service is unavailable.  This can occur if a support program or
+	file does not exist.  This can also be a catchall message when
+	something doesn't work, and the cause cannot be determined.
+	_EOExit_;
+
+exit-name[70]   = software;
+exit-desc[70]   =<<-  _EOExit_
+	An internal software error has been detected.
+	_EOExit_;
+
+exit-name[71]   = oserr;
+exit-desc[71]   =<<-  _EOExit_
+	An operating system error has been detected.  This is used for such
+	things as "cannot fork", "cannot create pipe", or the similar.
+	_EOExit_;
+
+exit-name[72]   = osfile;
+exit-desc[72]   =<<-  _EOExit_
+	Some system file (e.g., /etc/passwd, /etc/utmp, etc.) does not
+	exist, cannot be opened, or has some sort of error.
+	_EOExit_;
+
+exit-name[73]   = cantcreat;
+exit-desc[73]   =<<-  _EOExit_
+	A (user specified) output file cannot be created.
+	_EOExit_;
+
+exit-name[74]   = ioerr;
+exit-desc[74]   =<<-  _EOExit_
+	An error occurred while doing I/O on somefile.
+	_EOExit_;
+
+exit-name[75]   = tempfail;
+exit-desc[75]   =<<-  _EOExit_
+	A temporary failure, indicating something that is not really an
+	error.  The request should be reattempted later.
+	_EOExit_;
+
+exit-name[76]   = protocol;
+exit-desc[76]   =<<-  _EOExit_
+	the remote system returned something that was "not possible" during
+	a protocol exchange.
+	_EOExit_;
+
+exit-name[77]   = noperm;
+exit-desc[77]   =<<-  _EOExit_
+	You did not have sufficient permission to perform the operation.
+	This is not intended for file system problems, which should use
+	NOINPUT or CANTCREAT, but rather for higher level permissions.
+	_EOExit_;
+
+exit-name[78]   = config;
+exit-desc[78]   = 'configuration error';
 #endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

@@ -3,12 +3,11 @@
 # ----------------------------------------------------------------------
 # immediate.test      ---  test immediate option handling
 #
-# Time-stamp:        "2011-04-22 13:04:25 bkorb"
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -20,12 +19,13 @@
 ##   The Modified Berkeley Software Distribution License
 ##      See the file "COPYING.mbsd"
 ##
-##  These files have the following md5sums:
+##  These files have the following sha256 sums:
 ##
-##  43b91e8ca915626ed3818ffb1b71248b pkg/libopts/COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 pkg/libopts/COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f pkg/libopts/COPYING.mbsd
-#
+##  8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+##  4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+##  13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
+#--copyright-mark "(copyright \\(c\\)[ \t]+|" \
+#  "date[ \t]*=[ \t]*\")([12][90][0-9][0-9])"
 # ----------------------------------------------------------------------
 
 . ./defs
@@ -42,8 +42,9 @@ prog-title = "Test AutoOpts for ${testname}";
 include    = "#include <stdio.h>\nint invocation_ct = 0;";
 config-header = 'config.h';
 version    = '1.0';
+omit-nls-code;
 copyright = {
-    date  = "1992-2009";
+    date  = "1992-2014";
     owner = "Bruce Korb";
     eaddr = "autogen-users@lists.sourceforge.net";
     type  = gpl;
@@ -68,7 +69,7 @@ _EOF_
 
 INC=`echo ${INC} | ${SED} 's/-lguile//;s/-lqthreads//'`
 CFLAGS="-g`echo ' '${CFLAGS}' ' | \
-  ${SED} 's, -O2 , ,;s/ -g[^ ]* / /'`"
+  ${SED} 's, -O2 , -O0 ,;s/ -g[^ ]* / /'`"
 
 echo ${AG_L} ${testname}.def
 ${AG_L} ${testname}.def || \
@@ -80,15 +81,15 @@ compile "help"
 # # # # # # # # # # HELP OUTPUT FILE # # # # # # # # #
 
 echo creating ${testname}.hlp
-cat > ${testname}.hlp << '_EOF_'
+clean_help > ${testname}.hlp << '_EOF_'
 test_immediate - Test AutoOpts for immediate - Ver. 1.0
-USAGE:  immediate [ <option-name>[{=| }<val>] ]...
+Usage:  immediate [ <option-name>[{=| }<val>] ]...
    Arg Option-Name    Description
    Str second         The second option descrip
-				- disabled as --not-second
-   opt version        Output version information and exit
-   no  help           Display extended usage information and exit
-   no  more-help      Extended usage information passed thru pager
+				- disabled as '--not-second'
+   opt version        output version information and exit
+   no  help           display extended usage information and exit
+   no  more-help      extended usage information passed thru pager
 
 All arguments are named options.
 _EOF_
@@ -104,11 +105,11 @@ f=`./${testname} not-second`
 test "$f" = "invocation_ct = 2" || \
   failure "DIS-abled option not processed twice"
 
-f=`./${testname} help version=c | ${FGREP} 'USAGE:'`
-test -z "${f}" && failure "no USAGE: in help text"
+f=`./${testname} help version=c | ${FGREP} 'Usage:'`
+test -z "${f}" && failure "no Usage: in help text"
 
-f=`./${testname} version=c help | ${FGREP} -i 'copyright (c)'`
-test -z "${f}" && failure "no 'copyright (c)' in version text"
+f=`./${testname} version=c help | ${FGREP} -i 'Copyright (C)'`
+test -z "${f}" && failure "no 'Copyright (C)' in version text"
 
 cleanup
 

@@ -16,8 +16,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * along with this program.  If not, see <http://www.gnu.org/licenses>.
  *
  * As a special exception to the GNU General Public License, if you
  * distribute this file as part of a program that also links with and
@@ -95,7 +94,7 @@ spec_hash (unsigned spec)
 static void
 spec_init (void)
 {
-  static snv_bool_t is_init = SNV_FALSE;
+  static bool is_init = false;
 
   if (!is_init)
     {
@@ -109,7 +108,7 @@ spec_init (void)
 	  spec_table[hash] = snv_default_spec_table + ix;
 	}
 
-      is_init = SNV_TRUE;
+      is_init = true;
     }
 }
 
@@ -193,7 +192,7 @@ call_argtype_function (
            *  Here, we ensure that there are "argindex + 1" entries in
            *  that array.
            */
-          *argtypes = snv_renew (int, *argtypes, argindex + 1);
+          *argtypes = snv_renew (int, *argtypes, (argindex + 1));
 
           /*
            *  IF there are more entries that follow the current argument
@@ -203,7 +202,7 @@ call_argtype_function (
            */
           if (pinfo->argc < argindex)
             memset(*argtypes + pinfo->argc, PA_UNKNOWN,
-                   (argindex - pinfo->argc) * sizeof(**argtypes));
+                   (size_t)(argindex - pinfo->argc) * sizeof(**argtypes));
 
           pinfo->argc = argindex + 1;
         }
@@ -230,7 +229,7 @@ call_argtype_function (
           int new_ct = argindex + n;
 	  *argtypes = snv_renew (int, *argtypes, new_ct);
           memset(*argtypes + pinfo->argc, PA_UNKNOWN,
-                 (new_ct - pinfo->argc) * sizeof(**argtypes));
+                 (size_t)(new_ct - pinfo->argc) * sizeof(**argtypes));
 	  pinfo->argc = argindex + n;
 	  /* Call again... */
 	  pinfo->argindex = save_argindex;
@@ -283,14 +282,19 @@ static inline struct printf_info *
 parser_reset (struct printf_info *pinfo)
 {
   pinfo->is_long_double = pinfo->is_char = pinfo->is_short =
-    pinfo->is_long = pinfo->alt = pinfo->space = pinfo->left =
-    pinfo->showsign = pinfo->group = pinfo->wide =
-    pinfo->width = pinfo->spec = 0;
-
-  pinfo->state = SNV_STATE_BEGIN;
-  pinfo->prec = -1;
-  pinfo->dollar = 0;
-  pinfo->pad = ' ';
+  pinfo->is_long  = 0;
+  pinfo->alt      = 0;
+  pinfo->left     = 0;
+  pinfo->showsign = 0;
+  pinfo->group    = 0;
+  pinfo->wide     = 0;
+  pinfo->spec     = 0;
+  pinfo->width    = 0;
+  pinfo->space    = 0;
+  pinfo->state    = SNV_STATE_BEGIN;
+  pinfo->prec     = -1;
+  pinfo->dollar   = 0;
+  pinfo->pad      = ' ';
 
   return pinfo;
 }
@@ -461,7 +465,7 @@ parse_printf_format (const char *format, int n, int *argtypes)
   else
     printf_last_error = NULL;
 
-  return info.argc;
+  return (size_t)info.argc;
 }
 
 static int
@@ -690,7 +694,7 @@ stream_printfv (STREAM *stream, const char *format, snv_constpointer const *ap)
           switch (tp & ~PA_FLAG_UNSIGNED)
             {
             case PA_CHAR:
-              args[idx].pa_char = (char) *(const long int *)(ap + idx);
+              args[idx].pa_char = (unsigned char)*(const long int *)(ap + idx);
               break;
 
             case PA_WCHAR:
@@ -878,15 +882,15 @@ stream_vprintf (STREAM *stream, const char *format, va_list ap)
 	switch (argtypes[idx] & ~PA_FLAG_UNSIGNED)
 	  {
           case PA_CHAR:
-	    args[idx].pa_char = va_arg (ap, int); /* Promoted.  */
+	    args[idx].pa_char = (unsigned char)va_arg (ap, int); /* Promoted */
             break;
 
           case PA_WCHAR:
-	    args[idx].pa_wchar = va_arg (ap, snv_wint_t); /* Promoted.  */
+	    args[idx].pa_wchar = (snv_wchar_t)va_arg (ap, snv_wint_t);
             break;
 
           case PA_INT|PA_FLAG_SHORT:
-	    args[idx].pa_short_int = va_arg (ap, int); /* Promoted.  */
+	    args[idx].pa_short_int = (short int)va_arg (ap, int);
             break;
 
           case PA_INT:
@@ -902,7 +906,7 @@ stream_vprintf (STREAM *stream, const char *format, va_list ap)
             break;
 
           case PA_FLOAT:
-	    args[idx].pa_float = va_arg (ap, double); /* Promoted.  */
+	    args[idx].pa_float = (float)va_arg (ap, double); /* Promoted. */
             break;
 
           case PA_DOUBLE|PA_FLAG_LONG_DOUBLE:

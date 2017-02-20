@@ -1,13 +1,11 @@
 #! /bin/sh
 #  -*- Mode: Shell-script -*-
 #
-# subblock.test --- test the subblock parameter to getdefs
+# index.test --- test the subblock parameter to getdefs
 #
 # Author:	     Bruce Korb <bkorb@gnu.org>
-# Time-stamp:        "2011-02-02 12:04:37 bkorb"
-##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -23,14 +21,8 @@
 ##  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Common definitions
-if test -z "$srcdir"; then
-    srcdir=`echo "$0" | ${SED} 's,[^/]*$,,'`
-    test -z "$srcdir" && srcdir=.
-    test "$srcdir" = "$0" && srcdir=.
-    test "${VERBOSE+set}" != set && VERBOSE=1
-fi
-. $srcdir/defs
 
+. ./defs
 
 # Create the files we need in the test environment
 cat > ${testname}.c <<EOF
@@ -74,7 +66,7 @@ cat > ${testname}.test <<_EOF_
  *
  *      index.c
  */
-autogen definitions testdir;
+autogen definitions index-testd;
 
 #line 14 "index.c"
 gfunc[2] = {
@@ -127,4 +119,4 @@ ${GDexe} output=$testname.out $testname.c || \
 cmp -s $testname.test $testname.out || \
 	failure "`diff $testname.test $testname.out`"
 
-# subblock.test ends here
+# end of index.test

@@ -16,8 +16,7 @@
 ## General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, write to the Free Software
-## Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+## along with this program.  If not, see <http://www.gnu.org/licenses>.
 ##
 ## As a special exception to the GNU General Public License, if you
 ## distribute this file as part of a program that also links with and
@@ -26,7 +25,7 @@
 
 ## Code:
 
-INCLUDES                = -I$(top_srcdir)
+AM_CPPFLAGS             = -I$(top_srcdir)
 noinst_HEADERS          = mem.h filament.h stream.h printf.h compat.h
 dist_noinst_DATA        = filament.stamp stream.stamp printf.stamp
 noinst_LTLIBRARIES      = libsnprintfv.la

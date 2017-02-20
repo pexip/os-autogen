@@ -1,26 +1,24 @@
 [= AutoGen5 Template Library -*- Mode: scheme -*-
 
-# Time-stamp:      "2011-06-09 12:17:27 bkorb"
+# This file is part of AutoOpts, a companion to AutoGen.
+# AutoOpts is free software.
+# AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
 #
-##  This file is part of AutoOpts, a companion to AutoGen.
-##  AutoOpts is free software.
-##  AutoOpts is Copyright (c) 1992-2011 by Bruce Korb - all rights reserved
-##
-##  AutoOpts is available under any one of two licenses.  The license
-##  in use must be one of these two and the choice is under the control
-##  of the user of the license.
-##
-##   The GNU Lesser General Public License, version 3 or later
-##      See the files "COPYING.lgplv3" and "COPYING.gplv3"
-##
-##   The Modified Berkeley Software Distribution License
-##      See the file "COPYING.mbsd"
-##
-##  These files have the following md5sums:
-##
-##  43b91e8ca915626ed3818ffb1b71248b COPYING.gplv3
-##  06a1a2e4760c90ea5e1dad8dfaac4d39 COPYING.lgplv3
-##  66a5cedaf62c4b2637025f049f9b826f COPYING.mbsd
+# AutoOpts is available under any one of two licenses.  The license
+# in use must be one of these two and the choice is under the control
+# of the user of the license.
+#
+#  The GNU Lesser General Public License, version 3 or later
+#     See the files "COPYING.lgplv3" and "COPYING.gplv3"
+#
+#  The Modified Berkeley Software Distribution License
+#     See the file "COPYING.mbsd"
+#
+# These files have the following sha256 sums:
+#
+# 8584710e9b04216a394078dc156b781d0b47e1729104d666658aecef8ee32e95  COPYING.gplv3
+# 4379e7444a0e2ce2b12dd6f5a52a27a4d02d39d247901d3285c88cf0d37f477b  COPYING.lgplv3
+# 13aa749a5b0a454917a944ed8fffc530b784f5ead522b1aacaf4ec8aa55a6239  COPYING.mbsd
 
 =][=
 
@@ -42,32 +40,7 @@ DEFINE init-and-validate                =][=
     (error (sprintf "prog-name limited to 16 characters:  %s"
            prog-name)) )
 
-(out-push-new)
-
-=]
-tried=""
-prefix="[=(. inst-prefix)=]"
-exec_prefix="[=(. exec-prefix)=]"
-bindir="[=(. inst-bin-dir)=]"
-
-test_exe() {
-  tried="${tried} ${1}"
-  test -n "${1}" && test -x ${1} && ${1} -v >/dev/null
-  test $? -ne 0 && return 1
-  CLexe=${1}
-}
-test_exe "${CLexe}" || \
-  test_exe ${top_builddir}/columns/columns || \
-  test_exe "${bindir}/columns" || \
-  test_exe columns || \
-  die "cannot locate columns program:  ${tried}"
-[=
 (make-tmp-dir)
-(shell (out-pop #t))
-
-(define get-opt-value (lambda (val)
-        (if (<= val 32) val (+ val 96))  ))
-
 (define have-proc       #f)
 (define proc-name       "")
 (define test-name       "")
@@ -85,12 +58,26 @@ test_exe "${CLexe}" || \
 (define tmp-ct          0)
 (define extract-fmt     "\n/* extracted from %s near line %d */\n")
 (define make-callback-procs #f)
+(define omit-nls-code   (~ (get "no-xlate") "(any|no)thing"))
+(define xlate-desc-p    (and (not omit-nls-code) (not (exist? "full-usage"))))
+(define alt-value-idx   4096)
+(define get-value-idx   (lambda() (begin
+   (set! alt-value-idx (+ 1 alt-value-idx))
+   (sprintf "0x%X" alt-value-idx ))))
+
+(define have-noret-funcs
+        (or (exist? "usage-message") (exist? "die-code")) )
 
 (define need-stacking (lambda()
     (if (not (exist? "max"))
         #f
         (> (string->number (get "max")) 1)
 )   )   )
+
+(define get-text (lambda (nm) (shell
+        "{ sed 's/@[a-z]*{\\([^}]*\\)}/\\1/g' | "
+          "${CLexe} --fill -I0 -W72\n}<<\\_EODesc_\n"
+        (get nm) "\n_EODesc_" )))
 
 (define do-ifdefs (or (exist? "flag.ifdef") (exist? "flag.ifndef")))
 
@@ -100,6 +87,18 @@ test_exe "${CLexe}" || \
 ;;
 (define flag-options-only
         (and (not (exist? "long-opts")) (exist? "flag.value")))
+
+(if (exist? "vendor-opt") (begin
+    ;; except the 'vendor-opt' attribute allows long options that do
+    ;; not have flag values, but it conflicts with 'long-opts' and requires
+    ;; at least one 'flag.value'
+    ;;
+    (if (or (exist? "long-opts") (not (exist? "flag.value")))
+        (error "'vendor-opt' and 'long-opts' conflict.  flag values required")
+        (set! flag-options-only #f))
+    (if (exist? "library")
+        (error "'vendor-opt' conflicts with 'library'"))
+) )
 
 (if (and (exist? "reorder-args") (not (exist? "argument")) )
   (error
@@ -127,18 +126,37 @@ test_exe "${CLexe}" || \
         (error "a library must only have one 'flag.lib-name'"))
 )   )
 
+(if (exist? "main") (begin
+    (if (> (count "main") 1)
+        (error "too many main procedures"))
+    (if (not (exist? "main.main-type"))
+        (error "main procedure does not have a type") ) ))
+
 ;;  Establish a number of variations on the spelling of the
 ;;  program name.  Use these Scheme defined values throughout.
 ;;
-(define pname           (get-c-name "prog-name"))
-(define pname-cap       (string-capitalize  pname))
-(define pname-up        (string-upcase      pname))
-(define pname-down      (string-downcase    pname))
-(define main-guard      (string-append "TEST_" pname-up "_OPTS" ))
-(define number-opt-index  -1)
-(define default-opt-index -1)
-(define make-test-main  (if (exist? "test-main") #t
-                            (string? (getenv "TEST_MAIN")) ))
+(define pname               (get-c-name "prog-name"))
+(define pname-cap           (string-capitalize  pname))
+(define pname-up            (string-upcase      pname))
+(define pname-down          (string-downcase    pname))
+(define number-opt-index    -1)
+(define default-opt-index   -1)
+
+(define guarded-test-main   (or (exist? "test-main")
+                                (string? (getenv "TEST_MAIN"))))
+(if guarded-test-main
+    (warn "'test-main' is obsolete and should not be used any more.  Use 'main'."))
+
+(define main-guard          (string-append "TEST_" pname-up "_OPTS" ))
+(define make-main-proc
+  (if (exist? "main")
+      (~~ (get "main[].main-type" "") "shell-process|shell-parser|main")
+      guarded-test-main ) )
+(if (not make-main-proc) (set! guarded-test-main #f))
+(define put-shell-main
+  (or (== (get "main.main-type") "shell-process")
+      (and (not (exist? "main")) guarded-test-main)
+) )
 
 (define descriptor "")
 (define opt-name   "")
@@ -215,6 +233,8 @@ test_exe "${CLexe}" || \
         (join "\n" (stack "flag.value"))
         (count "flag.value") ) )
 
+(define temp-idx      0)
+(define no-flag-ct    0)
 (define lib-opt-ptr  "")
 (define max-name-len 10)                =][=
 
@@ -228,8 +248,11 @@ FOR flag                                =][=
     (if (> tmp-ct max-name-len)
         (set! max-name-len tmp-ct))
 
-    (if (< 1 (count "value"))
-        (error (sprintf "Option %s has too many `value's" (get "name"))))
+    (if (exist? "value")
+        (if (< 1 (count "value"))
+            (error (sprintf "Option %s has too many `value's" (get "name"))))
+        (set! no-flag-ct (+ 1 no-flag-ct))
+    )
 
     (if (and flag-options-only
              (not (exist? "documentation"))
@@ -238,7 +261,6 @@ FOR flag                                =][=
 
     (set! tmp-val
            (+ (if (exist? "call-proc")    1 0)
-              (if (exist? "flag-code")    1 0)
               (if (exist? "extract-code") 1 0)
               (if (exist? "flag-proc")    1 0)
               (if (exist? "unstack-arg")  1 0)
@@ -287,7 +309,29 @@ FOR flag                                =][=
         (set! lib-opt-ptr (string->c-name! (string-append
               (get "lib-name") "_" (get "name") "_optDesc_p"))) )
 =][=
-ENDFOR flag                             =][=
+
+ENDFOR flag
+
+=][=
+(if (and (exist? "vendor-opt") (= no-flag-ct 0))
+    (error "'vendor-opt' requires that there be options without flag values"))
+
+(define opt-strs (string-append pname "_opt_strs"))
+(string-table-new opt-strs)
+(out-push-new) (out-suspend "home-list")
+(if (not omit-nls-code) (begin
+    (out-push-new)
+    (out-suspend "xget")
+)   )
+(define field-name-fmt (string-append
+        "\n  /* referenced via " pname "Options.%s */\n"))
+(define put-xget (lambda (nm st) (begin
+    (out-resume      "xget")
+    (ag-fprintf 0    field-name-fmt nm)
+    (mk-gettextable  st)
+    (out-suspend     "xget")
+) ) )
+=][=
 
 ENDDEF init-and-validate
 
@@ -303,15 +347,6 @@ DEFINE save-name-morphs
    if "stack-arg" is specified.  The specified procedure is called if
    "call-proc" is specified.  Finally, we insert the specified code for
    options with "flag-code" or "extract-code" attributes.
-
-   This all changes, however, if "make-test-main" is set.  It is set if
-   either "test-main" is specified as a program/global attribute, or if
-   the TEST_MAIN environment variable is defined.  This should be set
-   if either the program is intended to digest options for an incorporating
-   shell script, or else if the user wants a quick program to show off the
-   usage text and command line parsing.  For that environment, all callbacks
-   are disabled except "optionStackArg" for stacked arguments and the
-   keyword set membership options.
 
   =][=
 
@@ -335,12 +370,14 @@ DEFINE save-name-morphs
 
   ELIF (or (exist? "extract-code")
            (exist? "flag-code")
+           (exist? "aliases")
            (exist? "arg-range"))
     =][=
 
     (set! have-proc #t)
     (set! is-extern #f)
-    (set! test-name (if (exist? "arg-range") proc-name
+    (set! test-name (if (or (exist? "arg-range") (exist? "aliases"))
+                        proc-name
                         (if need-stacking "optionStackArg" "NULL")  ))
     =][=
 
@@ -427,7 +464,7 @@ DEFINE save-name-morphs
   ;;  option descriptor table.  Never a need to mess with it if we are
   ;;  not building a "test main" procedure.
   ;;
-  (if (not make-test-main)
+  (if (not guarded-test-main)
       (set! test-name proc-name))
 
   (if have-proc
@@ -447,7 +484,7 @@ DEFINE save-name-morphs
   )
 
   (if (exist? "default")
-      (set! default-opt-index (for-index)) )
+      (set! default-opt-index (. flag-index)) )
 
 =][=
 
@@ -462,7 +499,7 @@ DEFINE set-defines
 =]
 #define SET_[=(. opt-name)=][= (if (exist? "arg-type") "(a)")
   =]   STMTS( \
-        [=set-desc=].optActualIndex = [=(for-index)=]; \
+        [=set-desc=].optActualIndex = [=(. flag-index)=]; \
         [=set-desc=].optActualValue = VALUE_[=(. opt-name)=]; \
         [=set-desc=].fOptState &= OPTST_PERSISTENT_MASK; \
         [=set-desc=].fOptState |= [=opt-state=][=
@@ -531,12 +568,13 @@ DEFINE option-copyright                 =]
 
 IF (exist? "copyright")                 =]
  *
- * This source file is copyrighted and licensed under the following terms:
+ * The [= prog-name =] program is copyrighted and licensed
+ * under the following terms:
  *
 [=
   CASE copyright.type                   =][=
   == ""   =][=
-   (sprintf " *  %s copyright (c) %s %s - all rights reserved\n *  %s"
+   (sprintf " *  %s Copyright (C) %s %s - all rights reserved\n *  %s"
      prog-name (get "copyright.date") (get "copyright.owner")
      "licensing type not specified" )   =][=
 
@@ -549,81 +587,53 @@ ENDIF "copyright exists"                =]
  */
 [=
 
+IF (exist? "addtogroup")               \=]
+/** \file [= (out-name)                 =]
+ *  \addtogroup [= addtogroup           =]
+ *  @{
+ */
+[=
+ENDIF                                   =][=
+
 ENDDEF option-copyright
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 Emit usage text                         =][=
 
-DEFINE usage-text                       =][=
+DEFINE emit-help-text                  \=]
+#define [=
+  (set! tmp-val (string-append (get "help-type") "-usage"))
+  (string->c-name! (string-append pname "_" tmp-val))  =] ([=
 
-  CASE  (set! tmp-val (string-append (get "usage-type") "-usage"))
-        (define usage-text-name 
-                (string->c-name! (string-append pname "_" tmp-val)) )
-        (set! tmp-val (get tmp-val "<<<NOT-FOUND>>>"))
+  CASE  (set! tmp-val (get tmp-val "<<<NOT-FOUND>>>"))
         tmp-val                         =][=
 
-  == "<<<NOT-FOUND>>>"                  =]
-#define [= (. usage-text-name) =] NULL[=
+  == "<<<NOT-FOUND>>>"                  =]NULL[=
 
-  == ""                                 =]
-static char const [= (. usage-text-name) =][] =
-       [=
+  == ""                                 =][=
 
-    (out-push-new)                     \=][=
-    INCLUDE "usage.tlib"               \=][=
-    (kr-string (out-pop #t))
+    (out-push-new)                      =][=
+    INCLUDE "usage.tlib"                =][=
+    (define tmp-val (out-pop #t))       =][=
+    (string-table-add-ref opt-strs tmp-val) =][=
 
- =];
+  ~ "[a-z][a-z0-9_]*"                   =][= (. tmp-val) =][=
+
+  *  anything else must be plain text   =][=
+    (string-table-add-ref opt-strs tmp-val) =][=
+  ESAC  flavor of usage text.           =])
 [=
+(if (not omit-nls-code) (begin
+   (set! tmp-text (string-append
+         "pz" (string-capitalize (get "help-type")) "Usage"))
+   (put-xget tmp-text tmp-val) ))       =][=
 
-  ~ "[a-z][a-z0-9_]*"                   =]
-#define [= (. usage-text-name) =] [= (. tmp-val) =]
-[=
+ENDDEF emit-help-text
 
-  *  anything else must be plain text   =]
-static char const [= (. usage-text-name) =][] =
-       [= (kr-string (. tmp-val))     =];
-[=
-  ESAC  flavor of usage text.           =][=
+;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
 
-ENDDEF usage-text
-
-;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-#define's for a single option     =][=
-
-DEFINE Option_Defines             =]
-#define VALUE_[=
-  (define value-desc (string-append UP-prefix "DESC("
-          (if (exist? "equivalence")
-              (get-up-name "equivalence")
-              UP-name) ")" ))
-  (define tmp-val (for-index))
-  (sprintf "%-18s" opt-name)=] [=
-
-  CASE  value    =][=
-  !E             =][= (get-opt-value tmp-val) =][=
-  ==  "'"        =]'\''[=
-  ==  "\\"       =]'\\'[=
-  ~~  "[ -~]"    =]'[=value=]'[=
-
-  =*  num        =][=
-      (if (>= number-opt-index 0)
-          (error "only one number option is allowed")  )
-      (set! number-opt-index tmp-val)
-      (get-opt-value tmp-val)   =][=
-
-  *              =][=(error (sprintf
-    "Error:  value for opt %s is `%s'\nmust be single char or 'NUMBER'"
-    (get "name") (get "value")))=][=
-
-  ESAC                            =][=
-  (out-push-new)                  =][=
-
-  CASE (get "arg-type")           =][=
-
-  =*   key                        =]
+DEFINE emit-keyword-enum          =]
 typedef enum {[=
     (if (not (exist? "arg-default"))
         (string-append " " enum-pfx "UNDEFINED = 0,")) =]
@@ -633,9 +643,18 @@ typedef enum {[=
 test $? -eq 0 || die ${CLexe} failed"
           (string-upcase! (string->c-name! (join " " (stack "keyword"))))
     enum-pfx )=]
-} te_[=(string-append Cap-prefix cap-name)=];[=
+} te_[=(string-append Cap-prefix cap-name)=];
+#define [= (sprintf "%-24s" (string-append OPT-pfx UP-name "_VAL2STR(_v)"))
+                 =] optionKeywordName(&[=(. value-desc)=], (_v))
+#define [=(. OPT-pfx)=]VALUE_[=(sprintf "%-14s" UP-name)
+                 =] ([=(. value-desc)=].optArg.argEnum)[=
 
-  =*   set                        =][=
+ENDDEF emit-keyword-enum
+
+;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
+
+DEFINE emit-member-mask           =][=
+
     (define setmember-fmt (string-append "\n#define %-24s 0x%0"
        (shellf "expr '(' %d + 4 ')' / 4" (count "keyword")) "XUL"
        (if (> (count "keyword") 32) "L" "")  ))
@@ -650,13 +669,21 @@ test $? -eq 0 || die ${CLexe} failed"
 
     ENDFOR keyword                =][=
 
-    (sprintf setmember-fmt (string->c-name! (string-append
+    (ag-fprintf 0 setmember-fmt (string->c-name! (string-append
              full-prefix "_MEMBERSHIP_MASK"))
-             (- (ash 1 (count "keyword")) 1) )  =][=
+             (- (ash 1 (count "keyword")) 1) )  =]
+#define [=(sprintf "%sVALUE_%-14s ((uintptr_t)%s.optCookie)"
+                   OPT-pfx UP-name value-desc)
+                 =]
+#define [=(sprintf "%1$sMEMLST_%2$-13s optionMemberList(&%3$s)"
+                   OPT-pfx UP-name value-desc)
+                 =][=
 
-  ESAC  (get "arg-type")
+ENDDEF emit-member-mask
 
-=][=
+;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
+
+DEFINE emit-value-defines         =][=
 
   CASE arg-type  =][=
 
@@ -668,16 +695,11 @@ test $? -eq 0 || die ${CLexe} failed"
 #define [=(. OPT-pfx)=]VALUE_[=(sprintf "%-14s" UP-name)
                  =] ([=(. value-desc)=].optArg.argInt)[=
 
-  =*  key        =]
-#define [= (sprintf "%-24s" (string-append OPT-pfx UP-name "_VAL2STR(_v)"))
-                 =] optionKeywordName(&[=(. value-desc)=], (_v))
-#define [=(. OPT-pfx)=]VALUE_[=(sprintf "%-14s" UP-name)
-                 =] ([=(. value-desc)=].optArg.argEnum)[=
+  =*  key        =][=
+       INVOKE emit-keyword-enum   =][=
 
-  =*  set        =]
-#define [=(sprintf "%sVALUE_%-14s ((uintptr_t)%s.optCookie)"
-                   OPT-pfx UP-name value-desc)
-                 =][=
+  =*  set        =][=
+       INVOKE emit-member-mask    =][=
 
   =*  bool       =]
 #define [=(. OPT-pfx)=]VALUE_[=(sprintf "%-14s" UP-name)
@@ -696,16 +718,13 @@ test $? -eq 0 || die ${CLexe} failed"
 
   ESAC           =][=
 
+ENDDEF emit-value-defines
 
-  IF (== (get-up-name "equivalence") UP-name) =]
-#define WHICH_[=(sprintf "%-18s" opt-name)
-                 =] ([=(. descriptor)=].optActualValue)
-#define WHICH_[=(. UP-prefix)=]IDX_[=(sprintf "%-14s" UP-name)
-                 =] ([=(. descriptor)=].optActualIndex)[=
-  ENDIF          =][=
-  IF (exist? "settable") =][=
+;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # =][=
 
-    IF (exist? "unstack-arg") =][=
+DEFINE set-option-define        =][=
+
+    IF (exist? "unstack-arg")   =][=
 
       set-defines
            set-desc  = (string-append UP-prefix "DESC("
@@ -722,28 +741,79 @@ test $? -eq 0 || die ${CLexe} failed"
            set-index = (index-name "equivalence")
            opt-state = "OPTST_SET | OPTST_EQUIVALENCE" =][=
 
-    ELSE  "is equivalenced"       =][=
+    ELSE  "is equivalenced"     =][=
 
       set-defines
            set-desc  = (string-append UP-prefix "DESC(" UP-name ")" )
-           set-index = (for-index)
+           set-index = (. flag-index)
            opt-state = OPTST_SET  =][=
 
-    ENDIF is/not equivalenced     =][=
+    ENDIF is/not equivalenced   =][=
 
+ENDDEF set-option-define
+
+;; # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+;;
+;; #define's for a single option
+;;
+;; First, emit defines that are always required.  Then start collecting
+;; defines in a diverted output.  If there is any output, there will
+;; be well more than 2 bytes of it.  If so, actually emit it, but first
+;; see if it needs to be enclused in a #ifdef/#endif pair.
+;; =][=
+DEFINE option-defines             =]
+#define VALUE_[=
+  (define value-desc (string-append UP-prefix "DESC("
+          (if (exist? "equivalence")
+              (get-up-name "equivalence")
+              UP-name) ")" ))
+  (sprintf "%-18s" opt-name)=] [=
+
+  CASE  value    =][=
+  !E             =][= (get-value-idx) =][=
+  ==  "'"        =]'\''[=
+  ==  "\\"       =]'\\'[=
+  ~~  "[ -~]"    =]'[=value=]'[=
+
+  =*  num        =][=
+      (if (>= number-opt-index 0)
+          (error "only one number option is allowed")  )
+      (set! number-opt-index flag-index)
+      (get-value-idx)             =][=
+
+  *              =][=(error (sprintf
+    "Error:  value for opt %s is `%s'\nmust be single char or 'NUMBER'"
+    (get "name") (get "value")))=][=
+
+  ESAC                            =][=
+  (out-push-new)                  =][=
+  INVOKE emit-value-defines       =][=
+
+  IF (== (get-up-name "equivalence") UP-name) =]
+/** Define the option value [= name =] is equivalenced to */
+#define WHICH_[=(sprintf "%-18s" opt-name)
+                 =] ([=(. descriptor)=].optActualValue)
+/** Define the index of the option [= name =] is equivalenced to */
+#define WHICH_[=(. UP-prefix)=]IDX_[=(sprintf "%-14s" UP-name)
+     =] ([=(. descriptor)=].optActualIndex)[=
+  ENDIF                           =][=
+
+  IF (exist? "settable")          =][=
+     INVOKE set-option-define     =][=
   ENDIF settable                  =][=
 
-  (define tmp-val (out-pop #t))   =][=
-  IF (defined? 'tmp-val) =][=
-    IF (> (string-length tmp-val) 2)  =][=
-      IF (hash-ref ifdef-ed flg-name) =]
-#if[=ifndef "n"=]def [= ifdef =][= ifndef =]
-[= (. tmp-val) =]
+  IF  (define tmp-val (out-pop #t))
+      (if (defined? 'tmp-val)
+          (> (string-length tmp-val) 2)
+          #f )                    =][=
+
+    IF (hash-ref ifdef-ed flg-name)      =]
+#if[=ifndef "n"=]def [= ifdef =][= ifndef \=]
+[= (. tmp-val)  =]
 #endif /* [= ifdef =][= ifndef =] */[=
-    
-      ELSE      =]
+
+    ELSE        =]
 [= (. tmp-val)  =][=
-      ENDIF     =][=
     ENDIF       =][=
   ENDIF         =][=
 
@@ -754,12 +824,25 @@ ENDDEF Option_Defines
 DEFINE   emit-alias-option
 
 =]
-static char const z[=(. cap-name)=]Text[]   = "This is an alias for '[=aliases=]'";
-#define z[=(. cap-name)=]_NAME    NULL
-static char const z[=(. cap-name)=]_Name[]  = "[=name=]";
-#define [=(. UP-name)=]_FLAGS    [= (get-up-name "aliases") =]_FLAGS[=
+/** Descriptive text for the [= name =] option */
+#define [= (. UP-name) =]_DESC    ([=
+    (set! tmp-val (string-append
+          "an alias for the '" (get "aliases") "' option"))
+    (if (exist? "deprecated")
+        (set! tmp-val (string-append tmp-val " (deprecated)")) )
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-val)  )
+    (string-table-add-ref opt-strs tmp-val) =])
+#define [= (. UP-name) =]_NAME    NULL
+/** Unmodified name string for the [= name =] option */
+#define [= (. UP-name) =]_name    ([=
+    (string-table-add-ref opt-strs (get "name")) =])
+/** Compiled in flag settings for the [= name =] option */
+#define [=(. UP-name)=]_FLAGS     ([=
+    (get-up-name "aliases") =]_FLAGS | OPTST_ALIAS[=
+    (if (exist? "deprecated") " | OPTST_DEPRECATED") =])[=
 
-ENDDEF   emit-alias-option
+ENDDEF   emit-alias-option "
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -767,115 +850,113 @@ Define the arrays of values associated with an option (strings, etc.) =][=
 
 DEFINE   emit-nondoc-option     =][=
   (if (exist? "translators")
-      (string-append "\n" (shellf
-"${CLexe} -I16 --fill --first='/* TRANSLATORS:' <<\\_EOF_
-%s
-_EOF_" (get "translators")  ) " */" )  ) =]
-static char const z[=(. cap-name)=]Text[] =
-        [= (kr-string (get "descrip")) =];
-static char const z[= (sprintf "%-25s" (string-append cap-name
-                    "_NAME[]" )) =] = "[=(. UP-name)=]";[=
+      (string-append "\n" (shell
+        "${CLexe} -I16 --fill --first='/* TRANSLATORS:' <<\\_EOF_\n"
+        (get "translators") "\n_EOF_")
+      " */" )  ) =]
+/** Descriptive text for the [= name =] option */
+#define [= (. UP-name) =]_DESC      ([=
+  (define tmp-val (get-text "descrip"))
+  (if (exist? "deprecated")
+      (set! tmp-val (string-append tmp-val " (deprecated)")) )
+  (if xlate-desc-p
+      (put-xget "pOptDesc->pzText" tmp-val) )
+  (string-table-add-ref opt-strs tmp-val) =])
+/** Upper-cased name for the [= name =] option */
+#define [= (. UP-name) =]_NAME      ([=
+    (string-table-add-ref opt-strs UP-name) =])[=
 
   #  IF this option can be disabled,
   #  THEN we must create the string for the disabled version
   #  =][=
   IF (> (len "disable") 0) =]
-static char const [=
-
+/** disablement name for the [= name =] option */
+#define NOT_[= (. UP-name) =]_name  ([=
     (hash-create-handle! disable-name   flg-name (string-append
-        "zNot" cap-name "_Name" ))
+        "NOT_" UP-name "_name" ))
     (hash-create-handle! disable-prefix flg-name (string-append
-        "zNot" cap-name "_Pfx" ))
+        "NOT_" UP-name "_PFX" ))
+    (string-table-add-ref opt-strs
+        (string-tr! (string-append (get "disable") "-" flg-name)
+                   optname-from optname-to)) =])
+/** disablement prefix for the [= name =] option */
+#define NOT_[= (. UP-name) =]_PFX   ([=
+    (string-table-add-ref opt-strs (string-downcase! (get "disable"))) =])
+/** Name string for the [= name =] option */
+#define [= (. UP-name) =]_name      ([=
+    (if (> (len "enable") 0)
+        (string-table-add-ref opt-strs
+           (string-tr! (string-append (get "enable") "-" flg-name)
+                    optname-from optname-to) )
+        (sprintf "NOT_%s_name + %d"
+           UP-name (+ (string-length (get "disable")) 1 ))
+    ) =])[=
 
-    (sprintf "zNot%-23s" (string-append cap-name "_Name[]")) =]= "[=
+  ELSE  No disablement of this option:  =][=
 
-       (string-tr! (string-append (get "disable") "-" flg-name)
-                   optname-from optname-to) =]";
-static char const [= (sprintf "zNot%-23s" (string-append cap-name "_Pfx[]"))
-             =]= "[=(string-downcase! (get "disable"))=]";[=
-
-
-      #  See if we can use a substring for the option name:
-      #  =][=
-      IF (> (len "enable") 0) =]
-static char const [=(sprintf "z%-26s" (string-append cap-name "_Name[]")) =]= "[=
-        (string-tr! (string-append (get "enable") "-" flg-name)
-                    optname-from optname-to) =]";[=
-      ELSE =]
-#define [=(sprintf "z%-27s " (string-append cap-name
-        "_Name")) =](zNot[= (. cap-name) =]_Name + [=
-        (+ (string-length (get "disable")) 1 ) =])[=
-      ENDIF =][=
-
-
-    ELSE  No disablement of this option:
-    =][=
     (hash-create-handle! disable-name   flg-name "NULL")
     (hash-create-handle! disable-prefix flg-name "NULL") ""
   =]
-static char const z[=    (sprintf "%-26s" (string-append cap-name "_Name[]"))
-             =]= "[= (string-tr! (string-append
-        (if (exist? "enable") (string-append (get "enable") "-") "")
-        (get "name"))   optname-from optname-to) =]";[=
+/** Name string for the [= name =] option */
+#define [= (. UP-name) =]_name      ([=
+    (string-table-add-ref opt-strs
+        (string-tr! (string-append
+             (if (exist? "enable") (string-append (get "enable") "-") "")
+             (get "name"))
+         optname-from optname-to)) =])[=
 
-    ENDIF (> (len "disable") 0) =][=
+  ENDIF (> (len "disable") 0)
 
-    #  Check for special attributes:  a default value
-    #  and conflicting or required options
-    =][=
-    IF (define def-arg-name (sprintf "z%-27s "
-                 (string-append cap-name "DefaultArg" )))
-       (define def-arg-array (sprintf "z%-27s "
-                 (string-append cap-name "DefaultArg[]" )))
-       (exist? "arg-default")   =][=
-       CASE arg-type            =][=
-       =* num                   =]
-#define [=(. def-arg-name)=]((char const*)[= arg-default =])[=
+  #  Check for special attributes:  a default value
+  #  and conflicting or required options
+  =][=
+  IF (define def-arg-name (sprintf "%-28s "
+             (string-append UP-name "_DFT_ARG" )))
+     (exist? "arg-default")   =]
+/** The compiled in default value for the [= name =] option argument */
+#define [= (. UP-name) =]_DFT_ARG   ([=
+     CASE arg-type            =][=
+     =* num                   =](char const*)[= arg-default =][=
 
-       =* time                  =]
-#define [=(. def-arg-name)=]((char const*)[=
-        (time-string->number (get "arg-default")) =])[=
+     =* time                  =](char const*)[=
+        (time-string->number (get "arg-default")) =][=
 
-       =* bool                  =][=
-          CASE arg-default      =][=
-          ~ n.*|f.*|0           =]
-#define [=(. def-arg-name)=]((char const*)AG_FALSE)[=
-          *                     =]
-#define [=(. def-arg-name)=]((char const*)AG_TRUE)[=
-          ESAC                  =][=
+     =* bool                  =][=
+        CASE arg-default      =][=
+        ~ n.*|f.*|0           =](char const*)false[=
+        *                     =](char const*)true[=
+        ESAC                  =][=
 
-       =* key                   =]
-#define [=(. def-arg-name)=]((char const*)[=
+     =* key                   =](char const*)[=
           (emit (if (=* (get "arg-default") enum-pfx) "" enum-pfx))
-          (get-up-name "arg-default") =])[=
+          (get-up-name "arg-default") =][=
 
-       =* set                   =]
-#define [=(. def-arg-name)=]NULL
+     =* set                   =]NULL)
 #define [=(sprintf "%-28s " (string-append cap-name "CookieBits"))=](void*)([=
-         IF (not (exist? "arg-default")) =]0[=
-         ELSE =][=
-           FOR    arg-default | =][=
+        IF (not (exist? "arg-default")) =]0[=
+        ELSE =][=
+          FOR    arg-default | =][=
              (string->c-name! (string-append UP-prefix UP-name "_"
                    (get-up-name "arg-default") ))  =][=
-           ENDFOR arg-default   =][=
-         ENDIF =])[=
+          ENDFOR arg-default   =][=
+        ENDIF =][=
 
-       =* str                   =]
-static char const [=(. def-arg-array)=]= [=(kr-string (get "arg-default"))=];[=
+     =* str                   =][=
+    (string-table-add-ref opt-strs (get "arg-default")) =][=
 
-       =* file                  =]
-static char const [=(. def-arg-array)=]= [=(kr-string (get "arg-default"))=];[=
+     =* file                  =][=
+    (string-table-add-ref opt-strs (get "arg-default")) =][=
 
-       *                        =][=
+     *                        =][=
           (error (string-append cap-name
                  " has arg-default, but no valid arg-type"))  =][=
-       ESAC                     =][=
-    ENDIF                       =][=
+     ESAC                     =])[=
+   ENDIF                      =][=
 
 
     IF (exist? "flags-must") =]
-static const int
-    a[=(. cap-name)=]MustList[] = {[=
+/** Other options that are required by the [= name =] option */
+static int const a[=(. cap-name)=]MustList[] = {[=
       FOR flags-must =]
     [= (index-name "flags-must") =],[=
       ENDFOR flags_must =] NO_EQUIVALENT };[=
@@ -883,13 +964,14 @@ static const int
 
 
     IF (exist? "flags-cant") =]
-static const int
-    a[=(. cap-name)=]CantList[] = {[=
+/** Other options that appear in conjunction with the [= name =] option */
+static int const a[=(. cap-name)=]CantList[] = {[=
       FOR flags-cant =]
     [= (index-name "flags-cant") =],[=
       ENDFOR flags-cant =] NO_EQUIVALENT };[=
     ENDIF =]
-#define [=(. UP-name)=]_FLAGS       ([=
+/** Compiled in flag settings for the [= name =] option */
+#define [= (. UP-name) =]_FLAGS     ([=
          ? enabled      "OPTST_INITENABLED"
                         "OPTST_DISABLED"       =][=
          stack-arg      " | OPTST_STACKED"     =][=
@@ -950,23 +1032,28 @@ ENDDEF   emit-nondoc-option
 
 Define the arrays of values associated with an option (strings, etc.) =][=
 
-DEFINE   opt-strs
+DEFINE emit-opt-strs
 
 =]
-/*
- *  [=(set-flag-names) cap-name=] option description[=
+/**
+ *  [= (set-flag-names) flg-name =] option description[=
   IF (or (exist? "flags_must") (exist? "flags_cant")) =] with
  *  "Must also have options" and "Incompatible options"[=
   ENDIF =]:
  */[=
   IF (hash-ref ifdef-ed flg-name)       =]
-#if[=ifndef "n"=]def [= ifdef =][= ifndef =][=
+#if[=ifndef "n"=]def [= (define if-def-name (get "ifdef" (get "ifndef")))
+    if-def-name                         =][=
   ENDIF  ifdef-ed                       =][=
 
   IF (exist? "documentation")           =]
-static char const z[=(. cap-name)=]Text[] =
-        [= (kr-string (get "descrip")) =];
-#define [=(. UP-name)=]_FLAGS       (OPTST_DOCUMENT | OPTST_NO_INIT)[=
+/** [= name =] option separation text */
+#define [= (. UP-name) =]_DESC      ([=
+    (define tmp-val (string-append (get-text "descrip") ":"))
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-val) )
+    (string-table-add-ref opt-strs tmp-val) =])
+#define [= (. UP-name) =]_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)[=
   ELIF (exist? "aliases")               =][=
      INVOKE emit-alias-option           =][=
   ELSE                                  =][=
@@ -975,11 +1062,11 @@ static char const z[=(. cap-name)=]Text[] =
 
   IF (hash-ref ifdef-ed flg-name)       =]
 
-#else   /* disable [= (. cap-name)=] */
-#define [=(. UP-name)=]_FLAGS       (OPTST_OMITTED | OPTST_NO_INIT)[=
+#else   /* disable [= (. flg-name)=] */
+#define [= (. UP-name) =]_FLAGS     (OPTST_OMITTED | OPTST_NO_INIT)[=
 
     IF (exist? "arg-default") =]
-#define z[=(. cap-name)=]DefaultArg NULL[=
+#define [= (. UP-name) =]_DFT_ARG   NULL[=
     ENDIF =][=
 
     IF (exist? "flags-must")  =]
@@ -989,27 +1076,30 @@ static char const z[=(. cap-name)=]Text[] =
     IF (exist? "flags-cant")  =]
 #define a[=(. cap-name)=]CantList   NULL[=
     ENDIF =]
-#define z[=(. cap-name)=]_NAME      NULL[=
+#define [= (. UP-name) =]_NAME      NULL[=
 
     IF (exist? "omitted-usage") =]
-static char const z[=(. cap-name)=]_Name[] = "[= name =]";[=
-       IF (set! tmp-text (get "omitted-usage"))
-       (> (string-length tmp-text) 1)    =]
-static char const z[=(. cap-name)=]Text[]  = [= (kr-string tmp-text) =];[=
-       ELSE  =]
-#define z[=(. cap-name)=]Text       NULL[=
-       ENDIF =][=
+/** Descriptive text for the [= name =] option */
+#define [= (. UP-name) =]_DESC      ([=
+    (set! tmp-text (get "omitted-usage"))
+    (if (> (string-length tmp-text) 1) (begin
+        (if xlate-desc-p
+            (put-xget "pOptDesc->pzText" tmp-text) )
+        (string-table-add-ref opt-strs tmp-text) )
+      "NULL") =])
+#define [= (. UP-name) =]_name      ([=
+    (string-table-add-ref opt-strs (get "name")) =])[=
 
     ELSE  =]
-#define z[=(. cap-name)=]Text       NULL
-#define z[=(. cap-name)=]_Name      NULL[=
+#define [= (. UP-name) =]_DESC      NULL
+#define [= (. UP-name) =]_name      NULL[=
     ENDIF =][=
 
     IF (> (len "disable") 0) =]
-#define zNot[=(. cap-name)=]_Name   NULL
-#define zNot[=(. cap-name)=]_Pfx    NULL[=
+#define NOT_[= (. UP-name) =]_name  NULL
+#define NOT_[= (. UP-name) =]_PFX   NULL[=
     ENDIF =]
-#endif  /* [= ifdef =][= ifndef =] */[=
+#endif  /* [= (. if-def-name) =] */[=
   ENDIF  ifdef-ed   =][=
 
 ENDDEF opt-strs
@@ -1027,20 +1117,30 @@ DEFINE help-strs
    (if (exist? "no-libopts") "" "/More_Help")
    (if (exist? "version")    "/Version" "")) =] option descriptions:
  */
-static char const zHelpText[]          = "Display extended usage information and exit";
-static char const zHelp_Name[]         = "help";[=
+#define HELP_DESC       ([=
+    (define tmp-text "display extended usage information and exit")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define HELP_name       ([=
+    (string-table-add-ref opt-strs "help")=])[=
 
   IF (not (exist? "no-libopts"))
 
 =]
 #ifdef HAVE_WORKING_FORK
-#define OPTST_MORE_HELP_FLAGS   (OPTST_IMM | OPTST_NO_INIT)
-static char const zMore_Help_Name[]    = "more-help";
-static char const zMore_HelpText[]     = "Extended usage information passed thru pager";
+#define MORE_HELP_DESC  ([=
+    (define tmp-text "extended usage information passed thru pager")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define MORE_HELP_name  ([=
+    (string-table-add-ref opt-strs "more-help")=])
+#define MORE_HELP_FLAGS (OPTST_IMM | OPTST_NO_INIT)
 #else
-#define OPTST_MORE_HELP_FLAGS   (OPTST_OMITTED | OPTST_NO_INIT)
-#define zMore_Help_Name   NULL
-#define zMore_HelpText    NULL
+#define MORE_HELP_DESC  HELP_DESC
+#define MORE_HELP_name  HELP_name
+#define MORE_HELP_FLAGS (OPTST_OMITTED | OPTST_NO_INIT)
 #endif[=
 
   ENDIF (not (exist? "no-libopts"))     =][=
@@ -1049,47 +1149,87 @@ static char const zMore_HelpText[]     = "Extended usage information passed thru
 
 =]
 #ifdef NO_OPTIONAL_OPT_ARGS
-#  define OPTST_VERSION_FLAGS   OPTST_IMM | OPTST_NO_INIT
+#  define VER_FLAGS     (OPTST_IMM | OPTST_NO_INIT)
 #else
-#  define OPTST_VERSION_FLAGS   OPTST_SET_ARGTYPE(OPARG_TYPE_STRING) | \
-                                OPTST_ARG_OPTIONAL | OPTST_IMM | OPTST_NO_INIT
+#  define VER_FLAGS     (OPTST_SET_ARGTYPE(OPARG_TYPE_STRING) | \
+                         OPTST_ARG_OPTIONAL | OPTST_IMM | OPTST_NO_INIT)
 #endif
-
-static char const zVersionText[]       = "Output version information and exit";
-static char const zVersion_Name[]      = "version";[=
+#define VER_DESC        ([=
+    (define tmp-text "output version information and exit")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define VER_name        ([=
+    (string-table-add-ref opt-strs "version")=])[=
 
   ENDIF (exist? "version")              =][=
 
   IF (exist? "resettable")
 
 =]
-static char const zResetText[]         = "Reset an option's state";
-static char const zReset_Name[]        = "reset-option";[=
+#define RESET_DESC      ([=
+    (define tmp-text "reset an option's state")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define RESET_name      ([=
+    (string-table-add-ref opt-strs "reset-option")=])
+#define RESET_FLAGS     (OPTST_SET_ARGTYPE(OPARG_TYPE_STRING)|OPTST_NO_INIT)[=
 
   ENDIF (exist? "resettable")           =][=
 
   IF (exist? "usage-opt")
 
 =]
-static char const zUsageText[]         = "Abbreviated usage to stdout";
-static char const zUsage_Name[]        = "usage";[=
+#define USAGE_DESC      ([=
+    (define tmp-text "abbreviated usage to stdout")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define USAGE_name      ([=
+    (string-table-add-ref opt-strs "usage")=])[=
 
   ENDIF (exist? "usage-opt")            =][=
+
+  IF (exist? "vendor-opt")
+
+=]
+#define VEND_DESC       ([=
+    (define tmp-text "vendor supported additional options")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define VEND_name       ([=
+    (string-table-add-ref opt-strs "vendor-option")=])[=
+
+  ENDIF (exist? "vendor-opt")           =][=
 
   IF (exist? "homerc")                  =][=
 
     IF (not (exist? "disable-save"))    =]
-static char const zSave_OptsText[]     = "Save the option state to a config file";
-static char const zSave_Opts_Name[]    = "save-opts";[=
+#define SAVE_OPTS_DESC  ([=
+    (define tmp-text "save the option state to a config file")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define SAVE_OPTS_name  ([=
+    (string-table-add-ref opt-strs "save-opts")=])[=
 
     ENDIF no disable-save               =][=
 
     IF (not (exist? "disable-load"))    =]
-static char const zLoad_OptsText[]     = "Load options from a config file";
-static char const zLoad_Opts_NAME[]    = "LOAD_OPTS";
-static char const zNotLoad_Opts_Name[] = "no-load-opts";
-static char const zNotLoad_Opts_Pfx[]  = "no";
-#define zLoad_Opts_Name   (zNotLoad_Opts_Name + 3)[=
+#define LOAD_OPTS_DESC     ([=
+    (define tmp-text "load options from a config file")
+    (if xlate-desc-p
+        (put-xget "pOptDesc->pzText" tmp-text) )
+    (string-table-add-ref opt-strs tmp-text)=])
+#define LOAD_OPTS_NAME     ([=
+    (string-table-add-ref opt-strs "LOAD_OPTS")=])
+#define NO_LOAD_OPTS_name  ([=
+    (string-table-add-ref opt-strs "no-load-opts")=])
+#define LOAD_OPTS_pfx      ([=
+    (string-table-add-ref opt-strs "no")=])
+#define LOAD_OPTS_name     (NO_LOAD_OPTS_name + 3)[=
 
     ENDIF no disable-load               =][=
 
@@ -1101,7 +1241,7 @@ ENDDEF   help-strs
 
 Define the values for an option descriptor   =][=
 
-DEFINE opt-desc         =][=
+DEFINE emit-opt-desc    =][=
   IF
      (set-flag-names)
 
@@ -1122,15 +1262,17 @@ DEFINE opt-desc         =][=
                   (exist? "flag-code"))   =]doOpt[=(. cap-name)=][=
          ELSE                             =]NULL[=
          ENDIF =],
-     /* desc, NAME, name */ z[=
-         (set! default-text (string-append default-text
-               "\n    { NULL }," )) cap-name =]Text, NULL, NULL,
+     /* desc, NAME, name */ [=
+        (set! default-text (string-append default-text
+               "\n    { NULL }, /* doc opt */" ))
+        (set! default-cookie (string-append default-cookie "NULL\n" ))
+        UP-name =]_DESC, NULL, NULL,
      /* disablement strs */ NULL, NULL },[=
 
   ELSE
 
 =]
-  {  /* entry idx, value */ [=(for-index)=], [=
+  {  /* entry idx, value */ [=(. flag-index)=], [=
                               (string-append VALUE-pfx UP-name)=],
      /* equiv idx, value */ [=
           IF (== (get-up-name "equivalence") UP-name)
@@ -1138,7 +1280,7 @@ DEFINE opt-desc         =][=
           ELIF (or (exist? "equivalence") (exist? "unstack-arg"))
               =]NOLIMIT, NOLIMIT[=
           ELSE
-              =][=(for-index)=], [=(string-append VALUE-pfx UP-name)=][=
+              =][=(. flag-index)=], [=(string-append VALUE-pfx UP-name)=][=
           ENDIF=],
      /* equivalenced to  */ [=
          (if (exist? "unstack-arg")
@@ -1156,14 +1298,15 @@ DEFINE opt-desc         =][=
      /* opt state flags  */ [=(. UP-name)=]_FLAGS, 0,
      /* last opt argumnt */ [=
          (set! tmp-val (if (exist? "arg-default")
-               (string-append "{ z" cap-name "DefaultArg },")
-               "{ NULL }," ))
-         (set! default-text (string-append default-text
-               "\n    " tmp-val ))
+               (string-append "{ " UP-name "_DFT_ARG },")
+               (string-append "{ NULL }, /* --" flg-name " */" ) ))
+         (set! default-text (string-append default-text "\n    " tmp-val))
          tmp-val =]
      /* arg list/cookie  */ [=
-            (if (and (=* (get "arg-type") "set") (exist? "arg-default"))
-                (string-append cap-name "CookieBits") "NULL") =],
+     (set! tmp-val (if (and (=* (get "arg-type") "set") (exist? "arg-default"))
+                (string-append cap-name "CookieBits") "NULL"))
+     (set! default-cookie (string-append default-cookie tmp-val "\n" ))
+     tmp-val =],
      /* must/cannot opts */ [=
          (if (exist? "flags-must")
              (string-append "a" cap-name "MustList, ")
@@ -1176,7 +1319,7 @@ DEFINE opt-desc         =][=
      ;;  If there is a difference between what gets invoked under test and
      ;;  what gets invoked "normally", then there must be a #define name
      ;;  for the procedure.  There will only be such a difference if
-     ;;  make-test-main is #t
+     ;;  guarded-test-main is #t
      ;;
      (if (= (hash-ref cb-proc-name   flg-name)
             (hash-ref test-proc-name flg-name))
@@ -1184,7 +1327,7 @@ DEFINE opt-desc         =][=
          (hash-ref test-proc-name flg-name)
          (string-append UP-name "_OPT_PROC")  )  =],
      /* desc, NAME, name */ [=
-     (sprintf "z%1$sText, z%1$s_NAME, z%1$s_Name," cap-name) =]
+     (sprintf "%1$s_DESC, %1$s_NAME, %1$s_name," UP-name) =]
      /* disablement strs */ [=(hash-ref disable-name   flg-name)=], [=
                               (hash-ref disable-prefix flg-name)=] },[=
   ENDIF =][=

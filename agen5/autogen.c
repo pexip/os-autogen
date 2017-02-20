@@ -2,12 +2,13 @@
 /**
  *  @file autogen.c
  *
- *  Time-stamp:        "2011-06-03 12:15:00 bkorb"
- *
  *  This is the main routine for autogen.
- *
- *  This file is part of AutoGen.
- *  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  @addtogroup autogen
+ *  @{
+ */
+
+/*  This file is part of AutoGen.
+ *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -33,14 +34,9 @@ typedef enum {
     EXIT_PCLOSE_NOWAIT
 } wait_for_pclose_enum_t;
 
-static char const zClientInput[] = "client-input";
-
 #define _State_(n)  #n,
 static char const * const state_names[] = { STATE_TABLE };
 #undef _State_
-
-static sigjmp_buf  abendJumpEnv;
-static int         abendJumpSignal = 0;
 
 typedef void (sighandler_proc_t)(int sig);
 static sighandler_proc_t ignore_signal, catch_sig_and_bail;
@@ -52,7 +48,7 @@ inner_main(void * closure, int argc, char ** argv);
 static void
 exit_cleanup(wait_for_pclose_enum_t cl_wait);
 
-static void
+static _Noreturn void
 cleanup_and_abort(int sig);
 
 static void
@@ -65,13 +61,21 @@ static void
 done_check(void);
 
 static void
-setup_signals(sighandler_proc_t * chldHandler,
-              sighandler_proc_t * abrtHandler,
-              sighandler_proc_t * dfltHandler);
+setup_signals(sighandler_proc_t * hdl_chld,
+              sighandler_proc_t * hdl_abrt,
+              sighandler_proc_t * hdl_dflt);
 /* = = = END-STATIC-FORWARD = = = */
+
+#ifndef HAVE_CHMOD
+#  include "compat/chmod.c"
+#endif
 
 /**
  * main routine under Guile guidance
+ *
+ * @param  closure Guile closure parameter.  Not used.
+ * @param  argc    argument count
+ * @param  argv    argument vector
  */
 static void
 inner_main(void * closure, int argc, char ** argv)
@@ -79,53 +83,47 @@ inner_main(void * closure, int argc, char ** argv)
     atexit(done_check);
     initialize(argc, argv);
 
-    procState = PROC_STATE_LOAD_DEFS;
-    readDefines();
+    processing_state = PROC_STATE_LOAD_DEFS;
+    read_defs();
 
     /*
      *  Activate the AutoGen specific Scheme functions.
      *  Then load, process and unload the main template
      */
-    procState = PROC_STATE_LOAD_TPL;
+    processing_state = PROC_STATE_LOAD_TPL;
 
     {
-        tTemplate* pTF = loadTemplate(pzTemplFileName, NULL);
+        templ_t* pTF = tpl_load(tpl_fname, NULL);
 
-        procState = PROC_STATE_EMITTING;
-        processTemplate(pTF);
+        processing_state = PROC_STATE_EMITTING;
+        process_tpl(pTF);
 
-        procState = PROC_STATE_CLEANUP;
+        processing_state = PROC_STATE_CLEANUP;
         cleanup(pTF);
     }
 
-    procState = PROC_STATE_DONE;
+    processing_state = PROC_STATE_DONE;
     setup_signals(SIG_DFL, SIG_IGN, SIG_DFL);
-    exit_code = AUTOGEN_EXIT_SUCCESS;
+    ag_exit_code = AUTOGEN_EXIT_SUCCESS;
     done_check();
     /* NOTREACHED */
+    (void)closure;
 }
 
 /**
  * main() called from _start()
+ *
+ * @param  argc    argument count
+ * @param  argv    argument vector
+ * @return nothing -- Guile never returns, but calls exit(2).
  */
 int
 main(int argc, char ** argv)
 {
-    optionSaveState(&autogenOptions);
-    pfTrace = stderr;
-
-    /*
-     *  IF sigsetjmp returns with a signal number,
-     *  THEN you cannot capture the value portably.  So, the jumper has
-     *  stashed it for use now.
-     */
-    if (sigsetjmp(abendJumpEnv, 0) != 0)
-        cleanup_and_abort(abendJumpSignal);
-
     setup_signals(ignore_signal, SIG_DFL, catch_sig_and_bail);
-
-    if (getenv("GUILE_WARN_DEPRECATED") == NULL)
-        putenv((char*)(void*)"GUILE_WARN_DEPRECATED=no");
+    optionSaveState(&autogenOptions);
+    trace_fp = stderr;
+    prep_env();
 
     AG_SCM_BOOT_GUILE(argc, argv, inner_main);
 
@@ -134,7 +132,9 @@ main(int argc, char ** argv)
 }
 
 /**
- *  This code must run regardless of which exit path is taken
+ * This code must run regardless of which exit path is taken
+ *
+ * @param [in] cl_wait Whether or not a child process should be waited for.
  */
 static void
 exit_cleanup(wait_for_pclose_enum_t cl_wait)
@@ -146,7 +146,7 @@ exit_cleanup(wait_for_pclose_enum_t cl_wait)
         static int exit_cleanup_done = 0;
         if (exit_cleanup_done) {
             if (OPT_VALUE_TRACE > TRACE_NOTHING)
-                fprintf(pfTrace, "exit_cleanup re-done\n");
+                fprintf(trace_fp, EXIT_CLEANUP_MULLIGAN);
             return;
         }
 
@@ -154,34 +154,36 @@ exit_cleanup(wait_for_pclose_enum_t cl_wait)
     }
 
 #ifdef SHELL_ENABLED
-    SCM_EVAL_CONST("(if (> (string-length shell-cleanup) 0)"
-                   " (shellf \"( (%s) & >/dev/null 2>&1 )\" shell-cleanup) )");
+    SCM_EVAL_CONST(EXIT_CLEANUP_STR);
 #endif
 
     close_server_shell();
 
     if (OPT_VALUE_TRACE > TRACE_NOTHING)
-        fprintf(pfTrace, "exit_cleanup %s done\n",
-                (cl_wait == EXIT_PCLOSE_WAIT) ? "waited" : "no waiting");
+        fprintf(trace_fp, EXIT_CLEANUP_DONE_FMT,
+                (cl_wait == EXIT_PCLOSE_WAIT)
+                ? EXIT_CLEANUP_WAITED : EXIT_CLEANUP_NOWAIT,
+                (unsigned int)getpid());
 
     do  {
-        if (pfTrace == stderr)
+        if (trace_fp == stderr)
             break;
 
         if (! trace_is_to_pipe) {
-            fclose(pfTrace);
+            fclose(trace_fp);
             break;
         }
 
 
-        fflush(pfTrace);
-        pclose(pfTrace);
+        fflush(trace_fp);
+        pclose(trace_fp);
         if (cl_wait == EXIT_PCLOSE_WAIT) {
             int status;
             while (wait(&status) > 0)  ;
         }
-    } while (0);
+    } while (false);
 
+    trace_fp = stderr;
     fflush(stdout);
     fflush(stderr);
 }
@@ -189,62 +191,61 @@ exit_cleanup(wait_for_pclose_enum_t cl_wait)
 /**
  *  A signal was caught, siglongjmp called and main() has called this.
  *  We do not deallocate stuff so it can be found in the core dump.
+ *
+ *  @param[in] sig the signal number
  */
-static void
+static _Noreturn void
 cleanup_and_abort(int sig)
 {
-    static char const zErr[] =
-        "AutoGen aborting on signal %d (%s) in state %s\n";
-
-    if (*pzOopsPrefix != NUL) {
-        fputs(pzOopsPrefix, stderr);
-        pzOopsPrefix = zNil;
+    if (processing_state == PROC_STATE_INIT) {
+        fprintf(stderr, AG_NEVER_STARTED, sig, strsignal(sig));
+        exit(AUTOGEN_EXIT_SIGNAL + sig);
     }
 
-    fprintf(stderr, zErr, sig, strsignal(sig),
-            ((unsigned)procState <= PROC_STATE_DONE)
-            ? state_names[ procState ] : "** BOGUS **");
+    if (*oops_pfx != NUL) {
+        fputs(oops_pfx, stderr);
+        oops_pfx = zNil;
+    }
 
-    if (procState == PROC_STATE_ABORTING) {
+    fprintf(stderr, AG_SIG_ABORT_FMT, sig, strsignal(sig),
+            ((unsigned)processing_state <= PROC_STATE_DONE)
+            ? state_names[ processing_state ] : BOGUS_TAG);
+
+    if (processing_state == PROC_STATE_ABORTING) {
         exit_cleanup(EXIT_PCLOSE_NOWAIT);
-        _exit(sig + 128);
+        abort();
     }
 
-    procState = PROC_STATE_ABORTING;
+    processing_state = PROC_STATE_ABORTING;
     setup_signals(SIG_DFL, SIG_DFL, SIG_DFL);
 
     /*
      *  IF there is a current template, then we should report where we are
      *  so that the template writer knows where to look for their problem.
      */
-    if (pCurTemplate != NULL) {
-        static char const zAt[] =
-            "processing template %s\n"
-            "            on line %d\n"
-            "       for function %s (%d)\n";
-
+    if (current_tpl != NULL) {
         int line;
-        teFuncType fnCd;
+        mac_func_t fnCd;
         char const * pzFn;
         char const * pzFl;
 
-        if (pCurMacro == NULL) {
-            pzFn = "pseudo-macro";
+        if (cur_macro == NULL) {
+            pzFn = PSEUDO_MACRO_NAME_STR;
             line = 0;
-            fnCd = -1;
+            fnCd = (mac_func_t)-1;
 
         } else {
-            teFuncType f =
-                (pCurMacro->funcCode > FUNC_CT)
-                    ? FTYP_SELECT : pCurMacro->funcCode;
-            pzFn = apzFuncNames[ f ];
-            line = pCurMacro->lineNo;
-            fnCd = pCurMacro->funcCode;
+            mac_func_t f =
+                (cur_macro->md_code > FUNC_CT)
+                    ? FTYP_SELECT : cur_macro->md_code;
+            pzFn = ag_fun_names[ f ];
+            line = cur_macro->md_line;
+            fnCd = cur_macro->md_code;
         }
-        pzFl = pCurTemplate->pzTplFile;
+        pzFl = current_tpl->td_file;
         if (pzFl == NULL)
-            pzFl = "NULL file name";
-        fprintf(stderr, zAt, pzFl, line, pzFn, fnCd);
+            pzFl = NULL_FILE_NAME_STR;
+        fprintf(stderr, AG_ABORT_LOC_FMT, pzFl, line, pzFn, fnCd);
     }
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -269,21 +270,21 @@ cleanup_and_abort(int sig)
  *  catch_sig_and_bail catches signals we abend on.  The "siglongjmp"
  *  goes back to the real "main()" procedure and it will call
  *  "cleanup_and_abort()", above.
+ *
+ *  @param[in] sig the signal number
  */
 static void
 catch_sig_and_bail(int sig)
 {
-    switch (procState) {
+    switch (processing_state) {
     case PROC_STATE_ABORTING:
-        exit_code = AUTOGEN_EXIT_SIGNAL;
+        ag_exit_code = AUTOGEN_EXIT_SIGNAL + sig;
 
     case PROC_STATE_DONE:
         break;
 
     default:
-        abendJumpSignal = sig;
-        exit_code = AUTOGEN_EXIT_SIGNAL;
-        siglongjmp(abendJumpEnv, sig);
+        cleanup_and_abort(sig);
     }
 }
 
@@ -293,10 +294,13 @@ catch_sig_and_bail(int sig)
  *  it will kill us.  If we set it to ignore, it will be inherited.
  *  Therefore, always in all programs set it to call a procedure.
  *  The "wait(3)" call will do magical things, but will not override SIGIGN.
+ *
+ *  @param[in] sig the signal number
  */
 static void
 ignore_signal(int sig)
 {
+    (void)sig;
     return;
 }
 
@@ -311,10 +315,6 @@ ignore_signal(int sig)
 static void
 done_check(void)
 {
-    static char const zErr[] =
-        "Scheme evaluation error.  AutoGen ABEND-ing in template\n"
-        "\t%s on line %d\n";
-
     /*
      *  There are contexts wherein this function can get called twice.
      */
@@ -322,66 +322,66 @@ done_check(void)
         static int done_check_done = 0;
         if (done_check_done) {
             if (OPT_VALUE_TRACE > TRACE_NOTHING)
-                fprintf(pfTrace, "done_check re-done\n");
+                fprintf(trace_fp, DONE_CHECK_REDONE);
             return;
         }
         done_check_done = 1;
     }
 
-    switch (procState) {
+    switch (processing_state) {
     case PROC_STATE_EMITTING:
     case PROC_STATE_INCLUDING:
         /*
-         *  A library (viz., Guile) procedure has called exit(3C).
-         *  The AutoGen abort paths all set procState to PROC_STATE_ABORTING.
+         * A library (viz., Guile) procedure has called exit(3C).  The
+         * AutoGen abort paths all set processing_state to PROC_STATE_ABORTING.
          */
-        if (*pzOopsPrefix != NUL) {
+        if (*oops_pfx != NUL) {
             /*
              *  Emit the CGI page header for an error message.  We will rewind
              *  stderr and write the contents to stdout momentarily.
              */
-            fputs(pzOopsPrefix, stdout);
-            pzOopsPrefix = zNil;
+            fputs(oops_pfx, stdout);
+            oops_pfx = zNil;
         }
 
         if (OPT_VALUE_TRACE > TRACE_NOTHING)
             scm_backtrace();
 
-        fprintf(stderr, zErr, pCurTemplate->pzTplFile, pCurMacro->lineNo);
+        fprintf(stderr, SCHEME_EVAL_ERR_FMT, current_tpl->td_file,
+                cur_macro->md_line);
 
         /*
          *  We got here because someone called exit early.
          */
         do  {
 #ifndef DEBUG_ENABLED
-            out_close(AG_FALSE);
+            out_close(false);
 #else
-            out_close(AG_TRUE);
+            out_close(true);
 #endif
-        } while (pCurFp->pPrev != NULL);
-        exit_code = AUTOGEN_EXIT_BAD_TEMPLATE;
+        } while (cur_fpstack->stk_prev != NULL);
+        ag_exit_code = AUTOGEN_EXIT_BAD_TEMPLATE;
         break; /* continue failure exit */
 
     case PROC_STATE_LOAD_DEFS:
-        exit_code = AUTOGEN_EXIT_BAD_DEFINITIONS;
-        fprintf(stderr, "ABEND-ing in %s state\n", state_names[procState]);
-        goto autogen_aborts;
+        ag_exit_code = AUTOGEN_EXIT_BAD_DEFINITIONS;
+        /* FALLTHROUGH */
 
     default:
-        fprintf(stderr, "ABEND-ing in %s state\n", state_names[procState]);
+        fprintf(stderr, AG_ABEND_STATE_FMT, state_names[processing_state]);
         goto autogen_aborts;
 
     case PROC_STATE_ABORTING:
-        exit_code = AUTOGEN_EXIT_BAD_TEMPLATE;
+        ag_exit_code = AUTOGEN_EXIT_BAD_TEMPLATE;
 
     autogen_aborts:
-        if (*pzOopsPrefix != NUL) {
+        if (*oops_pfx != NUL) {
             /*
              *  Emit the CGI page header for an error message.  We will rewind
              *  stderr and write the contents to stdout momentarily.
              */
-            fputs(pzOopsPrefix, stdout);
-            pzOopsPrefix = zNil;
+            fputs(oops_pfx, stdout);
+            oops_pfx = zNil;
         }
         break; /* continue failure exit */
 
@@ -393,12 +393,8 @@ done_check(void)
         break; /* continue normal exit */
     }
 
-    if (pzLastScheme != NULL) {
-        static char const fail_fmt[] =
-            "Failing Guile command:  = = = = =\n\n%s\n\n"
-            "=================================\n";
-        fprintf(stderr, fail_fmt, pzLastScheme);
-    }
+    if (last_scm_cmd != NULL)
+        fprintf(stderr, GUILE_CMD_FAIL_FMT, last_scm_cmd);
 
     /*
      *  IF we diverted stderr, then now is the time to copy the text to stdout.
@@ -408,29 +404,30 @@ done_check(void)
     if (cgi_stderr != NULL) {
         do {
             long pos = ftell(stderr);
-            char* pz;
+            char * pz;
+            size_t rdlen;
 
             /*
              *  Don't bother with the overhead if there is no work to do.
              */
             if (pos <= 0)
                 break;
-            pz = AGALOC(pos, "stderr redirected text");
+            pz = AGALOC(pos, "stderr redir");
             rewind(stderr);
-            fread( pz, (size_t)1, (size_t)pos, stderr);
-            fwrite(pz, (size_t)1, (size_t)pos, stdout);
+            rdlen = fread( pz, (size_t)1, (size_t)pos, stderr);
+            fwrite(pz, (size_t)1, rdlen, stdout);
             AGFREE(pz);
-        } while (0);
+        } while (false);
 
         unlink(cgi_stderr);
         AGFREE(cgi_stderr);
         cgi_stderr = NULL;
     }
 
-    ag_scribble_deinit();
+    scribble_deinit();
 
     if (OPT_VALUE_TRACE > TRACE_NOTHING)
-        fprintf(pfTrace, "done_check done\n");
+        fprintf(trace_fp, DONE_CHECK_DONE);
 
     exit_cleanup(EXIT_PCLOSE_WAIT);
 
@@ -440,46 +437,45 @@ done_check(void)
      *  exit code.  (Always EXIT_FAILURE, unless this was called at the end
      *  of inner_main().)
      */
-    if (procState != PROC_STATE_OPTIONS)
-        _exit(exit_code);
+    if (processing_state != PROC_STATE_OPTIONS)
+        exit(ag_exit_code);
 }
 
 
-LOCAL void
-ag_abend_at(char const * pzMsg
+LOCAL _Noreturn void
+ag_abend_at(char const * msg
 #ifdef DEBUG_ENABLED
-            , char const * pzFile, int line
+            , char const * fname, int line
 #endif
     )
 {
-    if (*pzOopsPrefix != NUL) {
-        fputs(pzOopsPrefix, stderr);
-        pzOopsPrefix = zNil;
+    if (*oops_pfx != NUL) {
+        fputs(oops_pfx, stderr);
+        oops_pfx = zNil;
     }
 
 #ifdef DEBUG_ENABLED
-    fprintf(stderr, "Giving up in %s line %d\n", pzFile, line);
+    fprintf(stderr, "Giving up in %s line %d\n", fname, line);
 #endif
 
-    if ((procState >= PROC_STATE_LIB_LOAD) && (pCurTemplate != NULL)) {
-        int l_no = (pCurMacro == NULL) ? -1 : pCurMacro->lineNo;
-        fprintf(stderr, "Error in template %s, line %d\n\t",
-                pCurTemplate->pzTplFile, l_no);
+    if ((processing_state >= PROC_STATE_LIB_LOAD) && (current_tpl != NULL)) {
+        int l_no = (cur_macro == NULL) ? -1 : cur_macro->md_line;
+        fprintf(stderr, ERROR_IN_TPL_FMT, current_tpl->td_file, l_no);
     }
-    fputs(pzMsg, stderr);
-    pzMsg += strlen(pzMsg);
-    if (pzMsg[-1] != NL)
+    fputs(msg, stderr);
+    msg += strlen(msg);
+    if (msg[-1] != NL)
         fputc(NL, stderr);
 
     {
-        teProcState oldState = procState;
-        procState = PROC_STATE_ABORTING;
+        proc_state_t o_state = processing_state;
+        processing_state = PROC_STATE_ABORTING;
 
-        switch (oldState) {
+        switch (o_state) {
         case PROC_STATE_EMITTING:
         case PROC_STATE_INCLUDING:
         case PROC_STATE_CLEANUP:
-            longjmp(fileAbort, FAILURE);
+            longjmp(abort_jmp_buf, FAILURE);
             /* NOTREACHED */
         default:
             exit(EXIT_FAILURE);
@@ -490,9 +486,9 @@ ag_abend_at(char const * pzMsg
 
 
 static void
-setup_signals(sighandler_proc_t * chldHandler,
-              sighandler_proc_t * abrtHandler,
-              sighandler_proc_t * dfltHandler)
+setup_signals(sighandler_proc_t * hdl_chld,
+              sighandler_proc_t * hdl_abrt,
+              sighandler_proc_t * hdl_dflt)
 {
     struct sigaction  sa;
     int    sigNo  = 1;
@@ -520,11 +516,11 @@ setup_signals(sighandler_proc_t * chldHandler,
 #  define SIGCHLD SIGCLD
 #endif
         case SIGCHLD:
-            sa.sa_handler = chldHandler;
+            sa.sa_handler = hdl_chld;
             break;
 
         case SIGABRT:
-            sa.sa_handler = abrtHandler;
+            sa.sa_handler = hdl_abrt;
             break;
 
             /*
@@ -538,6 +534,9 @@ setup_signals(sighandler_proc_t * chldHandler,
              */
 #ifdef SIGTSTP
         case SIGTSTP:
+#endif
+#ifdef SIGPROF
+        case SIGPROF:
 #endif
             continue;
 
@@ -580,7 +579,7 @@ setup_signals(sighandler_proc_t * chldHandler,
 #endif
 
         default:
-            sa.sa_handler = dfltHandler;
+            sa.sa_handler = hdl_dflt;
         }
         sigaction(sigNo,  &sa, NULL);
     } while (++sigNo < maxSig);
@@ -598,10 +597,8 @@ LOCAL void *
 ao_malloc (size_t sz)
 {
     void * res = malloc(sz);
-    if (res == NULL) {
-        fprintf(stderr, "malloc of %zd bytes failed\n", sz);
-        exit(EXIT_FAILURE);
-    }
+    if (res == NULL)
+        die(AUTOGEN_EXIT_FS_ERROR, MALLOC_FAIL_FMT, sz);
     return res;
 }
 
@@ -610,10 +607,8 @@ LOCAL void *
 ao_realloc (void *p, size_t sz)
 {
     void * res = (p == NULL) ? malloc(sz) : realloc(p, sz);
-    if (res == NULL) {
-        fprintf(stderr, "realloc of %zd bytes at 0x%p failed\n", sz, p);
-        exit(EXIT_FAILURE);
-    }
+    if (res == NULL)
+        die(AUTOGEN_EXIT_FS_ERROR, REALLOC_FAIL_FMT, sz, p);
     return res;
 }
 
@@ -621,10 +616,8 @@ LOCAL char *
 ao_strdup (char const * str)
 {
     char * res = strdup(str);
-    if (res == NULL) {
-        fprintf(stderr, "strdup of %d byte string failed\n", (int)strlen(str));
-        exit(EXIT_FAILURE);
-    }
+    if (res == NULL)
+        die(AUTOGEN_EXIT_FS_ERROR, STRDUP_FAIL_FMT, (int)strlen(str));
     return res;
 }
 
@@ -634,7 +627,9 @@ ao_strdup (char const * str)
         (void)option_load_mode, (void)program_pkgdatadir;
     }
 #endif
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

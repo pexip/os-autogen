@@ -1,12 +1,15 @@
+
 /**
  * @file agUtils.c
  *
  * Various utilities for AutoGen.
  *
- *  Time-stamp:        "2011-06-03 12:13:25 bkorb"
- *
+ * @addtogroup autogen
+ * @{
+ */
+/*
  *  This file is part of AutoGen.
- *  Copyright (c) 1992-2011 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -30,12 +33,33 @@ static void
 put_defines_into_env(void);
 
 static void
-start_dep_file(void);
+open_trace_file(char ** av, tOptDesc * odsc);
+
+static void
+check_make_dep_env(void);
 
 static char const *
-skipQuote(char const * pzQte);
+skip_quote(char const * qstr);
 /* = = = END-STATIC-FORWARD = = = */
 
+/**
+ * Print a file system error fatal error message and die.
+ *
+ * @param[in] op         the operation that failed.
+ * @param[in] fname      the file name the operation was on.
+ * @noreturn
+ */
+LOCAL void
+fswarn(char const * op, char const * fname)
+{
+    fprintf(stderr, FS_ERR_WARNING, errno, strerror(errno), op, fname);
+}
+
+/**
+ * Allocating printf function.  It either works or kills the program.
+ * @param[in] pzFmt the input format
+ * @returns the allocated, formatted result string.
+ */
 LOCAL char *
 aprf(char const * pzFmt, ...)
 {
@@ -46,15 +70,17 @@ aprf(char const * pzFmt, ...)
     va_end(ap);
 
     if (pz == NULL) {
-        static char const zMsg[] =
-            "could not allocate for or formatting failed on:\n%s";
-        char z[ sizeof (zMsg) + SCRIBBLE_SIZE ];
-        snprintf(z, sizeof(z), zMsg, pzFmt);
+        char z[ 2 * SCRIBBLE_SIZE ];
+        snprintf(z, sizeof(z), APRF_ALLOCATE_FAIL, pzFmt);
         AG_ABEND(z);
     }
     return pz;
 }
 
+/**
+ * Figure out what base name to use.  --base-name was not specified.
+ * Base it on the definitions file, if available.
+ */
 static void
 define_base_name(void)
 {
@@ -62,7 +88,7 @@ define_base_name(void)
     char* pzD;
 
     if (! ENABLED_OPT(DEFINITIONS)) {
-        OPT_ARG(BASE_NAME) = "baseless";
+        OPT_ARG(BASE_NAME) = DFT_BASE_NAME;
         return;
     }
 
@@ -77,7 +103,7 @@ define_base_name(void)
      *  IF input is from stdin, then use "stdin"
      */
     if ((pz[0] == '-') && (pz[1] == NUL)) {
-        OPT_ARG(BASE_NAME) = "stdin";
+        OPT_ARG(BASE_NAME) = STDIN_FILE_NAME;
         return;
     }
 
@@ -85,12 +111,16 @@ define_base_name(void)
      *  Otherwise, use the basename of the definitions file
      */
     OPT_ARG(BASE_NAME) = \
-        pzD = AGALOC(strlen(pz)+1, "derived base name");
+        pzD = AGALOC(strlen(pz)+1, "derived base");
 
     while ((*pz != NUL) && (*pz != '.'))  *(pzD++) = *(pz++);
     *pzD = NUL;
 }
 
+/**
+ * Put the -D option arguments into the environment.
+ * This makes them accessible to Guile/Scheme code, too.
+ */
 static void
 put_defines_into_env(void)
 {
@@ -111,7 +141,7 @@ put_defines_into_env(void)
             char*  p   = AGALOC(siz, "env define");
 
             strcpy(p, pz);
-            strcpy(p+siz-3, "=1");
+            strcpy(p+siz-3, DFT_ENV_VAL);
             pz = p;
         }
 
@@ -120,74 +150,6 @@ put_defines_into_env(void)
          */
         putenv((char*)pz);
     } while (--ct > 0);
-}
-
-static void
-start_dep_file(void)
-{
-    static char const mkdep_fmt[] =
-        "# Makefile dependency file created by %s\n"
-        "# with the following command:\n";
-
-    char * pz;
-
-    if (pzDepFile == NULL)
-        pzDepFile = aprf("%s.d-XXXXXX", OPT_ARG(BASE_NAME));
-    mkstemp((char *)pzDepFile);
-    pfDepends = fopen(pzDepFile, "w");
-
-    if (pfDepends == NULL)
-        AG_CANT("fopen for write", pzDepFile);
-
-    fprintf(pfDepends, mkdep_fmt, autogenOptions.pzProgName);
-
-    {
-        int     ac = autogenOptions.origArgCt;
-        char ** av = autogenOptions.origArgVect;
-
-        while (ac-- > 0) {
-            char * arg = *(av++);
-            fprintf(pfDepends, "#   %s\n", arg);
-        }
-    }
-
-    if (pzDepTarget == NULL) {
-        char * p;
-        AGDUPSTR(pzDepTarget, pzDepFile, "targ name");
-        p  = (char *)pzDepTarget + strlen(pzDepTarget) - 7;
-        *p = NUL;
-    }
-
-    {
-        static char const tfmt[] = "%s_%s";
-        char const * pnm = autogenOptions.pzPROGNAME;
-        char const * bnm = strchr(pzDepTarget, '/');
-
-        if (bnm != NULL)
-            bnm++;
-        else
-            bnm = pzDepTarget;
-
-        {
-            size_t sz = strlen(pnm) + strlen(bnm) + sizeof(tfmt) - 4;
-
-            pz_targ_base = pz = AGALOC(sz, "mk targ list");
-            sprintf(pz, tfmt, pnm, bnm);
-        }
-    }
-
-    /*
-     * Now scan over the characters in "pz_targ_base".  Anything that
-     * is not a legal name character gets replaced with an underscore.
-     */
-    for (;;) {
-        unsigned int ch = (unsigned int)*(pz++);
-        if (ch == NUL)
-            break;
-        if (! IS_ALPHANUMERIC_CHAR(ch))
-            pz[-1] = '_';
-    }
-    fprintf(pfDepends, "%s_TList =", pz_targ_base);
 }
 
 /**
@@ -199,48 +161,152 @@ start_dep_file(void)
  *
  *  The trace output starts with the command and arguments used to
  *  start autogen.
+ *
+ * @param[in] av    autogen's argument vector
+ * @param[in] odsc  option descriptor with file name string argument
  */
-LOCAL void
+static void
 open_trace_file(char ** av, tOptDesc * odsc)
 {
     char const * fname = odsc->optArg.argString;
 
     trace_is_to_pipe = (*fname == '|');
     if (trace_is_to_pipe)
-        pfTrace = popen(++fname, "w");
+        trace_fp = popen(++fname, "w");
 
     else if ((fname[0] == '>') && (fname[1] == '>')) {
-        fname += 2;
-        while (IS_WHITESPACE_CHAR((int)(*fname)))  fname++;
-        pfTrace = fopen(fname, "a");
+        fname = SPN_WHITESPACE_CHARS(fname + 2);
+        trace_fp = fopen(fname, "a");
     }
 
     else
-        pfTrace = fopen(fname, "w");
+        trace_fp = fopen(fname, "w");
 
-    if (pfTrace == NULL)
-        AG_ABEND(aprf("Error %d (%s) opening `%s' for output",
-                      errno, strerror(errno), fname));
+    if (trace_fp == NULL)
+        fserr(AUTOGEN_EXIT_FS_ERROR, "fopen", fname);
 
 #ifdef _IONBF
-    setvbuf(pfTrace, NULL, _IONBF, 0);
+    setvbuf(trace_fp, NULL, _IONBF, 0);
 #endif
 
-    fprintf(pfTrace, "\nAutoGen starts:  %s", *av);
+    fprintf(trace_fp, TRACE_START_FMT, (unsigned int)getpid(), *av);
     while (*(++av) != NULL)
-        fprintf(pfTrace, " '%s'", *av);
-    putc(NL, pfTrace);
+        fprintf(trace_fp, TRACE_AG_ARG_FMT, *av);
+    fprintf(trace_fp, TRACE_START_GUILE, libguile_ver);
+}
+
+/**
+ * Check the environment for make dependency info.  We look for
+ * AUTOGEN_MAKE_DEP, but if that is not found, we also look for
+ * DEPENDENCIES_OUTPUT.  To do dependency tracking at all, we
+ * must find one of these environment variables and it must
+ *
+ * * be non-empty
+ * * not contain a variation on "no"
+ * * not contain a variation on "false"
+ *
+ * Furthermore, to specify a file name, the contents must not contain
+ * some variation on "yes" or "true".
+ */
+static void
+check_make_dep_env(void)
+{
+    bool have_opt_string = false;
+    bool set_opt         = false;
+
+    char const * mdep = getenv(AG_MAKE_DEP_NAME);
+    if (mdep == NULL) {
+        mdep = getenv(DEP_OUT_NAME);
+        if (mdep == NULL)
+            return;
+    }
+    switch (*mdep) {
+    case NUL: break;
+    case '1':
+        set_opt = (mdep[0] == '1');
+        /* FALLTHROUGH */
+
+    case '0':
+        if (mdep[1] != NUL)
+            have_opt_string = true;
+        break;
+
+    case 'y':
+    case 'Y':
+        set_opt = true;
+        have_opt_string = (streqvcmp(mdep + 1, YES_NAME_STR+1) != 0);
+        break;
+
+    case 'n':
+    case 'N':
+        set_opt = \
+            have_opt_string = (streqvcmp(mdep + 1, NO_NAME_STR+1) != 0);
+        break;
+
+    case 't':
+    case 'T':
+        set_opt = true;
+        have_opt_string = (streqvcmp(mdep + 1, TRUE_NAME_STR+1) != 0);
+        break;
+
+    case 'f':
+    case 'F':
+        set_opt = \
+            have_opt_string = (streqvcmp(mdep + 1, FALSE_NAME_STR+1) != 0);
+        break;
+
+    default:
+        have_opt_string = \
+            set_opt = true;
+    }
+    if (! set_opt) return;
+    if (! have_opt_string) {
+        SET_OPT_MAKE_DEP("");
+        return;
+    }
+
+    {
+        char * pz = AGALOC(strlen(mdep) + 5, "mdep");
+        char * fp = pz;
+
+        *(pz++) = 'F';
+        for (;;) {
+            int ch = *(unsigned char *)(mdep++);
+            if (IS_END_TOKEN_CHAR(ch))
+                break;
+
+            *(pz++) = (char)ch;
+        }
+        *pz = NUL;
+
+        SET_OPT_SAVE_OPTS(fp);
+        mdep = SPN_WHITESPACE_CHARS(mdep);
+        if (*mdep == NUL)
+            return;
+
+        pz = fp;
+        *(pz++) = 'T';
+        for (;;) {
+            int ch = *(unsigned char *)(mdep++);
+            if (IS_END_TOKEN_CHAR(ch))
+                break;
+
+            *(pz++) = (char)ch;
+        }
+        *pz = NUL;
+        SET_OPT_SAVE_OPTS(fp);
+        AGFREE(fp);
+    }
 }
 
 LOCAL void
-doOptions(int arg_ct, char ** arg_vec)
+process_ag_opts(int arg_ct, char ** arg_vec)
 {
     /*
      *  Advance the argument counters and pointers past any
      *  command line options
      */
     {
-        static char const one_src[] = "%s ERROR:  Too many definition files\n";
         int  optCt = optionProcess(&autogenOptions, arg_ct, arg_vec);
 
         /*
@@ -255,12 +321,12 @@ doOptions(int arg_ct, char ** arg_vec)
             /* FALLTHROUGH */
 
         default:
-            usage_message(one_src, pzProg);
+            usage_message(DOOPT_TOO_MANY_DEFS, ag_pname);
             /* NOTREACHED */
 
         case 0:
             if (! HAVE_OPT(DEFINITIONS))
-                OPT_ARG(DEFINITIONS) = "-";
+                OPT_ARG(DEFINITIONS) = DFT_DEF_INPUT_STR;
             break;
         }
     }
@@ -268,7 +334,7 @@ doOptions(int arg_ct, char ** arg_vec)
     if ((OPT_VALUE_TRACE > TRACE_NOTHING) && HAVE_OPT(TRACE_OUT))
         open_trace_file(arg_vec, &DESC(TRACE_OUT));
 
-    startTime = time(NULL);
+    start_time = time(NULL) - 1;
 
     if (! HAVE_OPT(TIMEOUT))
         OPT_ARG(TIMEOUT) = (char const *)AG_DEFAULT_TIMEOUT;
@@ -279,13 +345,15 @@ doOptions(int arg_ct, char ** arg_vec)
      */
     if (  (! ENABLED_OPT(DEFINITIONS))
        && (! HAVE_OPT(OVERRIDE_TPL)) )
-        AG_ABEND("no template was specified");
+        AG_ABEND(NO_TEMPLATE_ERR_MSG);
 
     /*
      *  IF we do not have a base-name option, then we compute some value
      */
     if (! HAVE_OPT(BASE_NAME))
         define_base_name();
+
+    check_make_dep_env();
 
     if (HAVE_OPT(MAKE_DEP))
         start_dep_file();
@@ -299,8 +367,17 @@ doOptions(int arg_ct, char ** arg_vec)
         put_defines_into_env();
 }
 
+/**
+ *  look for a define string.  It may be in our DEFINE option list
+ *  (preferred result) or in the environment.  Look up both.
+ *
+ *  @param[in] de_name   name to look for
+ *  @param[in] check_env whether or not to look in environment
+ *
+ *  @returns a pointer to the string, if found, or NULL.
+ */
 LOCAL char const *
-getDefine(char const * pzDefName, ag_bool check_env)
+get_define_str(char const * de_name, bool check_env)
 {
     char const **   ppz;
     int     ct;
@@ -316,7 +393,7 @@ getDefine(char const * pzDefName, ag_bool check_env)
             if (pzEq != NULL)
                 *pzEq = NUL;
 
-            res = strcmp(pzDefName, pz);
+            res = strcmp(de_name, pz);
             if (pzEq != NULL)
                 *pzEq = '=';
 
@@ -324,41 +401,42 @@ getDefine(char const * pzDefName, ag_bool check_env)
                 return (pzEq != NULL) ? pzEq+1 : zNil;
         }
     }
-    return check_env ? getenv(pzDefName) : NULL;
+    return check_env ? getenv(de_name) : NULL;
 }
 
-
-/*
- *  The following routine scans over quoted text, shifting
- *  it in the process and eliminating the starting quote,
- *  ending quote and any embedded backslashes.  They may
- *  be used to embed the quote character in the quoted text.
- *  The quote character is whatever character the argument
- *  is pointing at when this procedure is called.
+/**
+ *  The following routine scans over quoted text, shifting it in the process
+ *  and eliminating the starting quote, ending quote and any embedded
+ *  backslashes.  They may be used to embed the quote character in the quoted
+ *  text.  The quote character is whatever character the argument is pointing
+ *  at when this procedure is called.
+ *
+ *  @param[in,out] in_q   input quoted string/output unquoted
+ *  @returns the address of the byte after the original closing quote.
  */
-LOCAL char*
-spanQuote(char* pzQte)
+LOCAL char *
+span_quote(char * in_q)
 {
-    char  q = *pzQte;          /*  Save the quote character type */
-    char* p = pzQte++;         /*  Destination pointer           */
+    char   qc = *in_q;          /*  Save the quote character type */
+    char * dp = in_q++;         /*  Destination pointer           */
 
-    while (*pzQte != q) {
-        switch (*p++ = *pzQte++) {
+    while (*in_q != qc) {
+        switch (*dp++ = *in_q++) {
         case NUL:
-            return pzQte-1;      /* Return address of terminating NUL */
+            return in_q-1;      /* Return address of terminating NUL */
 
         case '\\':
-            if (q != '\'') {
-                int ct = ao_string_cook_escape_char(pzQte, p-1, 0x7F);
-                if (p[-1] == 0x7F)  p--;
-                pzQte += ct;
+            if (qc != '\'') {
+                int ct = (int)ao_string_cook_escape_char(in_q, dp-1, 0x7F);
+                if (dp[-1] == 0x7F)  dp--;
+                in_q += ct;
 
             } else {
-                switch (*pzQte) {
+                switch (*in_q) {
                 case '\\':
                 case '\'':
                 case '#':
-                    p[-1] = *pzQte++;
+                    dp[-1] = *in_q++;
                 }
             }
             break;
@@ -368,124 +446,133 @@ spanQuote(char* pzQte)
         }
     }
 
-    *p = NUL;
-    return pzQte+1; /* Return addr of char after the terminating quote */
+    *dp = NUL;
+    return in_q+1; /* Return addr of char after the terminating quote */
 }
 
-/*
- *  The following routine skips over quoted text.
- *  The quote character is whatever character the argument
- *  is pointing at when this procedure is called.
+/**
+ *  The following routine skips over quoted text.  The quote character is
+ *  whatever character the argument is pointing at when this procedure is
+ *  called.
+ *
+ *  @param[in] qstr   input quoted string/output unquoted
+ *  @returns the address of the byte after the original closing quote.
  */
 static char const *
-skipQuote(char const * pzQte)
+skip_quote(char const * qstr)
 {
-    char  q = *pzQte++;        /*  Save the quote character type */
+    char qc = *qstr++;        /*  Save the quote character type */
 
-    while (*pzQte != q) {
-        switch (*pzQte++) {
+    while (*qstr != qc) {
+        switch (*qstr++) {
         case NUL:
-            return pzQte-1;      /* Return address of terminating NUL */
+            return qstr-1;      /* Return address of terminating NUL */
 
         case '\\':
-            if (q == '\'') {
+            if (qc == '\'') {
                 /*
                  *  Single quoted strings process the backquote specially
                  *  only in fron of these three characters:
                  */
-                switch (*pzQte) {
+                switch (*qstr) {
                 case '\\':
                 case '\'':
                 case '#':
-                    pzQte++;
+                    qstr++;
                 }
 
             } else {
                 char p[10];  /* provide a scratch pad for escape processing */
-                int ct = ao_string_cook_escape_char(pzQte, p, 0x7F);
-                pzQte += ct;
+                qstr += ao_string_cook_escape_char(qstr, p, 0x7F);
             } /* if (q == '\'')      */
-        }     /* switch (*pzQte++)   */
-    }         /* while (*pzQte != q) */
+        }     /* switch (*qstr++)   */
+    }         /* while (*qstr != q) */
 
-    return pzQte+1; /* Return addr of char after the terminating quote */
+    return qstr+1; /* Return addr of char after the terminating quote */
 }
 
-
+/**
+ * Skip over scheme expression.  We need to find what follows it.
+ * Guile will carefully parse it later.
+ *
+ * @param[in]  scan  where to start search
+ * @param[in]  end   point beyond which not to go
+ * @returns    character after closing parenthesis or "end",
+ * which ever comes first.
+ */
 LOCAL char const *
-skipScheme(char const * pzSrc,  char const * pzEnd)
+skip_scheme(char const * scan,  char const * end)
 {
     int  level = 0;
 
     for (;;) {
-        if (pzSrc >= pzEnd)
-            return pzEnd;
-        switch (*(pzSrc++)) {
+        scan = BRK_SCHEME_NOTE_CHARS(scan);
+        if (scan >= end)
+            return end;
+
+        switch (*(scan++)) {
         case '(':
             level++;
             break;
 
         case ')':
             if (--level == 0)
-                return pzSrc;
+                return scan;
             break;
 
         case '"':
-            pzSrc = skipQuote(pzSrc-1);
+            scan = skip_quote(scan-1);
         }
     }
 }
 
-
-LOCAL int
-count_nl(char const * pz)
-{
-    int ct = 0;
-    for (;;) {
-        char const * p = strchr(pz, NL);
-        if (p == NULL)
-            break;
-        ct++;
-        pz = p + 1;
-    }
-    return ct;
-}
-
-
+/**
+ * scan past an expression.  An expression is either a Scheme
+ * expression starting and ending with balanced parentheses,
+ * or a quoted string or a sequence of non-whitespace characters.
+ * semicolons denote a comment that extends to the next newline.
+ *
+ * @param [in]  src  input text
+ * @param [in]  len  the maximum length to scan over
+ *
+ * @returns a pointer to the character next after the expression end.
+ */
 LOCAL char const *
-skipExpression(char const * pzSrc, size_t len)
+skip_expr(char const * src, size_t len)
 {
-    char const * pzEnd = pzSrc + len;
+    char const * end = src + len;
 
  guess_again:
 
-    while (IS_WHITESPACE_CHAR(*pzSrc)) pzSrc++;
-    if (pzSrc >= pzEnd)
-        return pzEnd;
-    switch (*pzSrc) {
+    src = SPN_WHITESPACE_CHARS(src);
+    if (src >= end)
+        return end;
+    switch (*src) {
     case ';':
-        pzSrc = strchr(pzSrc, NL);
-        if (pzSrc == NULL)
-            return pzEnd;
+        src = strchr(src, NL);
+        if (src == NULL)
+            return end;
         goto guess_again;
 
     case '(':
-        return skipScheme(pzSrc, pzEnd);
+        return skip_scheme(src, end);
 
     case '"':
     case '\'':
     case '`':
-        pzSrc = skipQuote(pzSrc);
-        return (pzSrc > pzEnd) ? pzEnd : pzSrc;
+        src = skip_quote(src);
+        return (src > end) ? end : src;
 
     default:
         break;
     }
 
-    while (! IS_WHITESPACE_CHAR(*pzSrc))  pzSrc++;
-    return (pzSrc > pzEnd) ? pzEnd : pzSrc;
+    src = BRK_WHITESPACE_CHARS(src);
+    return (src > end) ? end : src;
 }
-/*
+/**
+ * @}
+ *
  * Local Variables:
  * mode: C
  * c-file-style: "stroustrup"

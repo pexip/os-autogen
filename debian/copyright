@@ -1,7 +1,7 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: AutoGen
 Upstream-Contact: Bruce Korb <bkorb@gnu.org>
-Source: ftp://ftp.gnu.org/gnu/autogen/
+Source: https://ftp.gnu.org/gnu/autogen/
 
 Files: *
 Copyright: (C) 1992-2016 by Bruce Korb

@@ -1,3 +1,16 @@
+autogen (1:5.18.12-4) unstable; urgency=medium
+
+  * Repository moved to salsa.
+  * [lintian] Drop trailing whitespace in debian/changelog.
+  * Use dh compat v10.
+  * Use dh_missing --fail-missing instead of dh_install --fail-missing.
+  * Point homepage and download location (including watch file) to https URL.
+  * [lintian] Stop invoking dpkg-parsechangelog in debian/rules, use
+    /usr/share/dpkg/pkg-info.mk.
+  * Add lintian override for duplicate words in README.Debian.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 06 Jan 2018 16:07:28 +0100
+
 autogen (1:5.18.12-3) unstable; urgency=medium
 
   * Add ${perl:Depends} to autogen's Depends. (Thanks, Paul Hardy!)
@@ -209,7 +222,7 @@ autogen (1:5.18.4-1) experimental; urgency=medium
   * New upstream version.
     + Drop 10_handle_grep_error.diff.
     + Autogen does not include timestamp in generated files anymore.
-      Closes: #762030 
+      Closes: #762030
   * 10_licensing.diff from upstream GIT: Add missing licensing headers.
   * Update debian/copyright, fix DEP-5 format errors.
   * 11_fix_testsuite.error.diff fix testsuite error on dash.
@@ -336,7 +349,7 @@ autogen (1:5.18.1~pre1-1) experimental; urgency=low
 autogen (1:5.18-2) unstable; urgency=low
 
   * Upload to unstable. (The autobuilders did not try, but manual builds on
-    armel/mips/mipsel succeeded.) 
+    armel/mips/mipsel succeeded.)
 
  -- Andreas Metzler <ametzler@debian.org>  Mon, 22 Jul 2013 07:56:42 +0200
 
@@ -973,7 +986,7 @@ autogen (1:5.5.5-2.1) unstable; urgency=low
 
 autogen (1:5.5.5-2) unstable; urgency=low
 
-  * fix override disparity 
+  * fix override disparity
 
  -- Luca Filipozzi <lfilipoz@debian.org>  Sat, 14 Jun 2003 10:42:21 -0700
 
@@ -991,7 +1004,7 @@ autogen (1:5.5.4-1) unstable; urgency=low
 
 autogen (1:5.5.3-2) unstable; urgency=low
 
-  * fix override disparity 
+  * fix override disparity
 
  -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 16 Mar 2003 21:47:08 -0800
 
@@ -1118,7 +1131,7 @@ autogen (5.2.12-1) unstable; urgency=low
 
 autogen (5.2.10-3) unstable; urgency=low
 
-  * created debian/autogen.info (Closes: Bug#117674) 
+  * created debian/autogen.info (Closes: Bug#117674)
 
  -- Luca Filipozzi <lfilipoz@debian.org>  Mon,  5 Nov 2001 18:08:13 -0800
 
@@ -1155,7 +1168,7 @@ autogen (5.2.7-3) unstable; urgency=low
 autogen (5.2.7-2) unstable; urgency=low
 
   * build-depend on tetex-bin and libguile9-dev (vice libguile6-dev)
-    (closes:bug#107267,bug#107280,bug#107592)  
+    (closes:bug#107267,bug#107280,bug#107592)
 
  -- James R. Van Zandt <jrv@debian.org>  Sat,  4 Aug 2001 18:30:29 -0400
 
@@ -1164,7 +1177,7 @@ autogen (5.2.7-1) unstable; urgency=low
   * New upstream release (closes:bug#99470,bug#100599)
   * debian/control: move Build-Depends line to source section
     (closes:bug#104303), update to policy version 3.2.1, rename libopts3
-    to libopts9. 
+    to libopts9.
   * debian/control: build-depends on texinfo
   * debian/rules: honor DEB_BUILD_OPTIONS.  Install .info files.
   * README.example, checkopt.def: update per example in autoopt.texi file
@@ -1208,7 +1221,7 @@ autogen (4.5.11-2) unstable; urgency=low
   * in copyright file, don't refer to former directory
   * upload everything, since the package unaccountably disappeared from
     unstable (closes:Bug#60308)
-  
+
  -- James R. Van Zandt <jrv@vanzandt.mv.com>  Sat,  4 Mar 2000 09:26:38 -0500
 
 autogen (4.5.11-1) unstable; urgency=low

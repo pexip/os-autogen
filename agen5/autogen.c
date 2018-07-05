@@ -8,7 +8,7 @@
  */
 
 /*  This file is part of AutoGen.
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,7 +24,16 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
+# include <sys/resource.h>
+#endif
+
+#ifdef SIGRTMIN
+# define MAX_AG_SIG SIGRTMIN-1
+#else
+# define MAX_AG_SIG NSIG
+#endif
+#ifndef SIGCHLD
+#  define SIGCHLD SIGCLD
 #endif
 
 typedef void (void_main_proc_t)(int, char **);
@@ -93,13 +102,13 @@ inner_main(void * closure, int argc, char ** argv)
     processing_state = PROC_STATE_LOAD_TPL;
 
     {
-        templ_t* pTF = tpl_load(tpl_fname, NULL);
+        templ_t * tpl = tpl_load(tpl_fname, NULL);
 
         processing_state = PROC_STATE_EMITTING;
-        process_tpl(pTF);
+        process_tpl(tpl);
 
         processing_state = PROC_STATE_CLEANUP;
-        cleanup(pTF);
+        cleanup(tpl);
     }
 
     processing_state = PROC_STATE_DONE;
@@ -120,6 +129,17 @@ inner_main(void * closure, int argc, char ** argv)
 int
 main(int argc, char ** argv)
 {
+    {
+        char const * lc = getenv("LC_ALL");
+        if ((lc != NULL) && (*lc != NUL) && (strcmp(lc, "C") != 0)) {
+            static char lc_all[] = "LC_ALL=C";
+            putenv(lc_all);
+            execvp(argv[0], argv);
+            fserr(AUTOGEN_EXIT_FS_ERROR, "execvp", argv[0]);
+        }
+    }
+
+    // setlocale(LC_ALL, "");
     setup_signals(ignore_signal, SIG_DFL, catch_sig_and_bail);
     optionSaveState(&autogenOptions);
     trace_fp = stderr;
@@ -127,7 +147,7 @@ main(int argc, char ** argv)
 
     AG_SCM_BOOT_GUILE(argc, argv, inner_main);
 
-    /* NOT REACHED */
+    /* NOTREACHED */
     return EXIT_FAILURE;
 }
 
@@ -344,9 +364,6 @@ done_check(void)
             oops_pfx = zNil;
         }
 
-        if (OPT_VALUE_TRACE > TRACE_NOTHING)
-            scm_backtrace();
-
         fprintf(stderr, SCHEME_EVAL_ERR_FMT, current_tpl->td_file,
                 cur_macro->md_line);
 
@@ -467,6 +484,9 @@ ag_abend_at(char const * msg
     if (msg[-1] != NL)
         fputc(NL, stderr);
 
+#ifdef DEBUG_ENABLED
+    abort();
+#else
     {
         proc_state_t o_state = processing_state;
         processing_state = PROC_STATE_ABORTING;
@@ -478,12 +498,12 @@ ag_abend_at(char const * msg
             longjmp(abort_jmp_buf, FAILURE);
             /* NOTREACHED */
         default:
-            exit(EXIT_FAILURE);
+            abort();
             /* NOTREACHED */
         }
     }
+#endif
 }
-
 
 static void
 setup_signals(sighandler_proc_t * hdl_chld,
@@ -492,11 +512,7 @@ setup_signals(sighandler_proc_t * hdl_chld,
 {
     struct sigaction  sa;
     int    sigNo  = 1;
-#ifdef SIGRTMIN
-    const int maxSig = SIGRTMIN-1;
-#else
-    const int maxSig = NSIG;
-#endif
+    int const maxSig = MAX_AG_SIG;
 
     sa.sa_flags   = 0;
     sigemptyset(&sa.sa_mask);
@@ -512,9 +528,6 @@ setup_signals(sighandler_proc_t * hdl_chld,
              *  POSIX oversight.  Allowed to be fixed for next POSIX rev, tho
              *  it is "optional" to reset SIGCHLD on exec(2).
              */
-#ifndef SIGCHLD
-#  define SIGCHLD SIGCLD
-#endif
         case SIGCHLD:
             sa.sa_handler = hdl_chld;
             break;
@@ -566,17 +579,6 @@ setup_signals(sighandler_proc_t * hdl_chld,
 #endif
             sa.sa_handler = SIG_IGN;
             break;
-
-#ifdef DAEMON_ENABLED
-# error DAEMON-ization of AutoGen is not ready for prime time
-  Choke Me.
-        case SIGHUP:
-            if (HAVE_OPT(DAEMON)) {
-                sa.sa_handler = handleSighup;
-                break;
-            }
-            /* FALLTHROUGH */
-#endif
 
         default:
             sa.sa_handler = hdl_dflt;

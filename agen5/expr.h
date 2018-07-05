@@ -6,7 +6,7 @@
  *  From the definitions    expr.def
  *  and the template file   snarf.tpl
  *
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -104,6 +104,7 @@ extern SCM ag_scm_make_tmp_dir(void);
 extern SCM ag_scm_makefile_script(SCM);
 extern SCM ag_scm_match_value_p(SCM, SCM, SCM);
 extern SCM ag_scm_max(SCM);
+extern SCM ag_scm_max_file_time(void);
 extern SCM ag_scm_min(SCM);
 extern SCM ag_scm_mk_gettextable(SCM);
 extern SCM ag_scm_out_delete(void);

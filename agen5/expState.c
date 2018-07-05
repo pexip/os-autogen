@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -56,7 +56,7 @@ static SCM
 find_entry_value(SCM op, SCM obj, SCM test);
 
 static ver_type_t
-str2int_ver(char* pz);
+str2int_ver(char * pz);
 
 static SCM
 do_tpl_file_line(int line_delta, char const * fmt);
@@ -98,8 +98,8 @@ count_entries(char * name)
         return 0;
 
     for (;;) {
-        def_ent_t * de = *(defs++);
-        if (de == NULL)
+        def_ent_t * def = *(defs++);
+        if (def == NULL)
             break;
         res++;
     }
@@ -112,9 +112,9 @@ count_entries(char * name)
 static SCM
 find_entry_value(SCM op, SCM obj, SCM test)
 {
-    bool     isIndexed;
-    def_ent_t*  pE;
-    char*       pzField;
+    bool        has_idx;
+    def_ent_t * def;
+    char *      pzField;
 
     {
         char * name = ag_scm2zchars(obj, "find name");
@@ -126,13 +126,13 @@ find_entry_value(SCM op, SCM obj, SCM test)
         if (pzField != NULL)
             *(pzField++) = NUL;
 
-        pE = find_def_ent(name, &isIndexed);
+        def = find_def_ent(name, &has_idx);
     }
 
     /*
      *  No such entry?  return FALSE
      */
-    if (pE == NULL) {
+    if (def == NULL) {
         if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
             fputs(FIND_ENT_FAIL, trace_fp);
         return SCM_BOOL_F;
@@ -144,22 +144,22 @@ find_entry_value(SCM op, SCM obj, SCM test)
     if (pzField == NULL) {
         SCM result;
         SCM field;
-        if (pE->de_type != VALTYP_TEXT) {
+        if (def->de_type != VALTYP_TEXT) {
             if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
                 fputs(FIND_ENT_FAIL, trace_fp);
             return SCM_BOOL_F; /* Cannot match string -- not a text value */
         }
 
-        field  = AG_SCM_STR02SCM(pE->de_val.dvu_text);
+        field  = scm_from_latin1_string(def->de_val.dvu_text);
         result = AG_SCM_APPLY2(op, field, test);
-        if (! isIndexed)
+        if (! has_idx)
             while (result == SCM_BOOL_F) {
 
-                pE = pE->de_twin;
-                if (pE == NULL)
+                def = def->de_twin;
+                if (def == NULL)
                     break;
 
-                field = AG_SCM_STR02SCM(pE->de_val.dvu_text);
+                field = scm_from_latin1_string(def->de_val.dvu_text);
                 result = AG_SCM_APPLY2(op, field, test);
             }
 
@@ -172,7 +172,7 @@ find_entry_value(SCM op, SCM obj, SCM test)
     /*
      *  a subfield for a text macro?  return FALSE
      */
-    if (pE->de_type == VALTYP_TEXT) {
+    if (def->de_type == VALTYP_TEXT) {
         if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
             fputs(FIND_ENT_FAIL, trace_fp);
         return SCM_BOOL_F;
@@ -183,23 +183,23 @@ find_entry_value(SCM op, SCM obj, SCM test)
      */
     pzField[-1] = name_sep_ch;
     {
-        SCM field   = AG_SCM_STR02SCM(pzField);
+        SCM field   = scm_from_latin1_string(pzField);
         SCM result;
         def_ctx_t ctx = curr_def_ctx;
 
         curr_def_ctx.dcx_prev = &ctx;
-        curr_def_ctx.dcx_defent = pE->de_val.dvu_entry;
+        curr_def_ctx.dcx_defent = def->de_val.dvu_entry;
 
         result = find_entry_value(op, field, test);
 
-        if (! isIndexed)
+        if (! has_idx)
             while (result == SCM_BOOL_F) {
 
-                pE = pE->de_twin;
-                if (pE == NULL)
+                def = def->de_twin;
+                if (def == NULL)
                     break;
 
-                curr_def_ctx.dcx_defent = pE->de_val.dvu_entry;
+                curr_def_ctx.dcx_defent = def->de_val.dvu_entry;
                 result = find_entry_value(op, field, test);
             }
 
@@ -222,7 +222,7 @@ find_entry_value(SCM op, SCM obj, SCM test)
 SCM
 ag_scm_base_name(void)
 {
-    return AG_SCM_STR02SCM(C(char *, OPT_ARG(BASE_NAME)));
+    return scm_from_latin1_string(C(char *, OPT_ARG(BASE_NAME)));
 }
 
 /*=gfunc version_compare
@@ -248,9 +248,9 @@ ag_scm_base_name(void)
  *       @end example
 =*/
 static ver_type_t
-str2int_ver(char* pz)
+str2int_ver(char * pz)
 {
-    char* pzStr = pz;
+    char * pzStr = pz;
     ver_type_t  val = 0;
     int ix = 4;
 
@@ -304,7 +304,7 @@ ag_scm_version_compare(SCM op, SCM v1, SCM v2)
     ver_type_t val2 = str2int_ver(ag_scm2zchars(v2, "ver"));
     v1 = SCM_FROM(val1);
     v2 = SCM_FROM(val2);
-    return scm_apply(op, v1, scm_cons(v2, AG_SCM_LISTOFNULL()));
+    return scm_apply(op, v1, scm_cons(v2, scm_list_1(SCM_EOL)));
 }
 
 /*=gfunc count
@@ -324,9 +324,8 @@ ag_scm_count(SCM obj)
 {
     int ent_len = count_entries(ag_scm2zchars(obj, "ag object"));
 
-    return AG_SCM_INT2SCM(ent_len);
+    return scm_from_int(ent_len);
 }
-
 
 /*=gfunc def_file
  *
@@ -339,9 +338,8 @@ ag_scm_count(SCM obj)
 SCM
 ag_scm_def_file(void)
 {
-    return AG_SCM_STR02SCM(C(char *, (base_ctx->scx_fname)));
+    return scm_from_latin1_string(C(char *, (base_ctx->scx_fname)));
 }
-
 
 /*=gfunc exist_p
  *
@@ -377,7 +375,6 @@ ag_scm_exist_p(SCM obj)
     return res;
 }
 
-
 /*=gfunc ag_function_p
  *
  * what:   test for function
@@ -398,7 +395,6 @@ ag_scm_ag_function_p(SCM obj)
 
     return res;
 }
-
 
 /*=gfunc match_value_p
  *
@@ -423,7 +419,7 @@ SCM
 ag_scm_match_value_p(SCM op, SCM obj, SCM test)
 {
     if (  (! AG_SCM_IS_PROC(op))
-       || (! AG_SCM_STRING_P(obj)) )
+       || (! scm_is_string(obj)) )
         return SCM_UNDEFINED;
 
     if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
@@ -431,7 +427,6 @@ ag_scm_match_value_p(SCM op, SCM obj, SCM test)
 
     return find_entry_value(op, obj, test);
 }
-
 
 /*=gfunc get
  *
@@ -447,14 +442,14 @@ ag_scm_match_value_p(SCM op, SCM obj, SCM test)
  *  or else the empty string.
 =*/
 SCM
-ag_scm_get(SCM agName, SCM altVal)
+ag_scm_get(SCM v_name, SCM alt_v_name)
 {
-    if (AG_SCM_STRING_P(agName)) {
+    if (scm_is_string(v_name)) {
         bool   x;
-        char * vnm = ag_scm2zchars(agName, "vname");
+        char * vnm = ag_scm2zchars(v_name, "vname");
         def_ent_t * de  = find_def_ent(vnm, &x);
         if ((de != NULL) && (de->de_type == VALTYP_TEXT))
-            return AG_SCM_STR02SCM(de->de_val.dvu_text);
+            return scm_from_latin1_string(de->de_val.dvu_text);
         if (OPT_VALUE_TRACE >= TRACE_EXPRESSIONS)
             fprintf(trace_fp, GOT_NOTHING_FMT, vnm,
                     (de != NULL) ? "non text value" : "no value at all",
@@ -465,11 +460,10 @@ ag_scm_get(SCM agName, SCM altVal)
         fprintf(trace_fp, GET_NOTHING_FMT, current_tpl->td_file,
                 (unsigned)cur_macro->md_line);
     
-    if (AG_SCM_STRING_P(altVal))
-        return altVal;
-    return AG_SCM_STR02SCM(zNil);
+    if (scm_is_string(alt_v_name))
+        return alt_v_name;
+    return scm_from_latin1_string(zNil);
 }
-
 
 /*=gfunc get_c_name
  *
@@ -485,12 +479,10 @@ ag_scm_get(SCM agName, SCM altVal)
  *  passed through "string->c-name!".
 =*/
 SCM
-ag_scm_get_c_name(SCM agName)
+ag_scm_get_c_name(SCM v_name)
 {
-    return ag_scm_string_to_c_name_x(
-        ag_scm_get(agName, SCM_UNDEFINED));
+    return ag_scm_string_to_c_name_x(ag_scm_get(v_name, SCM_UNDEFINED));
 }
-
 
 /*=gfunc get_up_name
  *
@@ -506,11 +498,10 @@ ag_scm_get_c_name(SCM agName)
  *  passed through "string->c-name!" and "string->up-case!".
 =*/
 SCM
-ag_scm_get_up_name(SCM agName)
+ag_scm_get_up_name(SCM v_name)
 {
-    return ag_scm_string_upcase_x(ag_scm_get_c_name(agName));
+    return ag_scm_string_upcase_x(ag_scm_get_c_name(v_name));
 }
-
 
 /*=gfunc get_down_name
  *
@@ -526,11 +517,10 @@ ag_scm_get_up_name(SCM agName)
  *  passed through "string->c-name!" and "string->down-case!".
 =*/
 SCM
-ag_scm_get_down_name(SCM agName)
+ag_scm_get_down_name(SCM v_name)
 {
-    return ag_scm_string_downcase_x(ag_scm_get_c_name(agName));
+    return ag_scm_string_downcase_x(ag_scm_get_c_name(v_name));
 }
-
 
 /*=gfunc high_lim
  *
@@ -555,28 +545,27 @@ ag_scm_get_down_name(SCM agName)
 SCM
 ag_scm_high_lim(SCM obj)
 {
-    def_ent_t*  pE;
-    bool     isIndexed;
+    def_ent_t *  def;
+    bool     has_idx;
 
-    pE = find_def_ent(ag_scm2zchars(obj, "ag value"), &isIndexed);
+    def = find_def_ent(ag_scm2zchars(obj, "ag value"), &has_idx);
 
     /*
      *  IF we did not find the entry we are looking for
      *  THEN return zero
      *  ELSE search the twin list for the high entry
      */
-    if (pE == NULL)
-        return AG_SCM_INT2SCM(0);
+    if (def == NULL)
+        return scm_from_int(0);
 
-    if (isIndexed)
-        return AG_SCM_INT2SCM((int)pE->de_index);
+    if (has_idx)
+        return scm_from_int((int)def->de_index);
 
-    if (pE->de_etwin != NULL)
-        pE = pE->de_etwin;
+    if (def->de_etwin != NULL)
+        def = def->de_etwin;
 
-    return AG_SCM_INT2SCM((int)pE->de_index);
+    return scm_from_int((int)def->de_index);
 }
-
 
 /*=gfunc len
  *
@@ -595,9 +584,8 @@ ag_scm_len(SCM obj)
 {
     int len = entry_length(ag_scm2zchars(obj, "ag value"));
 
-    return AG_SCM_INT2SCM(len);
+    return scm_from_int(len);
 }
-
 
 /*=gfunc low_lim
  *
@@ -610,22 +598,21 @@ ag_scm_len(SCM obj)
 SCM
 ag_scm_low_lim(SCM obj)
 {
-    def_ent_t*  pE;
+    def_ent_t * def;
     bool     x;
 
-    pE = find_def_ent(ag_scm2zchars(obj, "ag value"), &x);
+    def = find_def_ent(ag_scm2zchars(obj, "ag value"), &x);
 
     /*
      *  IF we did not find the entry we are looking for
      *  THEN return zero
      *  ELSE we have the low index.
      */
-    if (pE == NULL)
-        return AG_SCM_INT2SCM(0);
+    if (def == NULL)
+        return scm_from_int(0);
 
-    return AG_SCM_INT2SCM((int)pE->de_index);
+    return scm_from_int((int)def->de_index);
 }
-
 
 /*=gfunc set_option
  *
@@ -643,7 +630,6 @@ ag_scm_set_option(SCM opt)
     return SCM_UNDEFINED;
 }
 
-
 /*=gfunc suffix
  *
  * what:   get the current suffix
@@ -654,9 +640,8 @@ ag_scm_set_option(SCM opt)
 SCM
 ag_scm_suffix(void)
 {
-    return AG_SCM_STR02SCM((char*)curr_sfx);
+    return scm_from_latin1_string((char *)curr_sfx);
 }
-
 
 /*=gfunc tpl_file
  *
@@ -672,15 +657,15 @@ ag_scm_suffix(void)
 SCM
 ag_scm_tpl_file(SCM full)
 {
-    if (AG_SCM_BOOL_P(full) && AG_SCM_NFALSEP(full)) {
+    if (scm_is_bool(full) && scm_is_true(full)) {
         static char const * const sfx[] = { TPL_FILE_TPL, NULL };
 
         char z[AG_PATH_MAX];
         if (SUCCESSFUL(find_file(tpl_fname, z, sfx, NULL)))
-            return AG_SCM_STR02SCM(z);
+            return scm_from_latin1_string(z);
     }
 
-    return AG_SCM_STR02SCM(C(char *, tpl_fname));
+    return scm_from_latin1_string(C(char *, tpl_fname));
 }
 
 /**
@@ -691,8 +676,8 @@ do_tpl_file_line(int line_delta, char const * fmt)
 {
     unsigned int ln_no = (unsigned int)cur_macro->md_line;
     void * args[2] = {
-        [0] = (void *)current_tpl->td_file,
-        [1] = (void *)(uintptr_t)(ln_no + (unsigned)line_delta)
+        [0] = VOIDP(current_tpl->td_file),
+        [1] = VOIDP(ln_no + (unsigned)line_delta)
     };
     char * buf = strrchr(args[0], DIRCH);
     if (buf != NULL)
@@ -703,8 +688,8 @@ do_tpl_file_line(int line_delta, char const * fmt)
         buf = scribble_get(sz);
     }
 
-    sprintfv(buf, fmt, (snv_constpointer*)args);
-    return AG_SCM_STR02SCM(buf);
+    sprintfv(buf, fmt, (snv_constpointer *)args);
+    return scm_from_latin1_string(buf);
 }
 
 /*=gfunc tpl_file_line
@@ -730,13 +715,13 @@ do_tpl_file_line(int line_delta, char const * fmt)
  *  skip forward to the second argument.
 =*/
 SCM
-ag_scm_tpl_file_line(SCM fmt)
+ag_scm_tpl_file_line(SCM fmt_scm)
 {
-    char const * pzFmt = TPL_FILE_LINE_FMT;
-    if (AG_SCM_STRING_P(fmt))
-        pzFmt = ag_scm2zchars(fmt, "f/l fmt");
+    char const * fmt = TPL_FILE_LINE_FMT;
+    if (scm_is_string(fmt_scm))
+        fmt = ag_scm2zchars(fmt_scm, "f/l fmt");
 
-    return do_tpl_file_line(0, pzFmt);
+    return do_tpl_file_line(0, fmt);
 }
 
 /*=gfunc tpl_file_next_line
@@ -751,13 +736,27 @@ ag_scm_tpl_file_line(SCM fmt)
  *  consequently defaults to the format:  # <line-no+1> "<file-name>"
 =*/
 SCM
-ag_scm_tpl_file_next_line(SCM fmt)
+ag_scm_tpl_file_next_line(SCM fmt_scm)
 {
-    char const * pzFmt = TPL_FILE_NEXT_LINE_FMT;
-    if (AG_SCM_STRING_P(fmt))
-        pzFmt = ag_scm2zchars(fmt, "f/l fmt");
+    char const * fmt = TPL_FILE_NEXT_LINE_FMT;
+    if (scm_is_string(fmt_scm))
+        fmt = ag_scm2zchars(fmt_scm, "f/l fmt");
 
-    return do_tpl_file_line(1, pzFmt);
+    return do_tpl_file_line(1, fmt);
+}
+
+/*=gfunc max_file_time
+ *
+ * what: get the maximum input file modification time
+ *
+ * doc:  returns the time stamp of the most recently modified sourc file as the
+ *       number of seconds since the epoch.  If any input is dynamic
+ *       (a shell command), then it will be the current time.
+=*/
+SCM
+ag_scm_max_file_time(void)
+{
+    return scm_from_uint32((uint32_t)maxfile_time);
 }
 
 /*=gfunc def_file_line
@@ -783,28 +782,28 @@ ag_scm_tpl_file_next_line(SCM fmt)
  *  an argument vector version of printf: @xref{snprintfv}.
 =*/
 SCM
-ag_scm_def_file_line(SCM obj, SCM fmt)
+ag_scm_def_file_line(SCM obj, SCM fmt_scm)
 {
-    char const * pzFmt = DEF_FILE_LINE_FMT;
+    char const * fmt = DEF_FILE_LINE_FMT;
     char * buf;
     bool     x;
 
-    def_ent_t * pE = find_def_ent(ag_scm2zchars(obj, "ag value"), &x);
+    def_ent_t * def = find_def_ent(ag_scm2zchars(obj, "ag value"), &x);
 
     /*
      *  IF we did not find the entry we are looking for
      *  THEN return UNDEFINED
      */
-    if (pE == NULL)
+    if (def == NULL)
         return SCM_UNDEFINED;
 
-    if (AG_SCM_STRING_P(fmt))
-        pzFmt = ag_scm2zchars(fmt, "f/l fmt");
+    if (scm_is_string(fmt_scm))
+        fmt = ag_scm2zchars(fmt_scm, "f/l fmt");
 
     {
         void * args[2] = {
-            (void *)pE->de_file,
-            (void *)(uintptr_t)pE->de_line
+            VOIDP(def->de_file),
+            VOIDP(def->de_line)
         };
         ssize_t maxlen;
 
@@ -813,13 +812,14 @@ ag_scm_def_file_line(SCM obj, SCM fmt)
             args[0] = buf + 1;
 
         maxlen = (ssize_t)(
-            strlen(args[0]) + strlen(pzFmt) + LOG10_2to32 + 1);
+            strlen(args[0]) + strlen(fmt) + LOG10_2to32 + 1);
         buf    = scribble_get(maxlen);
-        sprintfv(buf, pzFmt, (snv_constpointer*)args);
+        sprintfv(buf, fmt, (snv_constpointer *)args);
     }
 
-    return AG_SCM_STR02SCM(buf);
+    return scm_from_latin1_string(buf);
 }
+
 /**
  * @}
  *

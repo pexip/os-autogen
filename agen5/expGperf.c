@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -71,9 +71,9 @@ ag_scm_make_gperf(SCM name, SCM hlist)
 
     char const * gp_nam = ag_scm2zchars(name, "gp nm");
     char const * h_list;
-    SCM          nl_scm = AG_SCM_STR2SCM(NEWLINE, (size_t)1);
+    SCM          nl_scm = scm_from_latin1_stringn(NEWLINE, (size_t)1);
 
-    if (! AG_SCM_STRING_P(name))
+    if (! scm_is_string(name))
         return SCM_UNDEFINED;
 
     /*
@@ -96,7 +96,7 @@ ag_scm_make_gperf(SCM name, SCM hlist)
         AGFREE(cmd);
 
         if (h_list != NULL)
-            free((void *)h_list);
+            free(VOIDP(h_list));
     }
 
     if (do_cleanup) {
@@ -142,10 +142,10 @@ ag_scm_gperf(SCM name, SCM str)
     if (*key2hash == NUL)
         str = SCM_UNDEFINED;
     else
-        str = AG_SCM_STR02SCM(key2hash);
+        str = scm_from_latin1_string(key2hash);
 
-    AGFREE((void *)cmd);
-    AGFREE((void *)key2hash);
+    AGFREE(cmd);
+    AGFREE(key2hash);
     return str;
 }
 #endif

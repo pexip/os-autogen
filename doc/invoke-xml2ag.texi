@@ -90,7 +90,7 @@ with a status code of 0.
 
 @exampleindent 0
 @example
-xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.4
+xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.12
 Usage:  xml2ag [ -<flag> [<val>] | --<name>[@{=| @}<val>] ]... [ <def-file> ]
 
 All other options are derived from autogen:
@@ -158,7 +158,7 @@ line option * a top level XML attribute named, "template"
 
 The ``base-name'' for the output will similarly be either: * the
 ``--base-name'' command line option * the base name of the .xml file
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report xml2ag bugs to bkorb@@gnu.org
 @end example
 @exampleindent 4

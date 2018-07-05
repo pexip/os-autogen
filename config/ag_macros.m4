@@ -29,6 +29,24 @@ dnl do always after generated macros:
 dnl
 AC_DEFUN([INVOKE_AG_MACROS_LAST],[
 [if test X${INVOKE_AG_MACROS_LAST_done} != Xyes ; then]
+  GUILE_FLAGS
+  [ag_gv=`gdir=\`pkg-config --cflags-only-I \
+  guile-${GUILE_EFFECTIVE_VERSION} | \
+  sed 's/-I *//;s/ *-I.*/ /g'\`
+  for d in $gdir
+  do  test -f "$d/libguile/version.h" && gdir=$d && break
+  done
+  gdir=\`awk '/SCM_MICRO_VERSION/{ print @S|@3 }' \
+  "${gdir}/libguile/version.h"\`
+  test -n "$gdir" || exit 1
+  IFS=' .'
+  set -- ${GUILE_EFFECTIVE_VERSION}
+  printf '%u%02u%03u' ${1} ${2} ${gdir}
+  `
+
+  test -n "$ag_gv" || ]AC_MSG_FAILURE([cannot determine Guile version], 1)
+  AC_DEFINE_UNQUOTED(GUILE_VERSION, ${ag_gv},
+             [define to a single number for Guile version])
   INVOKE_LIBOPTS_MACROS
 
   [echo 'test "X${ac_cv_header_sys_wait_h}" = Xyes' 1>&2
@@ -139,6 +157,26 @@ AGEN5_TESTS='$(NOSHELL_TESTS)'
 ]) # end of AC_DEFUN of AG_TEST_DO_SHELL
 
 
+AC_DEFUN([AG_ENABLE_STATIC_AUTOGEN],[
+  AC_ARG_ENABLE([static-autogen],
+    AS_HELP_STRING([--enable-static-autogen], [statically link autogen to libopts]),
+    [ag_cv_enable_static_autogen=${enable_static_autogen}],
+    AC_CACHE_CHECK([whether statically link autogen to libopts], ag_cv_enable_static_autogen,
+      ag_cv_enable_static_autogen=no)
+  ) # end of AC_ARG_ENABLE
+  if test "X${ag_cv_enable_static_autogen}" != Xno
+  then
+    AC_DEFINE([STATIC_AUTOGEN_ENABLED],[1],
+        [Define this if statically link autogen to libopts])
+    AG_STATIC_AUTOGEN="-static"
+  else
+    AG_STATIC_AUTOGEN=''
+  fi
+  AC_SUBST([AG_STATIC_AUTOGEN])
+
+]) # end of AC_DEFUN of AG_ENABLE_STATIC_AUTOGEN
+
+
 AC_DEFUN([AG_LINK_SETJMP],[
   AC_MSG_CHECKING([whether setjmp() links okay])
   AC_CACHE_VAL([ag_cv_link_setjmp],[
@@ -209,191 +247,6 @@ return 0;]),
 ]) # end of AC_DEFUN of AG_LINK_SIGSETJMP
 
 
-AC_DEFUN([AG_WITHLIB_GUILE],[
-  AC_ARG_WITH([libguile],
-    AS_HELP_STRING([--with-libguile], [libguile installation prefix]),
-    [ag_cv_with_libguile_root=${with_libguile}],
-    AC_CACHE_CHECK([whether with-libguile was specified], ag_cv_with_libguile_root,
-      ag_cv_with_libguile_root=no)
-  ) # end of AC_ARG_WITH libguile
-
-  if test "${with_libguile+set}" = set && \
-     test "X${withval}" = Xno
-  then ## disabled by request
-    ag_cv_with_libguile_root=no
-    ag_cv_with_libguile_cflags=no
-    ag_cv_with_libguile_libs=no
-  else
-
-  AC_ARG_WITH([libguile-cflags],
-    AS_HELP_STRING([--with-libguile-cflags], [libguile compile flags]),
-    [ag_cv_with_libguile_cflags=${with_libguile_cflags}],
-    AC_CACHE_CHECK([whether with-libguile-cflags was specified], ag_cv_with_libguile_cflags,
-      ag_cv_with_libguile_cflags=no)
-  ) # end of AC_ARG_WITH libguile-cflags
-
-  AC_ARG_WITH([libguile-libs],
-    AS_HELP_STRING([--with-libguile-libs], [libguile link command arguments]),
-    [ag_cv_with_libguile_libs=${with_libguile_libs}],
-    AC_CACHE_CHECK([whether with-libguile-libs was specified], ag_cv_with_libguile_libs,
-      ag_cv_with_libguile_libs=no)
-  ) # end of AC_ARG_WITH libguile-libs
-
-  case "X${ag_cv_with_libguile_cflags}" in
-  Xyes|Xno|X )
-    case "X${ag_cv_with_libguile_root}" in
-    Xyes|Xno|X ) ag_cv_with_libguile_cflags=no ;;
-    * )        ag_cv_with_libguile_cflags=-I${ag_cv_with_libguile_root}/include ;;
-    esac
-  esac
-  case "X${ag_cv_with_libguile_libs}" in
-  Xyes|Xno|X )
-    case "X${ag_cv_with_libguile_root}" in
-    Xyes|Xno|X ) ag_cv_with_libguile_libs=no ;;
-    * )        ag_cv_with_libguile_libs="-L${ag_cv_with_libguile_root}/lib -lguile";;
-    esac
-  esac
-  ag_save_CPPFLAGS="${CPPFLAGS}"
-  ag_save_LIBS="${LIBS}"
-  case "X${ag_cv_with_libguile_cflags}" in
-  Xyes|Xno|X )
-    f=`guile-config compile 2>/dev/null` || f=''
-    test -n "${f}" && ag_cv_with_libguile_cflags="${f}" && \
-      AC_MSG_NOTICE([guile-config used for CFLAGS: $f]) ;;
-  esac
-  case "X${ag_cv_with_libguile_libs}" in
-  Xyes|Xno|X )
-    f=`guile-config link 2>/dev/null` || f=''
-    test -n "${f}" && ag_cv_with_libguile_libs="${f}" && \
-      AC_MSG_NOTICE([guile-config used for LIBS: $f]) ;;
-  esac
-  case "X${ag_cv_with_libguile_cflags}" in
-  Xyes|Xno|X )
-    ag_cv_with_libguile_cflags="" ;;
-  * ) CPPFLAGS="${CPPFLAGS} ${ag_cv_with_libguile_cflags}" ;;
-  esac
-  case "X${ag_cv_with_libguile_libs}" in
-  Xyes|Xno|X )
-    LIBS="${LIBS} -lguile"
-    ag_cv_with_libguile_libs="-lguile" ;;
-  * )
-    LIBS="${LIBS} ${ag_cv_with_libguile_libs}" ;;
-  esac
-  LIBGUILE_CFLAGS=""
-  LIBGUILE_LIBS=""
-  AC_MSG_CHECKING([whether libguile can be linked with])
-  AC_CACHE_VAL([ag_cv_with_libguile],[
-  AC_LINK_IFELSE(
-    [AC_LANG_SOURCE([[@%:@include <libguile.h>
-@%:@if ((SCM_MAJOR_VERSION * 100) + SCM_MINOR_VERSION) > 200
-This has not been tested with Guile 2.1.  Remove this line to proceed.
-@%:@endif
-int main () {
-  SCM fumble = SCM_UNDEFINED;
-  SCM bumble = SCM_UNDEFINED;
-  SCM stumble= SCM_UNDEFINED;
-  long lstumble;
-  stumble = scm_display( fumble, bumble );
-  lstumble = scm_ilength( fumble );
-  stumble = scm_c_eval_string( "stumble" );
-  scm_misc_error( "oops", "bad", bumble );
-  stumble = scm_num_eq_p( fumble, bumble );
-  scm_wrong_type_arg( "oops", 1, bumble );
-  return 0; }]])],
-    [ag_cv_with_libguile=yes],
-    [ag_cv_with_libguile=no]) # end of AC_LINK_IFELSE 
-  ]) # end of AC_CACHE_VAL for ag_cv_with_libguile
-  fi ## disabled by request
-  AC_MSG_RESULT([${ag_cv_with_libguile}])
-    AC_SUBST([LIBGUILE_CFLAGS])
-    AC_SUBST([LIBGUILE_LIBS])
-  if test "X${ag_cv_with_libguile}" != Xno
-  then[
-      LIBGUILE_CFLAGS="${ag_cv_with_libguile_cflags}"
-      LIBGUILE_LIBS="${ag_cv_with_libguile_libs}"]
-          CPPFLAGS="@S|@{ag_save_CPPFLAGS}"
-      LIBS="@S|@{ag_save_LIBS}"
-  else
-    CPPFLAGS="${ag_save_CPPFLAGS}"
-    LIBS="${ag_save_LIBS}"
-      LIBGUILE_CFLAGS=''
-      LIBGUILE_LIBS=''
-      AC_MSG_ERROR([Cannot find libguile.  libguile is required.  Perhaps you need to install guile-devel?])
-  fi
-  AC_SUBST([AG_GUILE])
-
-]) # end of AC_DEFUN of AG_WITHLIB_GUILE
-
-
-AC_DEFUN([AG_WITHCONF_GUILE_VER],[
-  AC_ARG_WITH([guile-ver],
-    AS_HELP_STRING([--with-guile-ver], [the guile version is set]),
-    [ag_cv_set_guile_ver=${with_guile_ver}],
-    AC_CACHE_CHECK([whether the guile version is set], ag_cv_set_guile_ver,
-      ag_cv_set_guile_ver=no)
-  ) # end of AC_ARG_WITH
-  if test "X${ag_cv_set_guile_ver}" != Xno
-  then
-    ag_cv_test_guile_version=${ag_cv_set_guile_ver}
-  fi
-
-]) # end of AC_DEFUN of AG_WITHCONF_GUILE_VER
-
-
-AC_DEFUN([AG_TEST_GUILE_VERSION],[
-  AC_MSG_CHECKING([whether the guile version])
-  AC_CACHE_VAL([ag_cv_test_guile_version],[
-    ag_cv_test_guile_version=`exec 2> /dev/null
-v=\`guile-config --version 2>&1\`
-test -n "${v}" && {
-  echo "${v}" | sed 's/.*Guile version *//'
-  exit 0
-}
-v=\`guile --version\`
-test -n "${v}" && {
-  echo "${v}" | sed 's/.*Guile *//;1q'
-  exit 0
-}
-v=\`rpm -q --list guile-devel 2>/dev/null | \\
-        grep '/version\\.h' | \\
-        head -1\`
-test -n "${v}" && {
-  v=\`awk '/^#define SCM_M/{print $2 "=" $3}' $v\`
-  eval "$v"
-  test "X$SCM_MICRO_VERSION" = X || \\
-    SCM_MINOR_VERSION=$SCM_MINOR_VERSION.$SCM_MICRO_VERSION
-  echo "$SCM_MAJOR_VERSION.$SCM_MINOR_VERSION"
-  exit 0
-}
-v=\`dpkg --list 2>/dev/null | egrep 'guile-[0-9.]*-dev' | head -1\`
-test -n "${v}" && {
-  echo "${v}" | sed 's/.*guile-//;s/-dev.*//'
-  exit 0
-}
-exit 1`
-    if test $? -ne 0 || test -z "$ag_cv_test_guile_version"
-    then ag_cv_test_guile_version=no
-    fi
-  ]) # end of CACHE_VAL of ag_cv_test_guile_version
-  AC_MSG_RESULT([${ag_cv_test_guile_version}])
-  if test "X${ag_cv_test_guile_version}" != Xno
-  then
-    set -- `IFS=' .' ; echo ${ag_cv_test_guile_version}`
-i=${3}
-test -z "${i}" && i=0
-GUILE_VERSION=`expr ${1} \* 100000 + ${2} \* 1000 + ${i}`
-test ${GUILE_VERSION} -lt 107000 && \
-    AC_MSG_ERROR([Guile must be no older than 1.7.x])
-AC_DEFINE_UNQUOTED([GUILE_VERSION], [${GUILE_VERSION}],
-         [define to Guile version expression])
-AC_SUBST(GUILE_VERSION)
-  else
-    AC_MSG_ERROR(@<:@Cannot determine Guile version number@:>@)
-  fi
-
-]) # end of AC_DEFUN of AG_TEST_GUILE_VERSION
-
-
 AC_DEFUN([AG_WITHLIB_XML2],[
   AC_ARG_WITH([libxml2],
     AS_HELP_STRING([--with-libxml2], [libxml2 installation prefix]),
@@ -428,14 +281,14 @@ AC_DEFUN([AG_WITHLIB_XML2],[
   Xyes|Xno|X )
     case "X${ag_cv_with_libxml2_root}" in
     Xyes|Xno|X ) ag_cv_with_libxml2_cflags=no ;;
-    * )        ag_cv_with_libxml2_cflags=-I${ag_cv_with_libxml2_root}/include ;;
+    * ) ag_cv_with_libxml2_cflags=-I${ag_cv_with_libxml2_root}/include ;;
     esac
   esac
   case "X${ag_cv_with_libxml2_libs}" in
   Xyes|Xno|X )
     case "X${ag_cv_with_libxml2_root}" in
     Xyes|Xno|X ) ag_cv_with_libxml2_libs=no ;;
-    * )        ag_cv_with_libxml2_libs="-L${ag_cv_with_libxml2_root}/lib -lxml2";;
+    * )        ag_cv_with_libxml2_libs="-L${ag_cv_with_libxml2_root}/lib -lxml2" ;;
     esac
   esac
   ag_save_CPPFLAGS="${CPPFLAGS}"
@@ -520,11 +373,31 @@ return (sz > 0) ? 0 : 1; }],
 ]) # end of AC_DEFUN of AG_RUN_SOLARIS_SYSINFO
 
 
+AC_DEFUN([AG_ENABLE_TIMEOUT],[
+  AC_ARG_ENABLE([timeout],
+    AS_HELP_STRING([--enable-timeout], [specify an autogen timeout]),
+    [ag_cv_enable_timeout=${enable_timeout}],
+    AC_CACHE_CHECK([whether specify an autogen timeout], ag_cv_enable_timeout,
+      ag_cv_enable_timeout=no)
+  ) # end of AC_ARG_ENABLE
+  if test "X${ag_cv_enable_timeout}" != Xno
+  then
+    AC_DEFINE([TIMEOUT_ENABLED],[1],
+        [Define this if specify an autogen timeout])
+    AG_TIMEOUT="@S|@{ag_cv_enable_timeout}"
+  else
+    AG_TIMEOUT=''
+  fi
+  AC_SUBST([AG_TIMEOUT])
+
+]) # end of AC_DEFUN of AG_ENABLE_TIMEOUT
+
+
 AC_DEFUN([AG_RUN_STRCSPN],[
   AC_MSG_CHECKING([whether strcspn matches prototype and works])
   AC_CACHE_VAL([ag_cv_run_strcspn],[
   AC_RUN_IFELSE([@%:@include <string.h>
-int main (int argc, char** argv) {
+int main (int argc, char ** argv) {
    char zRej@<:@@:>@ = reject;
    char zAcc@<:@@:>@ = "a-ok-eject";
    return strcspn( zAcc, zRej ) - 5;
@@ -605,9 +478,8 @@ AC_DEFUN([AG_ENABLE_DEBUG],[
         [Define this if wanting autogen debugging])
     AC_DEFINE([DEBUG_ENABLED], [1],
           [Define this if debugging is enabled])
-    CFLAGS="-g `echo $CFLAGS|sed 's%-g *%%g;s%-O[0-9]* *%%g'`"
-    f=`which dmalloc 2>/dev/null`
-    [ -n "$f" ] && LIBS="${LIBS} -ldmalloc"
+    [f=`which dmalloc 2>/dev/null`
+    test -n "$f" && LIBS="${LIBS} -ldmalloc"]
   fi
 
 ]) # end of AC_DEFUN of AG_ENABLE_DEBUG
@@ -666,6 +538,9 @@ AC_DEFUN([INVOKE_AG_MACROS],[
   # Check to see if using shell scripts.
   AG_TEST_DO_SHELL
 
+  # Check to see if statically link autogen to libopts.
+  AG_ENABLE_STATIC_AUTOGEN
+
   # Check to see if setjmp() links okay.
   AG_LINK_SETJMP
 
@@ -675,20 +550,14 @@ AC_DEFUN([INVOKE_AG_MACROS],[
   # Check to see if sigsetjmp() links okay.
   AG_LINK_SIGSETJMP
 
-  # Check to see if prefix for a working libguile installation.
-  AG_WITHLIB_GUILE
-
-  # Check to see if the guile version is set.
-  AG_WITHCONF_GUILE_VER
-
-  # Check to see if the guile version.
-  AG_TEST_GUILE_VERSION
-
   # Check to see if a working libxml2 can be found.
   AG_WITHLIB_XML2
 
   # Check to see if sysinfo(2) is Solaris.
   AG_RUN_SOLARIS_SYSINFO
+
+  # Check to see if specify an autogen timeout.
+  AG_ENABLE_TIMEOUT
 
   # Check to see if strcspn matches prototype and works.
   AG_RUN_STRCSPN

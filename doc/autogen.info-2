@@ -1,9 +1,9 @@
 This is autogen.info, produced by makeinfo version 4.13 from
 /u/bkorb/ag/ag/doc//agdoc.texi.
 
-This manual is for GNU AutoGen version 5.18, updated August 2014.
+This manual is for GNU AutoGen version 5.18, updated August 2016.
 
-   Copyright (C) 1992-2014 by Bruce Korb.
+   Copyright (C) 1992-2015 by Bruce Korb.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU Free Documentation License,
@@ -18,8 +18,8 @@ END-INFO-DIR-ENTRY
 
    This file documents GNU AutoGen Version 5.18.
 
-   AutoGen copyright (C) 1992-2014 Bruce Korb AutoOpts copyright (C)
-1992-2014 Bruce Korb snprintfv copyright (C) 1999-2000 Gary V. Vaughan
+   AutoGen copyright (C) 1992-2015 Bruce Korb AutoOpts copyright (C)
+1992-2015 Bruce Korb snprintfv copyright (C) 1999-2000 Gary V. Vaughan
 
    AutoGen is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -33,6 +33,52 @@ General Public License for more details.
 
    You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+File: autogen.info,  Node: Required Attributes,  Next: Common Attributes,  Up: option attributes
+
+7.5.5.1 Required Attributes
+...........................
+
+Every option must have exactly one copy of both of these attributes.
+
+`name'
+     Long name for the option.  Even if you are not accepting long
+     options and are only accepting flags, it must be provided.
+     AutoOpts generates private, named storage that requires this name.
+     This name also causes a `#define'-d name to be emitted.  It must
+     not conflict with any other names you may be using in your program.
+
+     For example, if your option name is, `debug' or `munged-up', you
+     must not use the `#define' names `DEBUG' (or `MUNGED_UP') in your
+     program for non-AutoOpts related purposes.  They are now used by
+     AutoOpts.
+
+     Sometimes (most especially under Windows), you may get a surprise.
+     For example, `INTERFACE' is apparently a user space name that one
+     should be free to use.  Windows usurps this name.  To solve this,
+     you must do one of the following:
+
+       1. Change the name of your option
+
+       2. add the program attribute (*note program attributes::):
+
+              export = '#undef INTERFACE';
+
+       3. add the program attribute:
+
+              guard-option-names;
+
+`descrip'
+     Except for documentation options, a *very* brief description of the
+     option.  About 40 characters on one line, maximum, not counting
+     any texinfo markups.  Texinfo markups are stripped before printing
+     in the usage text.  It appears on the `usage()' output next to the
+     option name.
+
+     If, however, the option is a documentation option, it will appear
+     on one or more lines by itself.  It is thus used to visually
+     separate and comment upon groups of options in the usage text.
 
 
 File: autogen.info,  Node: Common Attributes,  Next: Immediate Action,  Prev: Required Attributes,  Up: option attributes
@@ -2041,12 +2087,12 @@ File: autogen.info,  Node: libopts-ao_string_tokenize,  Next: libopts-configFile
 tokenize an input string
 
 Usage:
-    token_list_t* res = ao_string_tokenize( string );
+    token_list_t * res = ao_string_tokenize( string );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     string      `char const*'  string to be tokenized
-     returns     token_list_t*  pointer to a structure that lists each
+     string      `char const *' string to be tokenized
+     returns     token_list_t * pointer to a structure that lists each
                                 token
 
    This function will convert one input string into a list of strings.
@@ -2094,13 +2140,13 @@ File: autogen.info,  Node: libopts-configFileLoad,  Next: libopts-optionFileLoad
 parse a configuration file
 
 Usage:
-    const tOptionValue* res = configFileLoad( fname );
+    const tOptionValue * res = configFileLoad( fname );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     fname       `char const*'  the file to load
+     fname       `char const *' the file to load
      returns     const          An allocated, compound value structure
-                 tOptionValue*  
+                 tOptionValue * 
 
    This routine will load a named configuration file and parse the text
 as a hierarchically valued option.  The option descriptor created from
@@ -2133,8 +2179,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
-     prog        `char const*'  program name
+     opts        `tOptions *'   program options descriptor
+     prog        `char const *' program name
      returns     int            0 -> SUCCESS, -1 -> FAILURE
 
    This function looks in all the specified directories for a
@@ -2168,18 +2214,19 @@ File: autogen.info,  Node: libopts-optionFindNextValue,  Next: libopts-optionFin
 find a hierarcicaly valued option instance
 
 Usage:
-    const tOptionValue* res = optionFindNextValue( odesc, pPrevVal, name, value );
+    const tOptionValue * res = optionFindNextValue( odesc, pPrevVal, name, value );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
      odesc       `const         an option with a nested arg type
-                 tOptDesc*'     
+                 tOptDesc *'    
      pPrevVal    `const         the last entry
-                 tOptionValue*' 
-     name        `char const*'  name of value to find
-     value       `char const*'  the matching value
+                 tOptionValue   
+                 *'             
+     name        `char const *' name of value to find
+     value       `char const *' the matching value
      returns     const          a compound value structure
-                 tOptionValue*  
+                 tOptionValue * 
 
    This routine will find the next entry in a nested value option or
 configurable.  It will search through the list and return the next entry
@@ -2200,16 +2247,16 @@ File: autogen.info,  Node: libopts-optionFindValue,  Next: libopts-optionFree,  
 find a hierarcicaly valued option instance
 
 Usage:
-    const tOptionValue* res = optionFindValue( odesc, name, val );
+    const tOptionValue * res = optionFindValue( odesc, name, val );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
      odesc       `const         an option with a nested arg type
-                 tOptDesc*'     
-     name        `char const*'  name of value to find
-     val         `char const*'  the matching value
+                 tOptDesc *'    
+     name        `char const *' name of value to find
+     val         `char const *' the matching value
      returns     const          a compound value structure
-                 tOptionValue*  
+                 tOptionValue * 
 
    This routine will find an entry in a nested value option or
 configurable.  It will search through the list and return a matching
@@ -2234,7 +2281,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     pOpts       `tOptions*'    program options descriptor
+     pOpts       `tOptions *'   program options descriptor
 
    AutoOpts sometimes allocates memory and puts pointers to it in the
 option state structures.  This routine deallocates all such memory.
@@ -2251,15 +2298,16 @@ File: autogen.info,  Node: libopts-optionGetValue,  Next: libopts-optionLoadLine
 get a specific value from a hierarcical list
 
 Usage:
-    const tOptionValue* res = optionGetValue( pOptValue, valueName );
+    const tOptionValue * res = optionGetValue( pOptValue, valueName );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
      pOptValue   `const         a hierarchcal value
-                 tOptionValue*' 
-     valueName   `char const*'  name of value to get
+                 tOptionValue   
+                 *'             
+     valueName   `char const *' name of value to get
      returns     const          a compound value structure
-                 tOptionValue*  
+                 tOptionValue * 
 
    This routine will find an entry in a nested value option or
 configurable.  If "valueName" is NULL, then the first entry is
@@ -2288,8 +2336,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
-     line        `char const*'  NUL-terminated text
+     opts        `tOptions *'   program options descriptor
+     line        `char const *' NUL-terminated text
 
    This is a client program callable routine for setting options from,
 for example, the contents of a file that they read in.  Only one option
@@ -2318,12 +2366,12 @@ File: autogen.info,  Node: libopts-optionMemberList,  Next: libopts-optionNextVa
 Get the list of members of a bit mask set
 
 Usage:
-    char* res = optionMemberList( od );
+    char * res = optionMemberList( od );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
      od          `tOptDesc *'   the set membership option description
-     returns     char*          the names of the set bits
+     returns     char *         the names of the set bits
 
    This converts the OPT_VALUE_name mask value to a allocated string.
 It is the caller's responsibility to free the string.
@@ -2337,16 +2385,18 @@ File: autogen.info,  Node: libopts-optionNextValue,  Next: libopts-optionOnlyUsa
 get the next value from a hierarchical list
 
 Usage:
-    const tOptionValue* res = optionNextValue( pOptValue, pOldValue );
+    const tOptionValue * res = optionNextValue( pOptValue, pOldValue );
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
      pOptValue   `const         a hierarchcal list value
-                 tOptionValue*' 
+                 tOptionValue   
+                 *'             
      pOldValue   `const         a value from this list
-                 tOptionValue*' 
+                 tOptionValue   
+                 *'             
      returns     const          a compound value structure
-                 tOptionValue*  
+                 tOptionValue * 
 
    This routine will return the next entry after the entry passed in.
 At the end of the list, NULL will be returned.  If the entry is not
@@ -2374,7 +2424,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     pOpts       `tOptions*'    program options descriptor
+     pOpts       `tOptions *'   program options descriptor
      ex_code     `int'          exit code for calling exit(3)
 
    This routine will print only the usage for each option.  This
@@ -2394,8 +2444,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
-     od          `tOptDesc*'    the descriptor for this arg
+     opts        `tOptions *'   program options descriptor
+     od          `tOptDesc *'   the descriptor for this arg
 
    This routine will print the version to stdout.
 
@@ -2412,8 +2462,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
-     od          `tOptDesc*'    the descriptor for this arg
+     opts        `tOptions *'   program options descriptor
+     od          `tOptDesc *'   the descriptor for this arg
 
    This routine will print the version to stdout and return instead of
 exiting.  Please see the source for the `print_ver' funtion for details
@@ -2432,9 +2482,9 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
+     opts        `tOptions *'   program options descriptor
      a_ct        `int'          program arg count
-     a_v         `char**'       program arg vector
+     a_v         `char **'      program arg vector
      returns     int            the count of the arguments processed
 
    This is the main entry point for processing options.  It is intended
@@ -2470,7 +2520,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     pOpts       `tOptions*'    program options descriptor
+     pOpts       `tOptions *'   program options descriptor
 
    Copy back the option state from saved memory.  The allocated memory
 is left intact, so this routine can be called repeatedly without having
@@ -2494,7 +2544,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     opts        `tOptions*'    program options descriptor
+     opts        `tOptions *'   program options descriptor
 
    This routine will save the state of option processing to a file.
 The name of that file can be specified with the argument to the
@@ -2526,7 +2576,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     pOpts       `tOptions*'    program options descriptor
+     pOpts       `tOptions *'   program options descriptor
 
    This routine will allocate enough memory to save the current option
 processing state.  If this routine has been called before, that memory
@@ -2572,11 +2622,11 @@ File: autogen.info,  Node: libopts-optionVersion,  Next: libopts-strequate,  Pre
 return the compiled AutoOpts version number
 
 Usage:
-    char const* res = optionVersion();
+    char const * res = optionVersion();
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     returns     char const*    the version string in constant memory
+     returns     char const *   the version string in constant memory
 
    Returns the full version string compiled into the library.  The
 returned string cannot be modified.
@@ -2594,7 +2644,7 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     ch_list     `char const*'  characters to equivalence
+     ch_list     `char const *' characters to equivalence
 
    Each character in the input string get mapped to the first character
 in the string.  This function name is mapped to option_strequate so as
@@ -2615,8 +2665,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     str1        `char const*'  first string
-     str2        `char const*'  second string
+     str1        `char const *' first string
+     str2        `char const *' second string
      returns     int            the difference between two differing
                                 characters
 
@@ -2673,8 +2723,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     str1        `char const*'  first string
-     str2        `char const*'  second string
+     str1        `char const *' first string
+     str2        `char const *' second string
      ct          `int'          compare length
      returns     int            the difference between two differing
                                 characters
@@ -2701,8 +2751,8 @@ Usage:
    Where the arguments are:
      Name        Type           Description
      ----        ----           ------------
-     dest        `char*'        output string
-     src         `char const*'  input string
+     dest        `char *'       output string
+     src         `char const *' input string
 
    Each character in the input string is mapped and the mapped-to
 character is put into the output.  This function name is mapped to
@@ -3383,7 +3433,7 @@ will produce the following output:
 
     Hello, World!
     Buzz off, World!
-    Hello, Bruce Korb,,,!
+    Hello, Bruce Korb!
 
 
 File: autogen.info,  Node: Config File Format,  Next: shell options,  Prev: Presetting Options,  Up: AutoOpts
@@ -3660,8 +3710,30 @@ follows:
    Here is the usage output example from AutoOpts error handling tests.
 The option definition has argument reordering enabled:
 
+    test_errors - Test AutoOpts for errors
+    Usage:  errors [ -<flag> [<val>] | --<name>[{=| }<val>] ]... arg ...
+      Flg Arg Option-Name    Description
+       -o no  option         The option option descrip
+       -s Str second         The second option descrip
+                                    - may appear up to 10 times
+       -i --- ignored        we have dumped this
+       -X no  another        Another option descrip
+                                    - may appear up to 5 times
+       -? no  help           display extended usage information and exit
+       -! no  more-help      extended usage information passed thru pager
+       -> opt save-opts      save the option state to a config file
+       -< Str load-opts      load options from a config file
+                                    - disabled as '--no-load-opts'
+                                    - may appear multiple times
 
-    exit 0
+    Options are specified by doubled hyphens and their name or by a single
+    hyphen and the flag character.
+    Operands and options may be intermixed.  They will be reordered.
+
+    The following option preset mechanisms are supported:
+     - reading file errorsRC
+    Packaged by Bruce (2016-08-29)
+    Report test_errors bugs to bkorb@gnu.org
 
    Using the invocation,
       test-errors operand1 -s first operand2 -X -- -s operand3
@@ -3709,7 +3781,7 @@ the script parser itself would be very verbose:
     If the script file already exists and contains Automated Option Processing
     text, the second line of the file through the ending tag will be replaced
     by the newly generated text.  The first '#!' line will be regenerated.
-    Packaged by Bruce (2014-08-30)
+    Packaged by Bruce (2016-08-29)
     Report genshellopt bugs to bkorb@gnu.org
 
     = = = = = = = =
@@ -3746,7 +3818,7 @@ the script parser itself would be very verbose:
     All arguments are named options.
     If no 'input' argument is provided or is set to simply "-", and if 'stdin'
     is not a 'tty', then the list of input files will be read from 'stdin'.
-    Packaged by Bruce (2014-08-30)
+    Packaged by Bruce (2016-08-29)
     Report getdefs bugs to bkorb@gnu.org
 
 Resulting in the following script:
@@ -3754,10 +3826,10 @@ Resulting in the following script:
     # # # # # # # # # # -- do not modify this marker --
     #
     #  DO NOT EDIT THIS SECTION
-     OF /u/bkorb/ag/ag/doc/ag-texi-14536.d/.ag-r4JrVV/genshellopt.sh
+     OF /u/bkorb/ag/ag/doc/ag-texi-14514.d/.ag-cjRsM3/genshellopt.sh
     #
     #  From here to the next `-- do not modify this marker --',
-    #  the text has been generated Saturday August 30, 2014 at 10:37:59 AM PDT
+    #  the text has been generated Monday August 29, 2016 at 02:37:00 PM PDT
     #  From the GETDEFS option definitions
     #
     GETDEFS_LONGUSAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
@@ -3834,7 +3906,7 @@ Resulting in the following script:
      - reading file /dev/null
     This program extracts AutoGen definitions from a list of source files.
     Definitions are delimited by '\''/*=<entry-type> <entry-name>\n'\'' and '\''=*/\n'\''.
-    Packaged by Bruce (2014-08-30)
+    Packaged by Bruce (2016-08-29)
     Report getdefs bugs to bkorb@gnu.org'
 
     GETDEFS_USAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
@@ -3866,7 +3938,7 @@ Resulting in the following script:
     All arguments are named options.
     If no '\''input'\'' argument is provided or is set to simply "-", and if '\''stdin'\''
     is not a '\''tty'\'', then the list of input files will be read from '\''stdin'\''.
-    Packaged by Bruce (2014-08-30)
+    Packaged by Bruce (2016-08-29)
     Report getdefs bugs to bkorb@gnu.org'
 
 
@@ -4534,6 +4606,16 @@ AutoOpts provides two templates for producing man pages.  The command
 library (`man3') pages are derived from stylized comments (*note
 getdefs Invocation::).
 
+   Man pages include a date in the footer.  By default, this is derived
+from the current date.  However, this may be overridden with the
+`MAN_PAGE_DATE' environment variable.  If set and not empty, its
+contents will be copied into where the output of `date '+%d %b %Y''
+would otherwise go.
+
+   Man pages may be formatted as either traditional man pages or using
+`mdoc' formatting.  The format is selected by selecting the appropriate
+template.
+
 * Menu:
 
 * man1::      command line man pages
@@ -4545,7 +4627,12 @@ File: autogen.info,  Node: man1,  Next: man3,  Up: AutoMan pages
 7.14.1 command line man pages
 -----------------------------
 
-Using the option definitions for an AutoOpts client program, the
+Man pages for commands are documented using the `agman-cmd.tpl' and
+`agmdoc-cmd.tpl' templates.  If the options specify pulling information
+from `RC'/`ini'/`cfg' files, then you may use the `rc-sample.tpl'
+template to produce an example config file for your program.
+
+   Using the option definitions for an AutoOpts client program, the
 `agman-cmd.tpl' template will produce an nroff document suitable for
 use as a `man(1)' page document for a command line command.  The
 description section of the document is either the `prog-man-descrip'
@@ -4581,8 +4668,10 @@ File: autogen.info,  Node: man3,  Prev: man1,  Up: AutoMan pages
 7.14.2 library man pages
 ------------------------
 
-Two global definitions are required, and then one library man page is
-produced for each `export_func' definition that is found.  It is
+Man pages for libraries are documented using the `agman3.tpl' template.
+
+   Two global definitions are required, and then one library man page
+is produced for each `export_func' definition that is found.  It is
 generally convenient to place these definitions as `getdefs' comments
 (*note getdefs Invocation::) near the procedure definition, but they
 may also be a separate AutoGen definitions file (*note Definitions
@@ -5004,6 +5093,7 @@ File: autogen.info,  Node: Option Define Names,  Prev: All Attribute Names,  Up:
 * guard-option-names:                    programming attributes.
                                                               (line  84)
 * guile-main:                            main guile.          (line  15)
+* handler-frees:                         main-for-each-type.  (line  66)
 * handler-proc:                          main-for-each-proc.  (line   6)
 * handler-type:                          main-for-each-type.  (line   6)
 * help-value:                            automatic options.   (line  18)
@@ -5014,6 +5104,7 @@ File: autogen.info,  Node: Option Define Names,  Prev: All Attribute Names,  Up:
 * immediate:                             Immediate Action.    (line  24)
 * include:                               programming attributes.
                                                               (line 115)
+* interleaved:                           main-for-each-opts.  (line  10)
 * keyword:                               arg-keyword.         (line   6)
 * lib-name:                              lib and program.     (line  27)
 * library:                               lib and program.     (line   7)
@@ -5611,7 +5702,7 @@ The following option preset mechanisms are supported:
  - reading file ./.columnsrc
  - reading file $HOME/.columnsrc
  - examining environment variables named COLUMNS_*
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report columns bugs to bkorb@gnu.org
 
 
@@ -5848,8 +5939,8 @@ version (-v)
 Print the program version to standard out, optionally with licensing
 information, then exit 0.  The optional argument specifies how much
 licensing detail to provide.  The default is to print just the version.
-The licensing infomation may be selected with an option argument.  Only
-the first letter of the argument is examined:
+The licensing information may be selected with an option argument.
+Only the first letter of the argument is examined:
 
 `version'
      Only print the version.  This is the default.
@@ -6059,7 +6150,7 @@ The following option preset mechanisms are supported:
  - reading file /dev/null
 This program extracts AutoGen definitions from a list of source files.
 Definitions are delimited by '/*=<entry-type> <entry-name>\n' and '=*/\n'.
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report getdefs bugs to bkorb@gnu.org
 
 
@@ -6383,8 +6474,8 @@ version
 Print the program version to standard out, optionally with licensing
 information, then exit 0.  The optional argument specifies how much
 licensing detail to provide.  The default is to print just the version.
-The licensing infomation may be selected with an option argument.  Only
-the first letter of the argument is examined:
+The licensing information may be selected with an option argument.
+Only the first letter of the argument is examined:
 
 `version'
      Only print the version.  This is the default.
@@ -6495,7 +6586,7 @@ print the usage text by passing it through a pager program.
 function.  The `PAGER' environment variable is used to select the
 program, defaulting to `more'.  Both will exit with a status code of 0.
 
-xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.4
+xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.12
 Usage:  xml2ag [ -<flag> [<val>] | --<name>[{=| }<val>] ]... [ <def-file> ]
 
 All other options are derived from autogen:
@@ -6563,7 +6654,7 @@ line option * a top level XML attribute named, "template"
 
 The ``base-name'' for the output will similarly be either: * the
 ``--base-name'' command line option * the base name of the .xml file
-Packaged by Bruce (2014-08-30)
+Packaged by Bruce (2016-08-29)
 Report xml2ag bugs to bkorb@gnu.org
 
 

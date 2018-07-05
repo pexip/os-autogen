@@ -8,7 +8,7 @@
  *
  *  Automated Finite State Machine
  *
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,10 +45,39 @@
 /* START === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
 /*  This file is part of AutoGen.
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  */
 
 #include "autogen.h"
+
+static inline te_cgi_state
+get_next_event(char ch, int inlen, char * out, int outlen)
+{
+    if (inlen <= 0)
+        return CGI_EV_END;
+
+    if (outlen < 4) {
+        static char const exhaustion[] = "output space exhausted\n";
+        memcpy(out, exhaustion, sizeof(exhaustion));
+
+        return CGI_ST_INVALID;
+    }
+
+    if (IS_ALPHABETIC_CHAR( ch ))
+        return CGI_EV_ALPHA;
+
+    if (IS_DEC_DIGIT_CHAR( ch ))
+        return CGI_EV_NAME_CHAR;
+
+    switch (ch) {
+    case '_': return CGI_EV_NAME_CHAR; break;
+    case '=': return CGI_EV_EQUAL;     break;
+    case '+': return CGI_EV_SPACE;     break;
+    case '%': return CGI_EV_ESCAPE;    break;
+    case '&': return CGI_EV_SEPARATOR; break;
+    default:  return CGI_EV_OTHER;     break;
+    }
+}
 
 /* END   === USER HEADERS === DO NOT CHANGE THIS COMMENT */
 
@@ -65,9 +94,10 @@ typedef enum {
     CGI_TR_NAME_EQUAL,
     CGI_TR_SEPARATE,
     CGI_TR_STASH,
+    CGI_TR_SV_SPACE,
     CGI_TR_VALUE_ESCAPE
 } te_cgi_trans;
-#define CGI_TRANSITION_CT  5
+#define CGI_TRANSITION_CT  6
 
 /**
  *  State transition handling map.  Map the state enumeration and the event
@@ -110,7 +140,7 @@ cgi_trans_table[ CGI_STATE_CT ][ CGI_EVENT_CT ] = {
   { { CGI_ST_VALUE, CGI_TR_STASH },                 /* EVT:  ALPHA */
     { CGI_ST_VALUE, CGI_TR_STASH },                 /* EVT:  NAME_CHAR */
     { CGI_ST_VALUE, CGI_TR_STASH },                 /* EVT:  = */
-    { CGI_ST_VALUE, CGI_TR_STASH },                 /* EVT:  + */
+    { CGI_ST_VALUE, CGI_TR_SV_SPACE },              /* EVT:  + */
     { CGI_ST_VALUE, CGI_TR_VALUE_ESCAPE },          /* EVT:  % */
     { CGI_ST_VALUE, CGI_TR_STASH },                 /* EVT:  OTHER */
     { CGI_ST_INIT, CGI_TR_SEPARATE },               /* EVT:  & */
@@ -167,7 +197,7 @@ static int
 cgi_invalid_transition( te_cgi_state st, te_cgi_event evt )
 {
     /* START == INVALID TRANS MSG == DO NOT CHANGE THIS COMMENT */
-    char* pz = aprf( zCgiStrings + CgiFsmErr_off, st, CGI_STATE_NAME( st ),
+    char * pz = aprf( zCgiStrings + CgiFsmErr_off, st, CGI_STATE_NAME( st ),
                      evt, CGI_EVT_NAME( evt ));
 
     AG_ABEND( aprf(CGI_PARSE_ERR_FMT, pz ));
@@ -181,18 +211,18 @@ cgi_invalid_transition( te_cgi_state st, te_cgi_event evt )
  */
 te_cgi_state
 cgi_run_fsm(
-    char const* pzSrc,
+    char const * pzSrc,
     int inlen,
-    char* pzOut,
+    char * pzOut,
     int outlen )
 {
     te_cgi_state cgi_state = CGI_ST_INIT;
     te_cgi_event trans_evt;
     te_cgi_state nxtSt;
     te_cgi_trans trans;
-    char const* saved_pzSrc = pzSrc;
+    char const * saved_pzSrc = pzSrc;
     int saved_inlen = inlen;
-    char* saved_pzOut = pzOut;
+    char * saved_pzOut = pzOut;
     int saved_outlen = outlen;
     (void)saved_pzSrc;
     (void)saved_inlen;
@@ -202,35 +232,8 @@ cgi_run_fsm(
     while (cgi_state < CGI_ST_INVALID) {
 
         /* START == FIND TRANSITION == DO NOT CHANGE THIS COMMENT */
-
-        char  curCh;
-        if (--inlen < 0) {
-            trans_evt = CGI_EV_END;
-            curCh = NUL;
-
-        } else {
-            if (outlen < 4) {
-                static char const exhaustion[] = "output space exhausted\n";
-                if (saved_outlen > (int)sizeof(exhaustion))
-                    memcpy(saved_pzOut, exhaustion, sizeof(exhaustion));
-
-                return CGI_ST_INVALID;
-            }
-            curCh = *(pzSrc++);
-            if (IS_ALPHABETIC_CHAR( curCh ))
-                trans_evt = CGI_EV_ALPHA;
-            else if (IS_DEC_DIGIT_CHAR( curCh ))
-                trans_evt = CGI_EV_NAME_CHAR;
-            else switch (curCh) {
-            case '_': trans_evt = CGI_EV_NAME_CHAR; break;
-            case '=': trans_evt = CGI_EV_EQUAL;     break;
-            case '+': trans_evt = CGI_EV_SPACE;     curCh = ' '; break;
-            case '%': trans_evt = CGI_EV_ESCAPE;    break;
-            case '&': trans_evt = CGI_EV_SEPARATOR; break;
-            default:  trans_evt = CGI_EV_OTHER;     break;
-            }
-        }
-
+        char curCh = *(pzSrc++);
+        trans_evt = get_next_event(curCh, inlen--, saved_pzOut, outlen);
         /* END   == FIND TRANSITION == DO NOT CHANGE THIS COMMENT */
 
 #ifndef __COVERITY__
@@ -240,35 +243,41 @@ cgi_run_fsm(
         } else
 #endif /* __COVERITY__ */
         {
-            const t_cgi_transition* pTT =
+            const t_cgi_transition * ttbl =
             cgi_trans_table[ cgi_state ] + trans_evt;
-            nxtSt = pTT->next_state;
-            trans = pTT->transition;
+            nxtSt = ttbl->next_state;
+            trans = ttbl->transition;
         }
 
 
         switch (trans) {
         case CGI_TR_INVALID:
             /* START == INVALID == DO NOT CHANGE THIS COMMENT */
-            exit( cgi_invalid_transition( cgi_state, trans_evt ));
+            exit( cgi_invalid_transition(cgi_state, trans_evt));
             /* END   == INVALID == DO NOT CHANGE THIS COMMENT */
             break;
 
 
         case CGI_TR_NAME_EQUAL:
             /* START == NAME_EQUAL == DO NOT CHANGE THIS COMMENT */
-            strcpy( pzOut, "='" );
-            outlen -= 2;
-            pzOut  += 2;
+            {
+            static char const txt[] = "='";
+            memcpy(pzOut, txt, sizeof(txt) - 1);
+            outlen -= sizeof(txt) - 1;
+            pzOut  += sizeof(txt) - 1;
+            }
             /* END   == NAME_EQUAL == DO NOT CHANGE THIS COMMENT */
             break;
 
 
         case CGI_TR_SEPARATE:
             /* START == SEPARATE == DO NOT CHANGE THIS COMMENT */
-            strcpy( pzOut, "';\n" );
-            outlen -= 2;
-            pzOut  += 3;
+            {
+            static char const txt[] = "';\n";
+            memcpy(pzOut, txt, sizeof(txt));
+            outlen -= sizeof(txt) - 1;
+            pzOut  += sizeof(txt) - 1;
+            }
             /* END   == SEPARATE == DO NOT CHANGE THIS COMMENT */
             break;
 
@@ -278,6 +287,14 @@ cgi_run_fsm(
             *(pzOut++) = curCh;
             outlen--;
             /* END   == STASH == DO NOT CHANGE THIS COMMENT */
+            break;
+
+
+        case CGI_TR_SV_SPACE:
+            /* START == SV_SPACE == DO NOT CHANGE THIS COMMENT */
+            *(pzOut++) = ' ';
+            outlen--;
+            /* END   == SV_SPACE == DO NOT CHANGE THIS COMMENT */
             break;
 
 

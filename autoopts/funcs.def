@@ -50,22 +50,22 @@ called from any other user code.  The @file{options.h} header is
 fairly clear about this, too.';
 
 
-#line 217 "cook.c"
+#line 220 "cook.c"
 export_func = {
     name    = 'ao_string_cook';
     private;
     what = 'concatenate and escape-process strings';
     arg = {
-        arg_type = 'char*';
+        arg_type = 'char *';
         arg_name = 'pzScan';
         arg_desc = 'The *MODIFIABLE* input buffer';
     };
     arg = {
-        arg_type = 'int*';
+        arg_type = 'int *';
         arg_name = 'lnct_p';
         arg_desc = 'The (possibly NULL) pointer to a line count';
     };
-    ret-type = 'char*';
+    ret-type = 'char *';
     ret-desc = 'The address of the text following the processed strings.
 The return value is NULL if the strings are ill-formed.';
     doc =
@@ -76,22 +76,22 @@ single quote strings, then the backslashes are honored only when they
 precede another backslash or a single quote character.';
     err = '@code{NULL} is returned if the string(s) is/are mal-formed.';
     srcfile = 'cook.c';
-    linenum = '217';
+    linenum = '220';
 };
 
 
-#line 37 "cook.c"
+#line 40 "cook.c"
 export_func = {
     name    = 'ao_string_cook_escape_char';
     private;
     what = 'escape-process a string fragment';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'pzScan';
         arg_desc = 'points to character after the escape';
     };
     arg = {
-        arg_type = 'char*';
+        arg_type = 'char *';
         arg_name = 'pRes';
         arg_desc = 'Where to put the result byte';
     };
@@ -115,7 +115,7 @@ character that is different from \\n, if need be.  For example, use
 0x7F and never emit a 0x7F.';
     err = '@code{NULL} is returned if the string is mal-formed.';
     srcfile = 'cook.c';
-    linenum = '37';
+    linenum = '40';
 };
 
 
@@ -124,11 +124,11 @@ export_func = {
     name    = 'ao_string_tokenize';
     what = 'tokenize an input string';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'string';
         arg_desc = 'string to be tokenized';
     };
-    ret_type = 'token_list_t*';
+    ret_type = 'token_list_t *';
     ret_desc = 'pointer to a structure that lists each token';
     doc =
 'This function will convert one input string into a list of strings.
@@ -166,7 +166,7 @@ constants in ANSI-C programs.';
 '@example
 #include <stdlib.h>
 int ix;
-token_list_t* ptl = ao_string_tokenize(some_string)
+token_list_t * ptl = ao_string_tokenize(some_string)
 for (ix = 0; ix < ptl->tkn_ct; ix++)
 do_something_with_tkn(ptl->tkn_list[ix]);
 free(ptl);
@@ -192,11 +192,11 @@ export_func = {
     name    = 'configFileLoad';
     what = 'parse a configuration file';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'fname';
         arg_desc = 'the file to load';
     };
-    ret_type = 'const tOptionValue*';
+    ret_type = 'const tOptionValue *';
     ret_desc = 'An allocated, compound value structure';
     doc =
 'This routine will load a named configuration file and parse the
@@ -225,13 +225,13 @@ type "@code{OPARG_TYPE_HIERARCHY}".  It may be used in calls to
 };
 
 
-#line 844 "makeshell.c"
+#line 849 "makeshell.c"
 export_func = {
     name    = 'genshelloptUsage';
     private;
     what = 'The usage function for the genshellopt generated program';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
@@ -247,7 +247,7 @@ each emitting the usage text in either the short (error exit)
 style or the long style.  The generated program will capture this
 and create shell script variables containing the two types of text.';
     srcfile = 'makeshell.c';
-    linenum = '844';
+    linenum = '849';
 };
 
 
@@ -286,12 +286,12 @@ export_func = {
     private;
     what = 'Decipher a boolean value';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -304,18 +304,18 @@ it is an empty string or it is a number that evaluates to zero.';
 };
 
 
-#line 264 "enum.c"
+#line 265 "enum.c"
 export_func = {
     name    = 'optionEnumerationVal';
     what = 'Convert from a string to an enumeration value';
     private;
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'the program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'pOD';
         arg_desc = 'enumeration option description';
     };
@@ -337,7 +337,7 @@ This will match the generated enumeration value.
 Full matches are always accepted.  Partial matches are accepted
 if there is only one partial match.';
     srcfile = 'enum.c';
-    linenum = '264';
+    linenum = '265';
 };
 
 
@@ -347,12 +347,12 @@ export_func = {
     private;
     what = 'Decipher a boolean value';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'pOptDesc';
         arg_desc = 'the descriptor for this arg';
     };
@@ -371,23 +371,23 @@ export_func = {
 The mode specifies if the file must exist, must not exist or may
 (or may not) exist.  The mode may also specify opening the';
     file = 'don\'t, open just the descriptor (fd), or open as a stream
-(FILE* pointer).';
+(FILE * pointer).';
     srcfile = 'file.c';
     linenum = '142';
 };
 
 
-#line 1095 "configfile.c"
+#line 1104 "configfile.c"
 export_func = {
     name    = 'optionFileLoad';
     what = 'Load the locatable config files, in order';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'prog';
         arg_desc = 'program name';
     };
@@ -414,7 +414,7 @@ Configuration files not found or not decipherable are simply ignored.';
 is out of date or indecipherable.  Otherwise, the value "0" will
 always be returned.';
     srcfile = 'configfile.c';
-    linenum = '1095';
+    linenum = '1104';
 };
 
 
@@ -424,26 +424,26 @@ export_func = {
     FIXME = 'the handling of \'pzName\' and \'pzVal\' is just wrong.';
     what = 'find a hierarcicaly valued option instance';
     arg = {
-        arg_type = 'const tOptDesc*';
+        arg_type = 'const tOptDesc *';
         arg_name = 'odesc';
         arg_desc = 'an option with a nested arg type';
     };
     arg = {
-        arg_type = 'const tOptionValue*';
+        arg_type = 'const tOptionValue *';
         arg_name = 'pPrevVal';
         arg_desc = 'the last entry';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'name';
         arg_desc = 'name of value to find';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'value';
         arg_desc = 'the matching value';
     };
-    ret_type = 'const tOptionValue*';
+    ret_type = 'const tOptionValue *';
     ret_desc = 'a compound value structure';
     doc =
 'This routine will find the next entry in a nested value option or
@@ -468,21 +468,21 @@ export_func = {
     name    = 'optionFindValue';
     what = 'find a hierarcicaly valued option instance';
     arg = {
-        arg_type = 'const tOptDesc*';
+        arg_type = 'const tOptDesc *';
         arg_name = 'odesc';
         arg_desc = 'an option with a nested arg type';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'name';
         arg_desc = 'name of value to find';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'val';
         arg_desc = 'the matching value';
     };
-    ret_type = 'const tOptionValue*';
+    ret_type = 'const tOptionValue *';
     ret_desc = 'a compound value structure';
     doc =
 'This routine will find an entry in a nested value option or configurable.
@@ -506,7 +506,7 @@ export_func = {
     name    = 'optionFree';
     what = 'free allocated option processing memory';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
@@ -524,16 +524,16 @@ export_func = {
     name    = 'optionGetValue';
     what = 'get a specific value from a hierarcical list';
     arg = {
-        arg_type = 'const tOptionValue*';
+        arg_type = 'const tOptionValue *';
         arg_name = 'pOptValue';
         arg_desc = 'a hierarchcal value';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'valueName';
         arg_desc = 'name of value to get';
     };
-    ret_type = 'const tOptionValue*';
+    ret_type = 'const tOptionValue *';
     ret_desc = 'a compound value structure';
     doc =
 'This routine will find an entry in a nested value option or configurable.
@@ -556,13 +556,13 @@ hierarchical option value.
 };
 
 
-#line 241 "enum.c"
+#line 242 "enum.c"
 export_func = {
     name    = 'optionKeywordName';
     what = 'Convert between enumeration values and strings';
     private;
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'pOD';
         arg_desc = 'enumeration option description';
     };
@@ -575,21 +575,21 @@ export_func = {
     ret_desc = 'the enumeration name from const memory';
     doc = 'This converts an enumeration value into the matching string.';
     srcfile = 'enum.c';
-    linenum = '241';
+    linenum = '242';
 };
 
 
-#line 543 "load.c"
+#line 553 "load.c"
 export_func = {
     name    = 'optionLoadLine';
     what = 'process a string for an option name and value';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'line';
         arg_desc = 'NUL-terminated text';
     };
@@ -610,22 +610,22 @@ except that you may not use backquotes.';
     err = 'Invalid options are silently ignored.  Invalid option arguments
 will cause a warning to print, but the function should return.';
     srcfile = 'load.c';
-    linenum = '543';
+    linenum = '553';
 };
 
 
-#line 1149 "configfile.c"
+#line 1157 "configfile.c"
 export_func = {
     name    = 'optionLoadOpt';
     private;
     what = 'Load an option rc/ini file';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'odesc';
         arg_desc = 'the descriptor for this arg';
     };
@@ -633,7 +633,7 @@ export_func = {
 'Processes the options found in the file named with
 odesc->optArg.argString.';
     srcfile = 'configfile.c';
-    linenum = '1149';
+    linenum = '1157';
 };
 
 
@@ -643,7 +643,7 @@ export_func = {
     private;
     what = 'translate and construct a path';
     arg = {
-        arg_type = 'char*';
+        arg_type = 'char *';
         arg_name = 'p_buf';
         arg_desc = 'The result buffer';
     };
@@ -653,12 +653,12 @@ export_func = {
         arg_desc = 'The size of this buffer';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'fname';
         arg_desc = 'The input name';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'prg_path';
         arg_desc = 'The full path of the current program';
     };
@@ -705,7 +705,7 @@ errors (cannot resolve the resulting path).';
 };
 
 
-#line 507 "enum.c"
+#line 508 "enum.c"
 export_func = {
     name    = 'optionMemberList';
     what = 'Get the list of members of a bit mask set';
@@ -714,34 +714,34 @@ export_func = {
         arg_name = 'od';
         arg_desc = 'the set membership option description';
     };
-    ret_type = 'char*';
+    ret_type = 'char *';
     ret_desc = 'the names of the set bits';
     doc = 'This converts the OPT_VALUE_name mask value to a allocated string.
 It is the caller\'s responsibility to free the string.';
     srcfile = 'enum.c';
-    linenum = '507';
+    linenum = '508';
 };
 
 
-#line 813 "nested.c"
+#line 824 "nested.c"
 export_func = {
     name    = 'optionNestedVal';
     private;
     what = 'parse a hierarchical option argument';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
     doc =
 'Nested value was found on the command line';
     srcfile = 'nested.c';
-    linenum = '813';
+    linenum = '824';
 };
 
 
@@ -750,16 +750,16 @@ export_func = {
     name    = 'optionNextValue';
     what = 'get the next value from a hierarchical list';
     arg = {
-        arg_type = 'const tOptionValue*';
+        arg_type = 'const tOptionValue *';
         arg_name = 'pOptValue';
         arg_desc = 'a hierarchcal list value';
     };
     arg = {
-        arg_type = 'const tOptionValue*';
+        arg_type = 'const tOptionValue *';
         arg_name = 'pOldValue';
         arg_desc = 'a value from this list';
     };
-    ret_type = 'const tOptionValue*';
+    ret_type = 'const tOptionValue *';
     ret_desc = 'a compound value structure';
     doc =
 'This routine will return the next entry after the entry passed in.  At the
@@ -788,12 +788,12 @@ export_func = {
     private;
     what = 'process an option with a numeric value.';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -804,12 +804,12 @@ export_func = {
 };
 
 
-#line 240 "usage.c"
+#line 243 "usage.c"
 export_func = {
     name    = 'optionOnlyUsage';
     what = 'Print usage text for just the options';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
@@ -823,7 +823,7 @@ export_func = {
 This function may be used when the emitted usage must incorporate
 information not available to AutoOpts.';
     srcfile = 'usage.c';
-    linenum = '240';
+    linenum = '243';
 };
 
 
@@ -851,24 +851,24 @@ This is disabled on platforms without a working fork() function.';
 };
 
 
-#line 100 "makeshell.c"
+#line 105 "makeshell.c"
 export_func = {
     name    = 'optionParseShell';
     private;
     what = 'Decipher a boolean value';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
     doc =
 'Emit a shell script that will parse the command line options.';
     srcfile = 'makeshell.c';
-    linenum = '100';
+    linenum = '105';
 };
 
 
-#line 442 "usage.c"
+#line 445 "usage.c"
 export_func = {
     name    = 'optionPrintParagraphs';
     private;
@@ -904,7 +904,7 @@ lines.
 If \'plain\' is true, we are emitting text for a user to see.  So, if it is
 true and NLS is not enabled, then just write the whole thing at once.';
     srcfile = 'usage.c';
-    linenum = '442';
+    linenum = '445';
 };
 
 
@@ -913,12 +913,12 @@ export_func = {
     name    = 'optionPrintVersion';
     what = 'Print the program version';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -934,12 +934,12 @@ export_func = {
     name    = 'optionPrintVersionAndReturn';
     what = 'Print the program version';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -958,7 +958,7 @@ export_func = {
     name    = 'optionProcess';
     what = 'this is the main option processing routine';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
@@ -968,7 +968,7 @@ export_func = {
         arg_desc = 'program arg count';
     };
     arg = {
-        arg_type = 'char**';
+        arg_type = 'char **';
         arg_name = 'a_v';
         arg_desc = 'program arg vector';
     };
@@ -999,20 +999,20 @@ ERRSKIP_OPTERR or ERRSTOP_OPTERR macros were invoked.';
 };
 
 
-#line 363 "putshell.c"
+#line 370 "putshell.c"
 export_func = {
     name    = 'optionPutShell';
     what = 'write a portable shell script to parse options';
     private;
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'the program options descriptor';
     };
     doc = 'This routine will emit portable shell script text for parsing
 the options described in the option definitions.';
     srcfile = 'putshell.c';
-    linenum = '363';
+    linenum = '370';
 };
 
 
@@ -1050,12 +1050,12 @@ export_func = {
     private;
     what = 'Reset the value of an option';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'pOptDesc';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1072,7 +1072,7 @@ export_func = {
     name    = 'optionRestore';
     what = 'restore option state from memory copy';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
@@ -1089,12 +1089,12 @@ printed to @code{stderr} and exit is called.';
 };
 
 
-#line 688 "save.c"
+#line 689 "save.c"
 export_func = {
     name    = 'optionSaveFile';
     what = 'saves the option state to a file';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
@@ -1118,7 +1118,7 @@ optionSaveFile(&progOptions);
 and do nothing.  If the output file cannot be created or updated, a message
 will be printed to @code{stderr} and the routine will return.';
     srcfile = 'save.c';
-    linenum = '688';
+    linenum = '689';
 };
 
 
@@ -1127,7 +1127,7 @@ export_func = {
     name    = 'optionSaveState';
     what = 'saves the option state to memory';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
@@ -1151,18 +1151,18 @@ Otherwise, it will always succeed.';
 };
 
 
-#line 529 "enum.c"
+#line 530 "enum.c"
 export_func = {
     name    = 'optionSetMembers';
     what = 'Convert between bit flag values and strings';
     private;
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'the program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the set membership option description';
     };
@@ -1182,7 +1182,7 @@ This will match the generated enumeration value.
 Full matches are always accepted.  Partial matches are accepted
 if there is only one partial match.';
     srcfile = 'enum.c';
-    linenum = '529';
+    linenum = '530';
 };
 
 
@@ -1192,12 +1192,12 @@ export_func = {
     private;
     what = 'Show info about range constraints';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'pOpts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'pOptDesc';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1224,12 +1224,12 @@ export_func = {
     private;
     what = 'put option args on a stack';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1246,12 +1246,12 @@ export_func = {
     private;
     what = 'process an option with a time and date.';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1268,12 +1268,12 @@ export_func = {
     private;
     what = 'process an option with a time duration.';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1308,12 +1308,12 @@ export_func = {
     private;
     what = 'Remove option args from a stack';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1324,13 +1324,13 @@ export_func = {
 };
 
 
-#line 552 "usage.c"
+#line 555 "usage.c"
 export_func = {
     name    = 'optionUsage';
     private;
     what = 'Print usage text';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
@@ -1348,7 +1348,7 @@ over-ride this, providing the value of it is set to either "gnu" or
 If "exitCode" is "AO_EXIT_REQ_USAGE" (normally 64), then output will to
 to stdout and the actual exit code will be "EXIT_SUCCESS".';
     srcfile = 'usage.c';
-    linenum = '552';
+    linenum = '555';
 };
 
 
@@ -1381,7 +1381,7 @@ definitions contain a "vendor-opt" attribute.';
 export_func = {
     name    = 'optionVersion';
     what = 'return the compiled AutoOpts version number';
-    ret_type = 'char const*';
+    ret_type = 'char const *';
     ret_desc = 'the version string in constant memory';
     doc =
 'Returns the full version string compiled into the library.
@@ -1397,12 +1397,12 @@ export_func = {
     private;
     what = 'Print the program version to stderr';
     arg = {
-        arg_type = 'tOptions*';
+        arg_type = 'tOptions *';
         arg_name = 'opts';
         arg_desc = 'program options descriptor';
     };
     arg = {
-        arg_type = 'tOptDesc*';
+        arg_type = 'tOptDesc *';
         arg_name = 'od';
         arg_desc = 'the descriptor for this arg';
     };
@@ -1418,7 +1418,7 @@ export_func = {
     name    = 'strequate';
     what = 'map a list of characters to the same value';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'ch_list';
         arg_desc = 'characters to equivalence';
     };
@@ -1438,12 +1438,12 @@ export_func = {
     name    = 'streqvcmp';
     what = 'compare two strings with an equivalence mapping';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'str1';
         arg_desc = 'first string';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'str2';
         arg_desc = 'second string';
     };
@@ -1507,12 +1507,12 @@ export_func = {
     name    = 'strneqvcmp';
     what = 'compare two strings with an equivalence mapping';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'str1';
         arg_desc = 'first string';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'str2';
         arg_desc = 'second string';
     };
@@ -1541,12 +1541,12 @@ export_func = {
     name    = 'strtransform';
     what = 'convert a string into its mapped-to value';
     arg = {
-        arg_type = 'char*';
+        arg_type = 'char *';
         arg_name = 'dest';
         arg_desc = 'output string';
     };
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'src';
         arg_desc = 'input string';
     };
@@ -1563,13 +1563,13 @@ The source and destination may be the same.';
 };
 
 
-#line 252 "text_mmap.c"
+#line 256 "text_mmap.c"
 export_func = {
     name    = 'text_mmap';
     private;
     what = 'map a text file with terminating NUL';
     arg = {
-        arg_type = 'char const*';
+        arg_type = 'char const *';
         arg_name = 'pzFile';
         arg_desc = 'name of the file to map';
     };
@@ -1584,11 +1584,11 @@ export_func = {
         arg_desc = 'mmap flags (see mmap(2))';
     };
     arg = {
-        arg_type = 'tmap_info_t*';
+        arg_type = 'tmap_info_t *';
         arg_name = 'mapinfo';
         arg_desc = 'returned info about the mapping';
     };
-    ret-type = 'void*';
+    ret-type = 'void *';
     ret-desc = 'The mmaped data address';
     doc =
 'This routine will mmap a file into memory ensuring that there is at least
@@ -1620,23 +1620,23 @@ errno will be set to @code{EINVAL}.';
 '#include <mylib.h>
 tmap_info_t mi;
 int no_nul;
-void* data = text_mmap("file", PROT_WRITE, MAP_PRIVATE, &mi);
+void * data = text_mmap("file", PROT_WRITE, MAP_PRIVATE, &mi);
 if (data == MAP_FAILED) return;
 no_nul = (mi.txt_size == mi.txt_full_size);
 << use the data >>
 text_munmap(&mi);';
     srcfile = 'text_mmap.c';
-    linenum = '252';
+    linenum = '256';
 };
 
 
-#line 325 "text_mmap.c"
+#line 329 "text_mmap.c"
 export_func = {
     name    = 'text_munmap';
     private;
     what = 'unmap the data mapped in by text_mmap';
     arg = {
-        arg_type = 'tmap_info_t*';
+        arg_type = 'tmap_info_t *';
         arg_name = 'mapinfo';
         arg_desc = 'info about the mapping';
     };
@@ -1648,13 +1648,13 @@ the associated file descriptors opened by that function.';
     see = 'munmap(2), close(2)';
     err = 'Any error code issued by munmap(2) or close(2) is possible.';
     srcfile = 'text_mmap.c';
-    linenum = '325';
+    linenum = '329';
 };
-vers-curr       = "167936";
+vers-curr       = "167937";
 vers-min        = "102400";
 vers-min-str    = "25:0:0";
-vers-sovers     = "41:0:16";
-display-ver     = "41.0";
+vers-sovers     = "41:1:16";
+display-ver     = "41.1";
 library         = opts;
 
 /*

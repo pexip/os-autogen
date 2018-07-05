@@ -1,7 +1,7 @@
 #! /bin/echo This_file_must_be_sourced,_not_executed
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -39,35 +39,35 @@ add_files_to_mf() {
     #  Regenerate the "genshell.h" 'cuz we just altered the template to
     #  contain the header version number.
     #
-    ${AGexe} -Tagman3.tpl funcs.def || \
-        die "FAILED: ${AGexe} -Tagman3.tpl funcs.def"
+    ${ag_aopts} -Tagman3.tpl funcs.def || \
+        die "FAILED: ${ag_aopts} -Tagman3.tpl funcs.def"
 
     local tmpl=$(
         ndst=""
         sfil=''
+        pdta="autoopts.m4${nl}tpl/usage.tlib${nl}"
+        edta="bootstrap.dir${nl}autoopts-config.in${nl}autogen.map${nl}"
+        edta="${edta}mk-tpl-config.sh${nl}mk-autoopts-pc.in${nl}"
+        edta="${edta}install-hook.sh${nl}po${nl}"
 
         for f in man mdoc texi
         do
             for g in man mdoc texi
             do
                 sfil=${sfil}tpl/${f}2${g}${nl}
-                test -f tpl/${f}2${g}.sh || \
-                    ndst=${ndst}tpl/${f}2${g}${nl}
             done
         done
-
-        pdta="autoopts.m4${nl}tpl/usage.tlib${nl}"
-        edta="bootstrap.dir${nl}autoopts-config.in${nl}autogen.map${nl}"
-        edta="${edta}mk-tpl-config.sh${nl}mk-autoopts-pc.in${nl}"
-        edta="${edta}install-hook.sh${nl}po${nl}"
 
         for f in tpl/*.*
         do
             case $f in
+            ( tpl-config* ) : ;;
+
             ( *.in | *.pl | *.sh )
-                g=$(echo $f | sed 's/\...$//;s/-tlib$/.tlib/')
-                ndst=${ndst}${g}${nl}    # installed file
-                edta=${edta}${f}${nl}    # distributed file
+                g=${f%.??}
+                g=${g//-tlib/.tlib}
+                ndst+=${g}${nl}    # installed file
+                edta+=${f}${nl}    # distributed file
                 ;;
 
             ( *tpl-config.tlib | *tpl/usage* ) : ;;
@@ -93,6 +93,8 @@ add_files_to_mf() {
         printf '\nnodist_pkgdata_DATA = $(libsrc) \\\n'
         echo "${ndst}" | sort -u | columns -I4 --spread=1 --line=' \'
 
+        printf '\nnodist_libdata_DATA = %s\n' tpl/tpl-config.tlib
+
         printf '\npkgdata_DATA    = \\\n'
         echo "${pdta}" | sort -u | columns -I4 --spread=1 --line=' \'
 
@@ -111,23 +113,20 @@ add_files_to_mf() {
 
     } > Makefile.lists
 
-    sed '/^GENMAN /r Makefile.lists' Makefile.am > Makefile.tmp
-    mv -f Makefile.tmp Makefile.am
-
+    sed '/^GENMAN /r Makefile.lists' Makefile.am.pre > Makefile.am
     rm -f Makefile.lists gnulib.mk *.3
 }
 
 make_funcs_def()
 {
-    $noag && exit 1
     ${char_mapper:-char-mapper} autogen.map || die "FAILED: char-mapper"
-    ${AGexe} ao-strs.def || die "cannot make strings - exited $?"
+    ${ag_aopts} ao-strs.def || die "cannot make strings - exited $?"
 
     declare cmd_list=$(
         sed -n '/case *XAT_CMD_/{;s/.*XAT_CMD_/cmd = /;s/:/;/;p;}' \
             configfile.c | tr '[A-Z_]' '[a-z-]')
 
-    ${AGexe} <<- _EOF_
+    ${ag_aopts} <<- _EOF_
 	AutoGen Definitions str2enum;
 	base-name = option-xat-attribute;
 	prefix    = xat;
@@ -140,7 +139,7 @@ make_funcs_def()
     cmd_list=$(
         sed -n '/case *VTP_CMD_/{;s/.*VTP_CMD_/cmd = /;s/:/;/;p;}' \
             configfile.c | tr '[A-Z_]' '[a-z-]')
-    ${AGexe} <<- _EOF_
+    ${ag_aopts} <<- _EOF_
 	AutoGen Definitions str2enum;
 	base-name = option-value-type;
 	prefix    = vtp;
@@ -153,15 +152,15 @@ make_funcs_def()
 
     test -d autoopts || mkdir autoopts
     test -d po       || mkdir po
-    ${AGexe} genshell.def  || \
-        die "FAILED: ${AGexe} genshell.def"
+    ${ag_aopts} genshell.def  || \
+        die "FAILED: ${ag_aopts} genshell.def"
 
-    ${AGexe} usage-txt.def || \
-        die "FAILED: ${AGexe} usage-txt.def"
-    mv usage-txt.h   autoopts/.
-    mv usage-txt.pot po/.
+    ${ag_aopts} usage-txt.def || \
+        die "FAILED: ${ag_aopts} usage-txt.def"
+    mv -f usage-txt.h   autoopts/.
+    mv -f usage-txt.pot po/.
 
-    files=$(sed -n '/^CSRC/,/\.c$/p' Makefile.am | \
+    files=$(sed -n '/^CSRC/,/\.c$/p' Makefile.am.pre | \
         sed '/^CSRC/d;s/[=\\]//'
     )
 
@@ -185,15 +184,18 @@ make_funcs_def()
 	 */
 	_END_VERS_INFO_
 
-    ${AGexe} funcs.def || die "FAILED: ${AGexe} funcs.def"
-    test -f options.h || die "options.h not created"
-    mv options.h autoopts/.
+    ${ag_aopts} funcs.def || \
+        die "FAILED: ${ag_aopts} funcs.def"
+    test -f options.h || \
+        die "options.h not created"
+    mv -f options.h autoopts/.
     cp project.h autoopts/.
 
     add_files_to_mf
     make_proto
 
-    ${AGexe} aoconf.def || die "FAILED: ${AGexe} aoconf.def"
+    ${ag_aopts} aoconf.def || \
+        die "FAILED: ${ag_aopts} aoconf.def"
 }
 
 test "X${mainpid}" = X && {
@@ -208,36 +210,38 @@ test "X${mainpid}" = X && {
     free_trap=false
 }
 
-export AGexe=${AGexe-autogen}\ -L${top_srcdir}/autoopts/tpl
-noag=`${AGexe} -v > /dev/null 2>&1 && echo false || echo true`
-nl=$'\n'
+${skip_gen} || \
+    export ag_aopts=${AGexe-autogen}\ -L${top_srcdir}/autoopts/tpl
 
 case "$1" in
 *genshell.c )
-    if ${noag}
+    if ${skip_gen}
     then
         test -f ${top_srcdir}/autoopts/genshell.c || \
             die "No autogen for building genshell.c"
     else
-        ${AGexe} genshell.def || \
-            die "FAILED: ${AGexe} genshell.def"
+        ${ag_aopts} genshell.def || \
+            die "FAILED: ${ag_aopts} genshell.def"
     fi
     ;;
 
 *libopts.texi )
-    if ${noag}
+    if ${skip_gen}
     then
         test -f ${top_srcdir}/autoopts/libopts.texi || \
             die "No autogen for building libopts.texi"
     else
         agopts='-Taginfo3.tpl -DLEVEL=subsection -blibopts funcs.def'
-        ${AGexe} ${agopts} || \
-            die "FAILED: ${AGexe} ${agopts}"
+        ${ag_aopts} ${agopts} || \
+            die "FAILED: ${ag_aopts} ${agopts}"
     fi
     ;;
 
 aoconf )
-    make_funcs_def
+    if ${skip_gen}
+    then untar_touch gen-src.tgz
+    else make_funcs_def
+    fi || die "could not rebuild files in $PWD"
     ;;
 esac
 

@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -50,6 +50,7 @@ trim_trailing_white(char * text)
         switch (*text++) {
         case NUL:
             return;
+
         case NL:
             if (IS_HORIZ_WHITE_CHAR(text[-2]))
                 goto doit;
@@ -61,24 +62,23 @@ trim_trailing_white(char * text)
  doit:
     start = SPN_HORIZ_WHITE_BACK(start, text - 2);
     *(start++) = NL;
-    {
-        char * dest = start;
 
-        for (;;) {
-            switch (*(dest++) = *(text++)) {
-            case NUL:
-                return;
+    char * dest = start;
 
-            case NL:
-                if (IS_HORIZ_WHITE_CHAR(dest[-2])) {
-                    dest  = SPN_HORIZ_WHITE_BACK(start, dest - 2);
-                    start = dest;
-                    *(dest++) = NL;
-                }
+    for (;;) {
+        switch (*(dest++) = *(text++)) {
+        case NUL:
+            return;
 
-            default:
-                break;
+        case NL:
+            if (IS_HORIZ_WHITE_CHAR(dest[-2])) {
+                dest  = SPN_HORIZ_WHITE_BACK(start, dest - 2);
+                start = dest;
+                *(dest++) = NL;
             }
+
+        default:
+            break;
         }
     }
 }
@@ -134,14 +134,14 @@ ag_scm_dne(SCM prefix, SCM first, SCM opt)
     char const *  pzFirst;
     char const *  pzPrefix;
 
-    if (! AG_SCM_STRING_P(prefix))
+    if (! scm_is_string(prefix))
         return SCM_UNDEFINED;
 
     date_str = zNil;
     pzFirst  = zNil;
 
     {
-        size_t pfxLen   = AG_SCM_STRLEN(prefix);
+        size_t pfxLen   = scm_c_string_length(prefix);
         pzPrefix = ag_scm2zchars(prefix, "dne-prefix");
 
         /*
@@ -187,7 +187,7 @@ ag_scm_dne(SCM prefix, SCM first, SCM opt)
      *  IF we also have a 'first' prefix string,
      *  THEN we set it to something other than ``zNil'' and deallocate later.
      */
-    if (AG_SCM_STRING_P(first))
+    if (scm_is_string(first))
         pzFirst = aprf(ENABLED_OPT(WRITABLE) ? "%s\n" : EXP_FMT_DNE1,
                        ag_scm2zchars(first, "pfx-1"), pzPrefix);
 
@@ -239,10 +239,10 @@ ag_scm_dne(SCM prefix, SCM first, SCM opt)
      *  the zNil string, or to an allocated buffer.
      */
     if (pzFirst != zNil)
-        AGFREE((void *)pzFirst);
+        AGFREE(pzFirst);
     {
-        SCM res = AG_SCM_STR02SCM(date_str);
-        AGFREE((void *)date_str);
+        SCM res = scm_from_latin1_string(date_str);
+        AGFREE(date_str);
 
         return res;
     }
@@ -310,7 +310,7 @@ ag_scm_error(SCM res)
 
     switch (ag_scm_type_e(res)) {
     case GH_TYPE_BOOLEAN:
-        if (AG_SCM_FALSEP(res))
+        if (scm_is_false(res))
             abrt = PROBLEM;
         msg = zNil;
         break;
@@ -326,7 +326,7 @@ ag_scm_error(SCM res)
     }
 
     case GH_TYPE_CHAR:
-        num_bf[0] = (char)AG_SCM_CHAR(res);
+        num_bf[0] = (char)SCM_CHAR(res);
         if ((num_bf[0] == NUL) || (num_bf[0] == '0'))
             abrt = PROBLEM;
         num_bf[1] = NUL;
@@ -358,13 +358,14 @@ ag_scm_error(SCM res)
      *  THEN print it.
      */
     if (*msg != NUL) {
-        char* pz = aprf(DEF_NOTE_FMT, (abrt != PROBLEM) ? ERROR_STR : WARN_STR,
-                        current_tpl->td_file, cur_macro->md_line,
-                        cur_fpstack->stk_fname, msg);
+        char const * typ = (abrt != PROBLEM) ? ERROR_STR : WARN_STR;
+        char * pz = aprf(DEF_NOTE_FMT, typ,
+                         current_tpl->td_file, cur_macro->md_line,
+                         cur_fpstack->stk_fname, msg);
         if (abrt != PROBLEM)
             AG_ABEND(pz);
         fputs(pz, trace_fp);
-        AGFREE((void*)pz);
+        AGFREE(pz);
     }
 
     longjmp(abort_jmp_buf, abrt);
@@ -587,27 +588,29 @@ construct_license(
             MK_LIC_PROG, MK_LIC_PFX, MK_LIC_OWN, MK_LIC_YRS
         };
         subs = scm_gc_protect_object(
-            scm_list_4(AG_SCM_STR02SCM(slst[0]), AG_SCM_STR02SCM(slst[1]),
-                       AG_SCM_STR02SCM(slst[2]), AG_SCM_STR02SCM(slst[3])));
+            scm_list_4(scm_from_latin1_string(slst[0]),
+                       scm_from_latin1_string(slst[1]),
+                       scm_from_latin1_string(slst[2]),
+                       scm_from_latin1_string(slst[3])));
 
-        empty = scm_gc_protect_object(AG_SCM_STR02SCM(""));
+        empty = scm_gc_protect_object(scm_from_latin1_string(""));
     }
 
-    if (! AG_SCM_STRING_P(lic))
+    if (! scm_is_string(lic))
         AG_ABEND(MK_LIC_NOT_STR);
 
     lic_text = find_lic_text(seg, lic, &text_len, pfx_pz);
     if (lic_text == NULL)
         AG_ABEND(aprf(MK_LIC_NO_LIC, ag_scm2zchars(lic, "lic")));
 
-    if (! AG_SCM_STRING_P(owner))   owner = empty;
-    if (! AG_SCM_STRING_P(years))   years = empty;
+    if (! scm_is_string(owner))   owner = empty;
+    if (! scm_is_string(years))   years = empty;
     vals = scm_list_4(prog, pfx, owner, years);
 
     do_multi_subs(&lic_text, &text_len, subs, vals);
 
     trim_trailing_white(lic_text);
-    return AG_SCM_STR02SCM(lic_text);
+    return scm_from_latin1_string(lic_text);
 }
 
 /*=gfunc license_full
@@ -630,8 +633,8 @@ construct_license(
  *
  *  All of these depend upon the existence of a license file named after the
  *  @code{license} argument with a @code{.lic} suffix.  That file should
- *  contain three blocks of text, each separated by two or more newline
- *  characters.
+ *  contain three blocks of text, each separated by two or more consecutive
+ *  newline characters (at least one completely blank line).
  *
  *  The first section describes copyright attribution and the name of the usage
  *  licence.  For GNU software, this should be the text that is to be displayed
@@ -640,15 +643,15 @@ construct_license(
  *
  *  The second section is a short description of the terms of the license.
  *  This is typically the kind of text that gets displayed in the header of
- *  source files.  The third section is strictly the name of the license
- *  without any substitution markers.  Only the <PFX>, <owner> and <program>
- *  markers are substituted.
+ *  source files.  Only the <PFX>, <owner> and <program> markers are
+ *  substituted.
  *
  *  The third section is strictly the name of the license.
  *  No marker substitutions are performed.
  *
  *  @example
  *  <PFX>Copyright (C) <years> <owner>, all rights reserved.
+ *  <PFX>
  *  <PFX>This is free software. It is licensed for use,
  *  <PFX>modification and redistribution under the terms
  *  <PFX>of the GNU General Public License, version 3 or later
@@ -740,7 +743,7 @@ ag_scm_license_name(SCM lic)
         txt = SPN_WHITESPACE_CHARS(txt);
         e   = SPN_WHITESPACE_BACK(txt, txt);
         *e  = NUL;
-        lic = AG_SCM_STR02SCM(txt);
+        lic = scm_from_latin1_string(txt);
     }
     return lic;
 }
@@ -764,7 +767,8 @@ ag_scm_gpl(SCM prog_name, SCM prefix)
     static SCM lic = SCM_UNDEFINED;
 
     if (lic == SCM_UNDEFINED)
-        lic = scm_gc_protect_object(AG_SCM_STR02SCM(FIND_LIC_TEXT_LGPL+1));
+        lic = scm_gc_protect_object(
+            scm_from_latin1_string(FIND_LIC_TEXT_LGPL+1));
     return ag_scm_license_description(lic, prog_name, prefix, SCM_UNDEFINED);
 }
 
@@ -787,7 +791,8 @@ ag_scm_agpl(SCM prog_name, SCM prefix)
     static SCM lic = SCM_UNDEFINED;
 
     if (lic == SCM_UNDEFINED)
-        lic = scm_gc_protect_object(AG_SCM_STR02SCM(FIND_LIC_TEXT_AGPL));
+        lic = scm_gc_protect_object(
+            scm_from_latin1_string(FIND_LIC_TEXT_AGPL));
     return ag_scm_license_description(lic, prog_name, prefix, SCM_UNDEFINED);
 }
 
@@ -811,7 +816,8 @@ ag_scm_lgpl(SCM prog_name, SCM owner, SCM prefix)
     static SCM lic = SCM_UNDEFINED;
 
     if (lic == SCM_UNDEFINED)
-        lic = scm_gc_protect_object(AG_SCM_STR02SCM(FIND_LIC_TEXT_LGPL));
+        lic = scm_gc_protect_object(
+            scm_from_latin1_string(FIND_LIC_TEXT_LGPL));
     return ag_scm_license_description(lic, prog_name, prefix, owner);
 }
 
@@ -836,7 +842,8 @@ ag_scm_bsd(SCM prog_name, SCM owner, SCM prefix)
     static SCM lic = SCM_UNDEFINED;
 
     if (lic == SCM_UNDEFINED)
-        lic = scm_gc_protect_object(AG_SCM_STR02SCM(FIND_LIC_TEXT_MBSD));
+        lic = scm_gc_protect_object(
+            scm_from_latin1_string(FIND_LIC_TEXT_MBSD));
     return ag_scm_license_description(lic, prog_name, prefix, owner);
 }
 
@@ -865,9 +872,9 @@ ag_scm_license(SCM license, SCM prog_name, SCM owner, SCM prefix)
         tmap_info_t  mi;
     } lic = { NULL, { NULL, 0, 0, 0, 0, 0, 0, 0 }};
 
-    char*     pzRes;
+    char * pzRes;
 
-    if (! AG_SCM_STRING_P(license))
+    if (! scm_is_string(license))
         return SCM_UNDEFINED;
 
     {
@@ -885,7 +892,7 @@ ag_scm_license(SCM license, SCM prog_name, SCM owner, SCM prefix)
 
         if ((lic.pzFN != NULL) && (strcmp(fname, lic.pzFN) != 0)) {
             text_munmap(&lic.mi);
-            AGFREE((void*)lic.pzFN);
+            AGFREE(lic.pzFN);
             lic.pzFN = NULL;
         }
 
@@ -905,8 +912,8 @@ ag_scm_license(SCM license, SCM prog_name, SCM owner, SCM prefix)
      *  Trim trailing white space.
      */
     {
-        char* pz = (char*)lic.mi.txt_data + lic.mi.txt_size;
-        while (  (pz > (char*)lic.mi.txt_data)
+        char * pz = (char *)lic.mi.txt_data + lic.mi.txt_size;
+        while (  (pz > (char *)lic.mi.txt_data)
               && IS_WHITESPACE_CHAR(pz[-1]))
             pz--;
         *pz = NUL;
@@ -917,19 +924,19 @@ ag_scm_license(SCM license, SCM prog_name, SCM owner, SCM prefix)
      *  Make sure they are reasonably sized (less than
      *  SCRIBBLE_SIZE).  Copy them to the scratch buffer.
      */
-    if (AG_SCM_STRLEN(prog_name) >= SCRIBBLE_SIZE)
+    if (scm_c_string_length(prog_name) >= SCRIBBLE_SIZE)
         AG_ABEND(aprf(MK_LIC_TOO_BIG_FMT, MK_LIC_BIG_PROG, SCRIBBLE_SIZE));
 
-    if (AG_SCM_STRLEN(prefix) >= SCRIBBLE_SIZE)
+    if (scm_c_string_length(prefix) >= SCRIBBLE_SIZE)
         AG_ABEND(aprf(MK_LIC_TOO_BIG_FMT, MK_LIC_BIG_PFX, SCRIBBLE_SIZE));
 
-    if (AG_SCM_STRLEN(owner) >= SCRIBBLE_SIZE)
+    if (scm_c_string_length(owner) >= SCRIBBLE_SIZE)
         AG_ABEND(aprf(MK_LIC_TOO_BIG_FMT, MK_LIC_BIG_OWN, SCRIBBLE_SIZE));
 
     /*
      *  Reformat the string with the given arguments
      */
-    pzRes = aprf((char*)lic.mi.txt_data, pname, ownrz);
+    pzRes = aprf((char *)lic.mi.txt_data, pname, ownrz);
     {
         int     pfx_size = (int)strlen(prefx);
         char *  pzScan   = pzRes;
@@ -982,9 +989,10 @@ ag_scm_license(SCM license, SCM prog_name, SCM owner, SCM prefix)
          *  We allocated a temporary buffer that has all the
          *  formatting done, but need the prefixes on each line.
          */
-        AGFREE((void*)pzRes);
+        AGFREE(pzRes);
 
-        return AG_SCM_STR2SCM(pzSaveRes, (size_t)((pzOut - pzSaveRes) - 1));
+        return scm_from_latin1_stringn(
+            pzSaveRes, (size_t)((pzOut - pzSaveRes) - 1));
     }
 }
 /**

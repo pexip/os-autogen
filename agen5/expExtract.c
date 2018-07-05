@@ -8,7 +8,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -55,9 +55,11 @@ load_file(char const * fname)
         }
 
         fsz = stbf.st_size;
-        res = (char*)AGALOC(fsz + 1, "load_file");
+        res = (char *)AGALOC(fsz + 1, "load_file");
         if (outfile_time < stbf.st_mtime)
             outfile_time = stbf.st_mtime;
+        if (maxfile_time < stbf.st_mtime)
+            maxfile_time = stbf.st_mtime;
     }
 
     {
@@ -126,8 +128,8 @@ load_extract_file(char const * new_fil)
     }
 
     if (last_fname != NULL) {
-        AGFREE((void*)last_fname);
-        AGFREE((void*)file_text);
+        AGFREE(last_fname);
+        AGFREE(file_text);
         last_fname = file_text = NULL;
     }
 
@@ -140,10 +142,10 @@ load_extract_file(char const * new_fil)
     if (file_text != NULL)
         return file_text;
 
-    AGFREE((void*)last_fname);
+    AGFREE(last_fname);
     last_fname = NULL;
     if (file_text != NULL) {
-        AGFREE((void*)file_text);
+        AGFREE(file_text);
         file_text = NULL;
     }
     return NULL;
@@ -160,18 +162,18 @@ mk_empty_text(char const * start, char const * end, SCM def)
     ssize_t mlen = (ssize_t)(strlen(start) + strlen(end) + 3);
     char * pzOut;
 
-    if (! AG_SCM_STRING_P(def)) {
+    if (! scm_is_string(def)) {
         pzOut = scribble_get(mlen);
         sprintf(pzOut, LINE_CONCAT3_FMT+3, start, end);
 
     } else {
         char const * pzDef = ag_scm2zchars(def, "dft extr str");
-        mlen += (ssize_t)AG_SCM_STRLEN(def) + 1;
+        mlen += (ssize_t)scm_c_string_length(def) + 1;
         pzOut = scribble_get(mlen);
         sprintf(pzOut, LINE_CONCAT3_FMT, start, pzDef, end);
     }
 
-    return AG_SCM_STR02SCM(pzOut);
+    return scm_from_latin1_string(pzOut);
 }
 
 
@@ -181,8 +183,8 @@ mk_empty_text(char const * start, char const * end, SCM def)
 static SCM
 get_text(char const * text, char const * start, char const * end, SCM def)
 {
-    char const* pzS = strstr(text, start);
-    char const* pzE;
+    char const * pzS = strstr(text, start);
+    char const * pzE;
 
     if (pzS == NULL)
         return mk_empty_text(start, end, def);
@@ -193,7 +195,7 @@ get_text(char const * text, char const * start, char const * end, SCM def)
 
     pzE += strlen(end);
 
-    return AG_SCM_STR2SCM(pzS, (size_t)(pzE - pzS));
+    return scm_from_latin1_stringn(pzS, (size_t)(pzE - pzS));
 }
 
 
@@ -294,7 +296,7 @@ ag_scm_extract(SCM file, SCM marker, SCM caveat, SCM def)
     char const * end;
     char const * text;
 
-    if (! AG_SCM_STRING_P(file) || ! AG_SCM_STRING_P(marker))
+    if (! scm_is_string(file) || ! scm_is_string(marker))
         return SCM_UNDEFINED;
 
     text = load_extract_file(ag_scm2zchars(file, "extr"));
@@ -303,7 +305,7 @@ ag_scm_extract(SCM file, SCM marker, SCM caveat, SCM def)
         char const * mark    = ag_scm2zchars(marker, "mark");
         char const * careful = EXTRACT_CAVEAT;
 
-        if (AG_SCM_STRING_P(caveat) && (AG_SCM_STRLEN(caveat) > 0))
+        if (scm_is_string(caveat) && (scm_c_string_length(caveat) > 0))
             careful = ag_scm2zchars(caveat, "caveat");
 
         start = aprf(mark, EXTRACT_START, careful);
@@ -317,8 +319,8 @@ ag_scm_extract(SCM file, SCM marker, SCM caveat, SCM def)
              res = mk_empty_text(start, end, def);
         else res = get_text(text, start, end, def);
 
-        AGFREE((void*)start);
-        AGFREE((void*)end);
+        AGFREE(start);
+        AGFREE(end);
         return res;
     }
 }
@@ -341,7 +343,7 @@ ag_scm_find_file(SCM file, SCM suffix)
 {
     SCM res = SCM_UNDEFINED;
 
-    if (! AG_SCM_STRING_P(file))
+    if (! scm_is_string(file))
         scm_wrong_type_arg(FIND_FILE_NAME, 1, file);
 
     {
@@ -351,15 +353,15 @@ ag_scm_find_file(SCM file, SCM suffix)
         /*
          *  The suffix is optional.  If provided, it will be a string.
          */
-        if (AG_SCM_STRING_P(suffix)) {
-            char* apz[2];
+        if (scm_is_string(suffix)) {
+            char * apz[2];
             apz[0] = (char *)ag_scm2zchars(suffix, "file suffix");
             apz[1] = NULL;
             if (SUCCESSFUL(find_file(pz, z, (char const **)apz, NULL)))
-                res = AG_SCM_STR02SCM(z);
+                res = scm_from_latin1_string(z);
 
         } else if (SUCCESSFUL(find_file(pz, z, NULL, NULL)))
-            res = AG_SCM_STR02SCM(z);
+            res = scm_from_latin1_string(z);
     }
 
     return res;

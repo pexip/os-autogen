@@ -2,7 +2,7 @@
 
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -55,6 +55,8 @@ collect_src() {
 	#include "autoopts/project.h"
 	#define  LOCAL static
 	#include "ao-strs.h"
+	static char const ao_ver_string[] =
+	    "${AO_CURRENT}:${AO_REVISION}:${AO_AGE}\n";
 	_EOF_
 
     for f in "$@"
@@ -166,14 +168,14 @@ scan_cflags() {
     do
         case "$1" in
         -I )
-            test -f $2/libguile/__scm.h && {
+            test -f "$2/libguile/__scm.h" && {
                 libguiledir=$2
                 return 0
             }
             ;;
         -I* )
             f=${1#-I}
-            test -f $f/libguile/__scm.h && {
+            test -f "$f/libguile/__scm.h" && {
                 libguiledir=$f
                 return 0
             }
@@ -207,14 +209,14 @@ find_libguiledir() {
         test -d ${libguiledir}/${v} && libguiledir=${libguiledir}/$v
 
     else
-        scan_cflags "$@"
+        scan_cflags $*
     fi
     guile_scm_h=`find ${libguiledir} -type f -name __scm.h`
 }
 
 fix_guile() {
     cd ${builddir}
-    find_libguiledir "${LGCFLAGS}"
+    find_libguiledir ${LGCFLAGS}
 
     list=`exec 2>/dev/null
         find ${libguiledir}/libguile* -type f | \

@@ -1,383 +1,119 @@
-2014-08-30  Bruce Korb  <bkorb@gnu.org>
-
-	set release version
-
-2014-08-24  Bruce Korb  <bkorb@gnu.org>
-
-	remove unused strings
-	* agen5/ag-text.def: many of the strings are no longer used.
-	  Also, in the shell initialization, ensure "set +o verbose"
-	  has been processed.
-	* agen5/agUtils.c (fswarn): new, for when fs errors are not fatal.
-	* agen5/defDirect.c (file_size): use it
-	  (doDir_include): use it
-	* agen5/expExtract.c (load_file): if fstat(3) fails, return errno
-	* agen5/funcEval.c (emit_insertion_file): use load_file()
-	* autoopts/tpl/cmd-doc.tlib: use new functionality
-
-2014-08-23  Bruce Korb  <bkorb@gnu.org>
-
-	add insert-file function
-	Sometimes, it is just easier to insert the contents of a file
-	than to go through "shell" and "cat" it into the output.
-
-	* agen5/ag-text.def (LD_EXTRACT_BAD_READ): no longer used
-	* agen5/agUtils.c (open_trace_file): use "fserr" call instead of AG_ABEND
-	* agen5/expExtract.c (load_file): likewise
-	* agen5/funcEval.c (ag_scm_insert_file): new function to implement
-
-	plus documentation and testing changes to support this.
-
-2014-08-22  Bruce Korb  <bkorb@gnu.org>
-
-	warn about using "test-main"
-
-	minor tweaks
-
-2014-08-16  Bruce Korb  <bkorb@gnu.org>
-
-	tweak NEWS
-
-	fix return macro, add warn function
-	* agen5/ag-text.def (WARN_FMT): for "warn" function
-	* agen5/expFormat.c (ag_scm_warn): implementation
-	* agen5/autogen.h (for_state_t): added fields to support RETURN
-	* agen5/funcFor.c (for_by_step): adjust for new context fields
-	  (for_each): likewise
-	  (free_for_context): rewritten to handle this stuff
-	* agen5/test/return.test: new test
-
-2014-08-15  Bruce Korb  <bkorb@gnu.org>
-
-	add documentation and testing
-	It is useful for folks to know how to use AUTOGEN_DNE_DATE.
-
-2014-08-14  Bruce Korb  <bkorb@gnu.org>
-
-	dne - Do Not Edit and AUTOGEN_DNE_DATE
-	This Scheme function has "traditionally" included a date and time stamp
-	in the resulting output and that could be suppressed by providing it a
-	"-d" option.  Due to very reasonable complaints, the new default is to
-	<strong>not</strong> include the date and require a "-D" option to
-	<i>en</i>able dates.  However, even that is not completely satisfactory.
-	The <strong>user</strong> of the template needs a way to select
-	behavior.  Enter the newly recognized environment variable:
-	<tt>AUTOGEN_DNE_DATE</tt> If set, it will override any "-D" option in
-	the template.  If set to the empty string or a string with the first
-	character being one of <tt>0nNfF</tt> (zero or the first letter of
-	"false" or "no"), then the date will not be emitted.  Otherwise, the
-	presence of this environment variable will cause the date to be emitted.
-
-2014-08-09  Bruce Korb  <bkorb@gnu.org>
-
-	Clarify start/end of AutoGen tracing
-	It is sometimes hard to match them up during a nested run
-
-	* agen5/ag-text.def: mark the start and end of tracing more clearly
-	* agen5/agUtils.c (open_trace_file): local function
-	  (check_make_dep_env): likewise
-	  (count_nl): move to defLex.c -- the only place used
-	  (skip_expr) DeCamelization
-	* agen5/defLex.c (count_nl): new
-	* agen5/test/debug.test: adjust for new start/end markers
-	* doc/Makefile.am: run_mktexi needs to specify the source directory
-
-2014-08-08  Bruce Korb  <bkorb@gnu.org>
-
-	remove timestamp from dne, add option to include it
-	Recording the timestamp in generated files creates unnecessary noise as
-	files that haven't really changed at all will show up as different when
-	comparing builds, which is something downstream distributions would like
-	to do.
-
-	default to not adding date and version information (old behaviour when
-	'-d' was passed) and add a new option '-D' that restores the timestamp,
-	in case anyone desperately needs it.
-
-2014-08-08  Bruce Korb  <bkorb@gnu.org>
-
-	give credit where credit is due
-	All the documentation scripts + cleanup of the
-	libopts source library Makefile.am file.
-
-	* THANKS: add Harlan Stenn
-	* autoopts/tpl/*.pl: Credit Harlan Stenn
-	* pkg/libopts/mklibsrc.sh: clean up Makefile.am output
-
-2014-07-07  Bruce Korb  <bkorb@gnu.org>
-
-	fix failures
-	From Andreas Schwab
-
-2014-07-06  Bruce Korb  <bkorb@gnu.org>
-
-	build stdnoreturn.h in tear-off lib
-	Pull in the gnulib stdnoreturn module.
-
-	Modified files:
-
-	* autoopts/version.c (optionPrintVersionAndReturn): export it
-	* config/bootstrap.local: stash the relevant makefile hackery
-	  and _Noreturn.h header data
-	* config/libopts.def: invoke gl_STDNORETURN_H
-	* config/misc.def: do not invoke it twice
-	* pkg/libopts/mklibsrc.sh: incorporate stdnoreturn.in.h and
-	  _Noterurn.h stuff in the library source.
-
-2014-07-05  Bruce Korb  <bkorb@gnu.org>
-
-	fix GFDL license
-	* pkg/gnudir.tpl: no need for 3 withs
-
-2014-07-02  Bruce Korb  <bkorb@gnu.org>
-
-	man page cleanup
-	Very noticable improvements to generated man pages
-
-	Modified files:
-
-	* autoopts/bootstrap.dir
-	* autoopts/mk-tpl-config.sh
-	* autoopts/tpl/Mdoc.pm
-	* autoopts/tpl/agman-cmd.tpl
-	* autoopts/tpl/agmdoc-cmd.tpl
-	* autoopts/tpl/cmd-doc.tlib
-	* autoopts/tpl/mdoc2man.pl
-	* autoopts/tpl/mdoc2man.sh
-	* autoopts/tpl/mdoc2texi.pl
-
-2014-07-01  Bruce Korb  <bkorb@gnu.org>
-
-	Fix up Guile fix up script
-	Guile both misuses the token "noreturn" in its headers
-	and rearranged its headers between releases.  It is tricky
-	to fix up headers in different places and not fix headers
-	that finally got fixed
-
-	* autoopts/mk-tpl-config.sh (find_libguiledir):
-	  look for libguile.h in a specific order to maximize
-	  the chances of finding the correct directory.
-
-2014-06-28  Bruce Korb  <bkorb@gnu.org>
-
-	facilitate version procs
-	In order to use the default version code and augment it,
-	there is now a version of optionPrintVersion that returns.
-
-	Hex numbers in definition files need not be quoted any more.
-
-	* agen5/defLex.c (gather_name): accept hex numbers
-
-	* agen5/test/define.test: test it
-
-	* autoopts/version.c (optionPrintVersionAndReturn): new
-
-	* doc/autogen-texi.txt: augment getopt.tpl doc
-
-2014-06-15  Bruce Korb  <bkorb@gnu.org>
-
-	fix format-arg macro
-	"argc" is not defined in the test program.
-
-2014-05-17  Bruce Korb  <bkorb@gnu.org>
-
-	release version
-
-2014-05-10  Bruce Korb  <bkorb@gnu.org>
-
-	add delays to kill signals
-	It seems that on some platforms, if signals arrive too quickly,
-	the process winds up hanging instead of dying.  Therefore, in
-	the shell die() function, wait a second between signals.
-
-	* agen5/ag-text.def (SHELL_INIT_STR): wait one second after
-	  the SIGTERM, SIGINT and SIGHUP signals.  Afterwards, send
-	  a SIGKILL signal.
-
-	* autoopts/mk-tpl-config.sh (fix_guile): this function runs
-	  under "set -e", so do not fail-exit if grep does not find
-	  the "noreturn" word.
-
-2014-05-03  Bruce Korb  <bkorb@gnu.org>
-
-	clean up "noreturn"
-	This is a more rigorous fix for the libguile usage of the "noreturn"
-	token.  It must *always* run, so it is folded into the
-	mk-tpl-config.sh script.
-
-	fix month
-
-2014-04-19  Bruce Korb  <bkorb@gnu.org>
-
-	final release tweaks
-
-2014-04-13  Bruce Korb  <bkorb@gnu.org>
-
-	ATTRIBUTE_FORMAT_ARG is now used
-	The gettext() wrapper function needs to be markable as:
-	  __attribute__((format_arg(1)))
-	but since not all compilers accept it, we wrap it.
-
-	Also, a new template for handling perl program options is added.
-
-2014-03-29  Bruce Korb  <bkorb@gnu.org>
-
-	argument to aoGetsText() is type "format"
-	The aoGetsText() emitted i18n helper function needs its argument
-	to have the "format_arg" attribute.
-
-2014-03-23  Bruce Korb  <bkorb@gnu.org>
-
-	Only apply texi2mdoc when it is needed.
-	Several adjustments to tests, too.  Also, update cright updater flags.
-
-2014-02-22  Bruce Korb  <bkorb@gnu.org>
-
-	remove stray token
-
-	update copyright update
-
-2014-02-02  Bruce Korb  <bkorb@gnu.org>
-
-	improve the man page
-
-	polish copyright updating
-
-2014-01-26  Bruce Korb  <bkorb@gnu.org>
-
-	try to filter out "dash".
-
-	add embedded options
-	Some files may have different find-the-copyright-line expressions.
-	Allow this by searching for --copyright-mark in the source file.
-	That should stand out sufficiently.  Its use requires it be in
-	some sort of comment.
-
-2014-01-10  Bruce Korb  <bkorb@gnu.org>
+2016-08-29  Bruce Korb  <bkorb@gnu.org>
 
 	update news
 
-	bump the libopts revision
+	use "which" to locate local tools
 
-	Add guards against inquery calls to option procedures
-	The "help" printing code can call option handling code when the
-	option arg has not been set.  Make sure the option arg handling
-	code does not try to do stuff when there is no option argument.
+	cross platform support
+	* config/misc.def (PKG_CONFIG): use an environment parameter
+	  to select the correct pkg-config program for cross platform build
+	* configure.ac.pre (XXexe): in a cross platform environment, do not
+	  select build products for any build rules
 
-	update copyrights
-	update copyright dates.
+2016-07-31  Bruce Korb  <bkorb@gnu.org>
 
-2013-12-31  Bruce Korb  <bkorb@gnu.org>
+	fix bootstrap
+	finish the scan_data_buf inline function.
 
-	check for ptrdiff_t
-	Guile defines this if HAVE_PTRDIFF_T is not defined, ergo add it
-	to our config testing so as to not double define it in compilations.
+	* add-on/char-mapper/char-mapper.c (scan_data_buf): include
+	  all the arguments needed to work correctly.
 
-	de-camelization and code cleaning
+	* autoopts/nested.c (optionLoadNested): warning patrol
 
-2013-12-21  Bruce Korb  <bkorb@gnu.org>
+	* config/libopts.def: accept POSIX_SHELL from the environment
+	  during the configure step
 
-	adjust libopts.m4
+2016-05-27  Bruce Korb  <bkorb@gnu.org>
 
-2013-12-01  Bruce Korb  <bkorb@gnu.org>
+	update news
 
-	checkpoint status
+2016-05-27  Bruce Korb  <bkorb@gnu.org>
 
-2013-11-23  Bruce Korb  <bkorb@gnu.org>
+	miscelleaneous cleanups
+	* agen5/ag-text.def (MK_GPERF_SCRIPT): augment CFLAGS with "-g"
+	  LDFLAGS might depend upon CFLAGS content.
 
-	Do not abort from main()
-	If you are going to create a core dump, keep the stack active
-	and correct.
+	* configure.ac.pre (GUILE_VERSION): that is an output C define,
+	  not a script variable.  Use $ag_gv instead.
 
-	* agen5/autogen.c: remove abend_env and abend_sig globals
-	  (main): remove sigsetjmp call
-	  (cleanup_and_abort): mark with _Noreturn
-	  (ag_abend_at): likewise
+	* agen5/autogen.c : fix warnings
+	* agen5/expOutput.c : fix warnings
+	* autoopts/putshell.c : fix warnings
+	* autoopts/save.c : fix warnings
+	* autoopts/time.c : fix warnings
+	* config/misc.def : fix warnings
 
-2013-11-16  Bruce Korb  <bkorb@gnu.org>
+2016-05-26  Bruce Korb  <bkorb@gnu.org>
 
-	fix Guile headers
-	Guile headers include a #define for noreturn:
+	more error.test fixes
 
-	  #define SCM_NORETURN __attribute__ ((noreturn))
+2016-05-24  Bruce Korb  <bkorb@gnu.org>
 
-	which is a problem when other headers have a #define
-	for "noreturn".
+	another adjustment for abort() call
 
-	* autoopts/fix-guile.sh: new script that fixes the Guile define
-	  to replace "(noreturn)" with "(__noreturn)".
-	* autoopts/bootstrap.dir: distribute the stinky thing
-	* autoopts/Makefile.am: run the stinky thing when needed
-	* config/misc.def: run the gl_STDNORETURN_H macro in configure
-	* agen5/scribble.c : Warning patrol
+	another adjustment for abort() call
 
-2013-10-22  Bruce Korb  <bkorb@gnu.org>
+	adjust for abort() call
 
-	copyright notice address
-	Change from Franklin Street to URL.
-	Also update fdl.texi
+2016-05-24  Bruce Korb  <bkorb@gnu.org>
 
-2013-10-16  Bruce Korb  <bkorb@gnu.org>
+	NUL terminate CGI def text
+	Usually (99.44% of the time), CGI text gets NUL teriminated.
+	However, sometimes not.  Fix it.
 
-	Version 5.18.2
-	final polish
+	* agen5/autogen.c (ag_abend_at): call abort()
+	* agen5/agCgi.c (ENV_TABLE) reorder to make easier to debug
+	* agen5/cgi-fsm.c (cgi_run_fsm): add NUL byte on separation transition.
 
-	LIBGUILE_PATH is not needed, but "tr" is
-	* autoopts/test/defs.in: remove the code that uses LIBGUILE_PATH
-	  and find the "tr" program
-	* config/confmacs.tlib: remove the code that tried to create
-	  LIBGUILE_PATH
-	* compat/compat.h: #defined values used in preprocessing expressions
-	  cannot be type cast
+2016-05-24  Bruce Korb  <bkorb@gnu.org>
 
-2013-10-12  Bruce Korb  <bkorb@gnu.org>
+	NUL terminate CGI def text
+	Usually (99.44% of the time), CGI text gets NUL teriminated.
+	However, sometimes not.  Fix it.
 
-	fix directive derivations
-	* doc/auto_gen-tpl.in: extract the directive information into files
-	  that can be alphabetically sorted.
-	* agen5/defDirect.c: all directives are now handled by specific
-	  functions, even always-fail and always-ignored directives.
-	* agen5/mk-stamps.sh: omit the #defines of ignored and handled-by-
-	  error directive functions.
-	* agen5/defLex.c(gather_name): correct skip-over-a-number code.
-	* agen5/test/debug.test: use the new, improved "'...'" quotes
-	  instead of the bad, old "``...''" quotes
+	* agen5/autogen.c (ag_abend_at): call abort()
+	* agen5/agCgi.c (ENV_TABLE) reorder to make easier to debug
+	* agen5/cgi-fsm.c (cgi_run_fsm): add NUL byte on separation transition.
 
-2013-10-10  Bruce Korb  <bkorb@gnu.org>
+2016-05-23  Bruce Korb  <bkorb@gnu.org>
 
-	ChangeLog is now history
+	add a couple of static procs to fwd decs
 
-2013-10-06  Bruce Korb  <bkorb@gnu.org>
+	remove some Guile wrappers
+	Some parts of the Guile interface have stabilized in the currently
+	supported versions of Guile (1.8 and later).  Remove several
+	wrappers for these functions.
 
-	quote CFLAGS value
-	Thanks to Leo Davis --
-	* autoopts/tpl/usage.tlib: The values passed through the environment must be
-	  protected against shell tokenization.
-	* doc/autogen-texi.txt: fix description of generated main() proc.
-	* autoopts/tpl/getopt.tpl: declare optionUsage, too.
-	* autoopts/tpl/optmain.tlib: clean up main proc generation
-	* autoopts/test/getopt.test: adjust test
+	TODO: add manywarnings gnulib module
 
-	From more email:
-	* doc/auto_gen-tpl.in:  "directive" values are no longer extracted from
-	  agen5/defDirect.c.  Instead, sed out the documentation.
+2016-05-09  Bruce Korb  <bkorb@gnu.org>
 
-2013-10-05  Bruce Korb  <bkorb@gnu.org>
+	remove quotes for disabled options in man pages
 
-	rework arg-optional
-	The description in the doc was not as clear as possible.
+2016-04-20  Bruce Korb  <bkorb@gnu.org>
 
-2013-09-08  Bruce Korb  <bkorb@gnu.org>
+	Fix mal-formed usage text
+	Option "values" beyond the range of single letters were supposed to
+	indicate that there was no flag character for the option.  The
+	"IS_GRAPHIC_CHAR()" macro did not properly test for this.
 
-	set release version
+	* agen5/agUtils.c (span_quote): remove unneeded braces
+	* autoopts/cook.c (nl_count): new function to clarify code
+	  (contiguous_quote): clarify with new function
+	* autoopts/usage.c (GRAPH_CH): new macro for testing for graphic chars.
+	  Will not stumble on values beyond 0xFF.
 
-2013-09-05  Bruce Korb  <bkorb@gnu.org>
+2016-03-08  Bruce Korb  <bruce.korb@hgst.com>
 
-	allow alternate "no return" flags
-	If "no-return" is specified, the default tag for the non-returning
-	functions is "_Noreturn".  However, if the attribute is not the
-	empty string, that will be used instead.  And doc the stuff.
+	update the NEWS
 
-2013-09-03  Bruce Korb  <bkorb@gnu.org>
+	update the NEWS
 
-	doc cleanup
+	Ensure testing vars are unset
+	The CGI variables CONTENT_LENGTH REQUEST_METHOD and QUERY_STRING
+	need to be unset before starting a test suite.
+
+	happy new year & de-uglifications
+
+	formatting changes
+

@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,10 +27,19 @@
 
 /* = = = START-STATIC-FORWARD = = = */
 static bool
-read_okay(char const * pzFName);
+read_okay(char const * fname);
 
 static char const *
 expand_dir(char const ** dir_pp, char * name_buf);
+
+static inline bool
+file_search_dirs(
+    char const * in_name,
+    char *       res_name,
+    char const * const * sfx_list,
+    char const * referring_tpl,
+    size_t       nm_len,
+    bool         no_suffix);
 
 static size_t
 cnt_macros(char const * pz);
@@ -46,11 +55,11 @@ digest_tpl(tmap_info_t * minfo, char * fname);
  * Return the template structure matching the name passed in.
  */
 LOCAL templ_t *
-find_tpl(char const * pzTemplName)
+find_tpl(char const * tpl_name)
 {
     templ_t * pT = named_tpls;
     while (pT != NULL) {
-        if (streqvcmp(pzTemplName, pT->td_name) == 0)
+        if (streqvcmp(tpl_name, pT->td_name) == 0)
             break;
         pT = C(templ_t *, (pT->td_scan));
     }
@@ -59,19 +68,19 @@ find_tpl(char const * pzTemplName)
 
 /**
  * the name is a regular file with read access.
- * @param[in] pzFName  file name to check
+ * @param[in] fname  file name to check
  * @returns \a true when the named file exists and is a regular file
  * @returns \a false otherwise.
  */
 static bool
-read_okay(char const * pzFName)
+read_okay(char const * fname)
 {
     struct stat stbf;
-    if (stat(pzFName, &stbf) != 0)
+    if (stat(fname, &stbf) != 0)
         return false;
     if (! S_ISREG(stbf.st_mode))
         return false;
-    return (access(pzFName, R_OK) == 0) ? true : false;
+    return (access(fname, R_OK) == 0) ? true : false;
 }
 
 /**
@@ -83,7 +92,7 @@ read_okay(char const * pzFName)
 static char const *
 expand_dir(char const ** dir_pp, char * name_buf)
 {
-    char * res = (void *)*dir_pp;
+    char * res = VOIDP(*dir_pp);
 
     if (res[1] == NUL)
         AG_ABEND(aprf(LOAD_FILE_SHORT_NAME, res));
@@ -102,6 +111,103 @@ expand_dir(char const ** dir_pp, char * name_buf)
     }
 
     return res;
+}
+
+static inline bool
+file_search_dirs(
+    char const * in_name,
+    char *       res_name,
+    char const * const * sfx_list,
+    char const * referring_tpl,
+    size_t       nm_len,
+    bool         no_suffix)
+{
+    /*
+     *  Search each directory in our directory search list for the file.
+     *  We always force two copies of this option, so we know it exists.
+     *  Later entries are more recently added and are searched first.
+     *  We start the "dirlist" pointing to the real last entry.
+     */
+    int  ct = STACKCT_OPT(TEMPL_DIRS);
+    char const ** dirlist = STACKLST_OPT(TEMPL_DIRS) + ct - 1;
+    char const *  c_dir   = FIND_FILE_CURDIR;
+
+    /*
+     *  IF the file name starts with a directory separator,
+     *  then we only search once, looking for the exact file name.
+     */
+    if (*in_name == '/')
+        ct = -1;
+
+    for (;;) {
+        char * pzEnd;
+
+        /*
+         *  c_dir is always FIND_FILE_CURDIR the first time through
+         *  and is never that value after that.
+         */
+        if (c_dir == FIND_FILE_CURDIR) {
+
+            memcpy(res_name, in_name, nm_len);
+            pzEnd  = res_name + nm_len;
+            *pzEnd = NUL;
+
+        } else {
+            unsigned int fmt_len;
+
+            /*
+             *  IF one of our template paths starts with '$', then expand it
+             *  and replace it now and forever (the rest of this run, anyway).
+             */
+            if (*c_dir == '$')
+                c_dir = expand_dir(dirlist+1, res_name);
+
+            fmt_len = (unsigned)snprintf(
+                res_name, AG_PATH_MAX - MAX_SUFFIX_LEN,
+                FIND_FILE_DIR_FMT, c_dir, in_name);
+            if (fmt_len >= AG_PATH_MAX - MAX_SUFFIX_LEN)
+                break; // fail-return
+            pzEnd = res_name + fmt_len;
+        }
+
+        if (read_okay(res_name))
+            return true;
+
+        /*
+         *  IF the file does not already have a suffix,
+         *  THEN try the ones that are okay for this file.
+         */
+        if (no_suffix && (sfx_list != NULL)) {
+            char const * const * sfxl = sfx_list;
+            *(pzEnd++) = '.';
+
+            do  {
+                strcpy(pzEnd, *(sfxl++)); /* must fit */
+                if (read_okay(res_name))
+                    return true;
+
+            } while (*sfxl != NULL);
+        }
+
+        /*
+         *  IF we've exhausted the search list,
+         *  THEN see if we're done, else go through search dir list.
+         *
+         *  We try one more thing if there is a referrer.
+         *  If the searched-for file is a full path, "ct" will
+         *  start at -1 and we will leave the loop here and now.
+         */
+        if (--ct < 0) {
+            if ((referring_tpl == NULL) || (ct != -1))
+                break;
+            c_dir = referring_tpl;
+
+        } else {
+            c_dir = *(dirlist--);
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -143,7 +249,7 @@ find_file(char const * in_name,
             return FAILURE;
 
         AGDUPSTR(in_name, res_name, "find file name");
-        free_me = (void*)in_name;
+        free_me = VOIDP(in_name);
 
         /*
          *  in_name now points to the name the file system can use.
@@ -173,102 +279,16 @@ find_file(char const * in_name,
         if (pz == NULL)
             referring_tpl = NULL;
         else {
-            AGDUPSTR(referring_tpl, referring_tpl, "referring_tpl");
+            AGDUPSTR(referring_tpl, referring_tpl, "refer tpl");
             pz = strrchr(referring_tpl, '/');
             *pz = NUL;
         }
     }
 
-    {
-        /*
-         *  Search each directory in our directory search list for the file.
-         *  We always force two copies of this option, so we know it exists.
-         *  Later entries are more recently added and are searched first.
-         *  We start the "dirlist" pointing to the real last entry.
-         */
-        int  ct = STACKCT_OPT(TEMPL_DIRS);
-        char const ** dirlist = STACKLST_OPT(TEMPL_DIRS) + ct - 1;
-        char const *  c_dir   = FIND_FILE_CURDIR;
+    if (! file_search_dirs(in_name, res_name, sfx_list, referring_tpl,
+                           nm_len, no_suffix))
+        res = FAILURE;
 
-        /*
-         *  IF the file name starts with a directory separator,
-         *  then we only search once, looking for the exact file name.
-         */
-        if (*in_name == '/')
-            ct = -1;
-
-        for (;;) {
-            char * pzEnd;
-
-            /*
-             *  c_dir is always FIND_FILE_CURDIR the first time through
-             *  and is never that value after that.
-             */
-            if (c_dir == FIND_FILE_CURDIR) {
-
-                memcpy(res_name, in_name, nm_len);
-                pzEnd  = res_name + nm_len;
-                *pzEnd = NUL;
-
-            } else {
-                unsigned int fmt_len;
-
-                /*
-                 *  IF one of our template paths starts with '$', then expand it
-                 *  and replace it now and forever (the rest of this run, anyway).
-                 */
-                if (*c_dir == '$')
-                    c_dir = expand_dir(dirlist+1, res_name);
-
-                fmt_len = (unsigned)snprintf(
-                    res_name, AG_PATH_MAX - MAX_SUFFIX_LEN,
-                    FIND_FILE_DIR_FMT, c_dir, in_name);
-                if (fmt_len >= AG_PATH_MAX - MAX_SUFFIX_LEN)
-                    break; // fail-return
-                pzEnd = res_name + fmt_len;
-            }
-
-            if (read_okay(res_name))
-                goto find_file_done;
-
-            /*
-             *  IF the file does not already have a suffix,
-             *  THEN try the ones that are okay for this file.
-             */
-            if (no_suffix && (sfx_list != NULL)) {
-                char const * const * sfxl = sfx_list;
-                *(pzEnd++) = '.';
-
-                do  {
-                    strcpy(pzEnd, *(sfxl++)); /* must fit */
-                    if (read_okay(res_name))
-                        goto find_file_done;
-
-                } while (*sfxl != NULL);
-            }
-
-            /*
-             *  IF we've exhausted the search list,
-             *  THEN see if we're done, else go through search dir list.
-             *
-             *  We try one more thing if there is a referrer.
-             *  If the searched-for file is a full path, "ct" will
-             *  start at -1 and we will leave the loop here and now.
-             */
-            if (--ct < 0) {
-                if ((referring_tpl == NULL) || (ct != -1))
-                    break;
-                c_dir = referring_tpl;
-
-            } else {
-                c_dir = *(dirlist--);
-            }
-        }
-    }
-
-    res = FAILURE;
-
- find_file_done:
     AGFREE(free_me);
     AGFREE(referring_tpl);
     return res;
@@ -343,7 +363,7 @@ load_macs(templ_t * tpl, char const * fname, char const * pzData)
             void *  data  =
                 (tpl->td_name == NULL) ? tpl->td_text : tpl->td_name;
             size_t  size  = (size_t)(tpl->td_scan - (char *)data);
-            memmove((void*)e_mac, data, size);
+            memmove(VOIDP(e_mac), data, size);
 
             tpl->td_text  -= delta;
             tpl->td_scan  -= delta;
@@ -400,8 +420,8 @@ digest_tpl(tmap_info_t * minfo, char * fname)
                        + strlen(fname) + 0x10)
                     & (size_t)(~0x0F);
 
-    res = (templ_t*)AGALOC(alloc_sz, "main template");
-    memset((void*)res, 0, alloc_sz);
+    res = (templ_t *)AGALOC(alloc_sz, "main template");
+    memset(VOIDP(res), 0, alloc_sz);
 
     /*
      *  Initialize the values:
@@ -416,7 +436,7 @@ digest_tpl(tmap_info_t * minfo, char * fname)
 
     res->td_name -= (long)res;
     res->td_text -= (long)res;
-    res = (templ_t*)AGREALOC((void*)res, res->td_size,
+    res = (templ_t *)AGREALOC(VOIDP(res), res->td_size,
                                 "resize template");
     res->td_name += (long)res;
     res->td_text += (long)res;
@@ -463,6 +483,8 @@ tpl_load(char const * fname, char const * referrer)
 
         if (outfile_time < stbf.st_mtime)
             outfile_time = stbf.st_mtime;
+        if (maxfile_time < stbf.st_mtime)
+            maxfile_time = stbf.st_mtime;
     }
 
     text_mmap(tpl_file, PROT_READ|PROT_WRITE, MAP_PRIVATE, &map_info);
@@ -520,7 +542,7 @@ tpl_unload(templ_t * tpl)
         mac++;
     }
 
-    AGFREE((void*)(tpl->td_file));
+    AGFREE(tpl->td_file);
     AGFREE(tpl);
 }
 

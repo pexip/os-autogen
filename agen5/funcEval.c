@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -32,6 +32,10 @@ tpl_text(templ_t * tpl, macro_t * mac);
 static void
 tpl_warning(templ_t * tpl, macro_t * mac, char const * msg);
 
+static char const *
+is_mac_entry_ok(bool * allocated, def_ent_t * ent,
+                int * code, templ_t * tpl, macro_t * mac);
+
 static void
 emit_insertion_file(char const * fname, FILE * outfp);
 
@@ -52,7 +56,7 @@ scm2display(SCM s)
 
     switch (ag_scm_type_e(s)) {
     case GH_TYPE_BOOLEAN:
-        z[0] = AG_SCM_NFALSEP(s) ? '1' : '0'; z[1] = NUL;
+        z[0] = scm_is_true(s) ? '1' : '0'; z[1] = NUL;
         break;
 
     case GH_TYPE_STRING:
@@ -61,7 +65,7 @@ scm2display(SCM s)
         break;
 
     case GH_TYPE_CHAR:
-        z[0] = (char)AG_SCM_CHAR(s); z[1] = NUL; break;
+        z[0] = (char)SCM_CHAR(s); z[1] = NUL; break;
 
     case GH_TYPE_VECTOR:
         res = RESOLVE_SCM_VECTOR; break;
@@ -96,7 +100,7 @@ scm2display(SCM s)
         res = RESOLVE_SCM_EXACT; break;
 
     case GH_TYPE_UNDEFINED:
-        res = (char*)zNil; break;
+        res = (char *)zNil; break;
 
     default:
         res = RESOLVE_SCM_UNKNOWN; break;
@@ -121,6 +125,76 @@ static void
 tpl_warning(templ_t * tpl, macro_t * mac, char const * msg)
 {
     fprintf(trace_fp, TPL_WARN_FMT, tpl->td_file, mac->md_line, msg);
+}
+
+/**
+ * eval_mac_expr() helper function.  Determine if the entry found is
+ * a text entry.  If not, we return an empty string.
+ *
+ * @param allocated  whether the returned string has been allocated
+ * @param ent        The macro entry we found.  Now testing validity.
+ * @param code       flag word to indicate we found a valid string
+ * @param tpl        the current template being parsed
+ * @param mac        the current macro being invoked
+ *
+ * @returns a pointer to the macro substitution text
+ */
+static char const *
+is_mac_entry_ok(bool * allocated, def_ent_t * ent,
+                int * code, templ_t * tpl, macro_t * mac)
+{
+    char const * res = (char *)zNil;
+
+    if ((*code & EMIT_IF_ABSENT) != 0)
+        return res;
+
+    if (  (ent->de_type != VALTYP_TEXT)
+       && ((*code & EMIT_PRIMARY_TYPE) == EMIT_VALUE)  ) {
+        tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
+        return res;
+    }
+
+    /*
+     *  Compute the expression string.  There are three possibilities:
+     *  1.  There is an expression string in the macro, but it must
+     *      be formatted with the text value.
+     *      Make sure we have a value.
+     *  2.  There is an expression string in the macro, but it is *NOT*
+     *      to be formatted.  Use it as is.  Do *NOT* verify that
+     *      the define value is text.
+     *  3.  There is no expression with the macro invocation.
+     *      The define value *must* be text.
+     */
+    if ((*code & EMIT_FORMATTED) != 0) {
+        /*
+         *  And make sure what we found is a text value
+         */
+        if (ent->de_type != VALTYP_TEXT) {
+            tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
+            return res;
+        }
+
+        *allocated = true;
+        res = aprf(tpl_text(tpl, mac), ent->de_val.dvu_text);
+    }
+
+    else if (mac->md_txt_off != 0)
+        res = tpl->td_text + mac->md_txt_off;
+
+    else {
+        /*
+         *  And make sure what we found is a text value
+         */
+        if (ent->de_type != VALTYP_TEXT) {
+            tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
+            return res;
+        }
+
+        res = ent->de_val.dvu_text;
+    }
+
+    *code &= EMIT_PRIMARY_TYPE;
+    return res;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -201,55 +275,9 @@ eval_mac_expr(bool * allocated)
          *  OTHERWISE, we found an entry.  Make sure we were supposed to.
          */
         else {
-            if ((code & EMIT_IF_ABSENT) != 0)
-                return (char*)zNil;
-
-            if (  (ent->de_type != VALTYP_TEXT)
-               && ((code & EMIT_PRIMARY_TYPE) == EMIT_VALUE)  ) {
-                tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
-                return (char*)zNil;
-            }
-
-            /*
-             *  Compute the expression string.  There are three possibilities:
-             *  1.  There is an expression string in the macro, but it must
-             *      be formatted with the text value.
-             *      Make sure we have a value.
-             *  2.  There is an expression string in the macro, but it is *NOT*
-             *      to be formatted.  Use it as is.  Do *NOT* verify that
-             *      the define value is text.
-             *  3.  There is no expression with the macro invocation.
-             *      The define value *must* be text.
-             */
-            if ((code & EMIT_FORMATTED) != 0) {
-                /*
-                 *  And make sure what we found is a text value
-                 */
-                if (ent->de_type != VALTYP_TEXT) {
-                    tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
-                    return (char*)zNil;
-                }
-
-                *allocated = true;
-                text = aprf(tpl_text(tpl, mac), ent->de_val.dvu_text);
-            }
-
-            else if (mac->md_txt_off != 0)
-                text = tpl->td_text + mac->md_txt_off;
-
-            else {
-                /*
-                 *  And make sure what we found is a text value
-                 */
-                if (ent->de_type != VALTYP_TEXT) {
-                    tpl_warning(tpl, mac, EVAL_EXPR_BLOCK_IN_EVAL);
-                    return (char*)zNil;
-                }
-
-                text = ent->de_val.dvu_text;
-            }
-
-            code &= EMIT_PRIMARY_TYPE;
+            text = is_mac_entry_ok(allocated, ent, &code, tpl, mac);
+            if (text == zNil)
+                return text;
         }
     }
 
@@ -260,7 +288,7 @@ eval_mac_expr(bool * allocated)
     case EMIT_VALUE:
         assert(ent != NULL);
         if (*allocated) {
-            AGFREE((void*)text);
+            AGFREE(text);
             *allocated = false;
         }
 
@@ -272,7 +300,7 @@ eval_mac_expr(bool * allocated)
         SCM res = ag_eval(text);
 
         if (*allocated) {
-            AGFREE((void*)text);
+            AGFREE(text);
             *allocated = false;
         }
 
@@ -282,10 +310,10 @@ eval_mac_expr(bool * allocated)
 
     case EMIT_SHELL:
     {
-        char* pz = shell_cmd(text);
+        char * pz = shell_cmd(text);
 
         if (*allocated)
-            AGFREE((void*)text);
+            AGFREE(text);
 
         if (pz != NULL) {
             *allocated = true;
@@ -293,7 +321,7 @@ eval_mac_expr(bool * allocated)
         }
         else {
             *allocated = false;
-            text = (char*)zNil;
+            text = (char *)zNil;
         }
         break;
     }
@@ -344,10 +372,10 @@ ag_scm_emit(SCM val)
     switch (depth) {
     case 1:
     {
-        out_stack_t* pSaveFp;
+        out_stack_t * pSaveFp;
         unsigned long pnum;
 
-        if (! AG_SCM_NUM_P(val))
+        if (! scm_is_number(val))
             break;
 
         pSaveFp = cur_fpstack;
@@ -373,11 +401,11 @@ ag_scm_emit(SCM val)
         if (val == SCM_UNDEFINED)
             break;
 
-        if (AG_SCM_NULLP(val))
+        if (scm_is_null(val))
             break;
 
-        if (AG_SCM_STRING_P(val)) {
-            fputs((char*)ag_scm2zchars(val, "emit val"), fp);
+        if (scm_is_string(val)) {
+            fputs((char *)ag_scm2zchars(val, "emit val"), fp);
             fflush(fp);
             break;
         }
@@ -443,10 +471,10 @@ ag_scm_insert_file(SCM val)
     switch (depth) {
     case 1:
     {
-        out_stack_t* pSaveFp;
+        out_stack_t * pSaveFp;
         unsigned long pnum;
 
-        if (! AG_SCM_NUM_P(val))
+        if (! scm_is_number(val))
             break;
 
         pSaveFp = cur_fpstack;
@@ -472,10 +500,10 @@ ag_scm_insert_file(SCM val)
         if (val == SCM_UNDEFINED)
             break;
 
-        if (AG_SCM_NULLP(val))
+        if (scm_is_null(val))
             break;
 
-        if (AG_SCM_STRING_P(val)) {
+        if (scm_is_string(val)) {
             emit_insertion_file(ag_scm2zchars(val, "emit val"), fp);
             break;
         }
@@ -519,16 +547,16 @@ eval(char const * expr)
     switch (*expr) {
     case '(':
     case ';':
-        res = ag_eval((char*)expr);
+        res = ag_eval((char *)expr);
         break;
 
     case '`':
         AGDUPSTR(pzTemp, expr, "shell script");
         (void)span_quote(pzTemp);
         expr = shell_cmd(pzTemp);
-        AGFREE((void*)pzTemp);
-        res = AG_SCM_STR02SCM((char*)expr);
-        AGFREE((void*)expr);
+        AGFREE(pzTemp);
+        res = scm_from_latin1_string((char *)expr);
+        AGFREE(expr);
         break;
 
     case '"':
@@ -540,9 +568,9 @@ eval(char const * expr)
         /* FALLTHROUGH */
 
     default:
-        res = AG_SCM_STR02SCM((char*)expr);
+        res = scm_from_latin1_string((char *)expr);
         if (allocated)
-            AGFREE((void*)expr);
+            AGFREE(expr);
     }
 
     return res;
@@ -564,7 +592,7 @@ eval(char const * expr)
  *   macro is inferred.  The result of the expression evaluation
  *   (@pxref{expression syntax}) is written to the current output.
 =*/
-macro_t*
+macro_t *
 mFunc_Expr(templ_t * tpl, macro_t * mac)
 {
     bool allocated_str;
@@ -578,7 +606,7 @@ mFunc_Expr(templ_t * tpl, macro_t * mac)
     }
 
     if (allocated_str)
-        AGFREE((void*)pz);
+        AGFREE(pz);
 
     return mac + 1;
 }
@@ -623,7 +651,7 @@ macro_t *
 mLoad_Expr(templ_t * tpl, macro_t * mac, char const ** ppzScan)
 {
     char *        copy; /* next text dest   */
-    char const *  src     = (char const*)mac->md_txt_off; /* macro text */
+    char const *  src     = (char const *)mac->md_txt_off; /* macro text */
     size_t        src_len = (size_t)mac->md_res;          /* macro len  */
     char const *  end_src = src + src_len;
 
@@ -702,7 +730,7 @@ mLoad_Expr(templ_t * tpl, macro_t * mac, char const ** ppzScan)
         mac->md_txt_off = 0;
 
     } else {
-        char* pz = copy;
+        char * pz = copy;
         src_len = (size_t)(end_src - src);
 
         mac->md_txt_off = (uintptr_t)(copy - tpl->td_text);
@@ -718,7 +746,7 @@ mLoad_Expr(templ_t * tpl, macro_t * mac, char const ** ppzScan)
          *  THEN find the ending expression...
          */
         if ((mac->md_res & EMIT_ALWAYS) != 0) {
-            char* pzNextExpr = (char*)skip_expr(pz, src_len);
+            char * pzNextExpr = (char *)skip_expr(pz, src_len);
 
             /*
              *  The next expression must be within bounds and space separated

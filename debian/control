@@ -10,7 +10,7 @@ Standards-Version: 3.9.6
 Homepage: http://www.gnu.org/software/autogen/
 Vcs-Git: git://anonscm.debian.org/collab-maint/autogen.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/autogen.git
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: autogen
 Architecture: any

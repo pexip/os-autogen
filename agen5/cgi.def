@@ -1,7 +1,7 @@
 
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,10 +27,7 @@ autogen definitions fsm;
 
 method = case;
 type   = loop;
-cookie = "char const* pzSrc";
-cookie = "int inlen";
-cookie = "char* pzOut";
-cookie = "int outlen";
+cookie = "char const * pzSrc", "int inlen", "char * pzOut", "int outlen";
 
 state  = name, value;
 event  = alpha, name_char, equal, space, escape, other, separator, end;
@@ -45,7 +42,7 @@ transition  =
  { tst = name;  tev = alpha, name_char;       ttype = stash; },
  { tst = name;  tev = equal; next = value; },
  { tst = value; tev = '*';                    ttype = stash; },
- { tst = value; tev = space;                  ttype = stash; },
+ { tst = value; tev = space;                  ttype = sv_space; },
  { tst = value; tev = escape; },
  { tst = value; tev = end;       next = done; ttype = separate; },
  { tst = value; tev = separator; next = init; ttype = separate; };

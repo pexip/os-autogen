@@ -11,7 +11,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -36,10 +36,10 @@ typedef enum {
 static def_ent_t * free_de_list = NULL;
 static void *      de_blocks    = NULL;
 
-#define ENTRY_SPACE        (4096 - sizeof(void*))
+#define ENTRY_SPACE        (4096 - sizeof(void *))
 #define ENTRY_ALLOC_CT     (ENTRY_SPACE / sizeof(def_ent_t))
 #define ENTRY_ALLOC_SIZE   \
-    ((ENTRY_ALLOC_CT * sizeof(def_ent_t)) + sizeof(void*))
+    ((ENTRY_ALLOC_CT * sizeof(def_ent_t)) + sizeof(void *))
 
 /* = = = START-STATIC-FORWARD = = = */
 static void
@@ -91,7 +91,7 @@ new_def_ent(void)
         res[-1].de_next = NULL;
     }
 
-    memset((void *)res, 0, sizeof(*res));
+    memset(VOIDP(res), 0, sizeof(*res));
     return res;
 }
 
@@ -249,7 +249,7 @@ insert_ent(def_ent_t * de)
      *  Link in the new twin chain entry into the list.
      */
     if (de->de_index == NO_INDEX) {
-        def_ent_t* pT = de_list->de_etwin;
+        def_ent_t * pT = de_list->de_etwin;
         if (pT == NULL)
             pT = de_list;
 
@@ -274,7 +274,7 @@ insert_ent(def_ent_t * de)
                sizeof(def) - ag_offsetof(def_ent_t, de_name));
 
         /*
-         * Contents are swapped.  Link "de" after "de_list" and return "de_list".
+         * Contents are swapped.  Link "de" after "de_list" & return "de_list".
          */
         de->de_twin = de_list->de_twin;
         if (de->de_twin != NULL)
@@ -348,7 +348,7 @@ number_and_insert_ent(char * name, char const * idx_str)
 
     strtransform(ent->de_name, ent->de_name);
     ent->de_type  = VALTYP_UNKNOWN;
-    ent->de_file  = (char*)cctx->scx_fname;
+    ent->de_file  = (char *)cctx->scx_fname;
     ent->de_line  = cctx->scx_line;
     return (curr_ent = insert_ent(ent));
 }
@@ -362,8 +362,8 @@ ready_def_input(char const ** ppzfile, size_t * psz)
     struct stat stbf;
 
     if (! ENABLED_OPT(DEFINITIONS)) {
-        base_ctx = (scan_ctx_t*)AGALOC(sizeof(scan_ctx_t), "scan context");
-        memset((void *)base_ctx, 0, sizeof(scan_ctx_t));
+        base_ctx = (scan_ctx_t *)AGALOC(sizeof(scan_ctx_t), "scan context");
+        memset(VOIDP(base_ctx), 0, sizeof(scan_ctx_t));
         base_ctx->scx_line  = 1;
         base_ctx->scx_fname = READY_INPUT_NODEF;
 
@@ -386,14 +386,14 @@ ready_def_input(char const ** ppzfile, size_t * psz)
     if (strcmp(*ppzfile, "-") == 0) {
         *ppzfile = OPT_ARG(DEFINITIONS) = "stdin";
         if (getenv(REQUEST_METHOD) != NULL) {
-            loadCgi();
+            load_cgi();
             cctx = base_ctx;
             dp_run_fsm();
             return INPUT_DONE;
         }
 
     accept_fifo:
-        outfile_time  = time(NULL);
+        maxfile_time = outfile_time = time(NULL);
         *psz = 0x4000 - (4+sizeof(*base_ctx));
         return INPUT_STDIN;
     }
@@ -421,6 +421,7 @@ ready_def_input(char const ** ppzfile, size_t * psz)
      */
     *psz = (size_t)stbf.st_size;
 
+    maxfile_time = stbf.st_mtime;
     outfile_time = ENABLED_OPT(SOURCE_TIME) ? stbf.st_mtime : time(NULL);
 
     return INPUT_FILE;
@@ -446,8 +447,8 @@ read_defs(void)
      *  Allocate the space we need for our definitions.
      */
     sizeLeft = dataSize+4+sizeof(*base_ctx);
-    base_ctx = (scan_ctx_t*)AGALOC(sizeLeft, "file buf");
-    memset((void *)base_ctx, 0, sizeLeft);
+    base_ctx = (scan_ctx_t *)AGALOC(sizeLeft, "file buf");
+    memset(VOIDP(base_ctx), 0, sizeLeft);
     base_ctx->scx_line = 1;
     sizeLeft = dataSize;
 
@@ -481,7 +482,7 @@ read_defs(void)
      *  Read until done...
      */
     for (;;) {
-        size_t rdct = fread((void *)pzData, (size_t)1, sizeLeft, fp);
+        size_t rdct = fread(VOIDP(pzData), (size_t)1, sizeLeft, fp);
 
         /*
          *  IF we are done,
@@ -507,7 +508,7 @@ read_defs(void)
          *  See if there is any space left
          */
         if (sizeLeft == 0) {
-            scan_ctx_t* p;
+            scan_ctx_t * p;
             off_t dataOff;
 
             /*
@@ -522,7 +523,7 @@ read_defs(void)
              */
             dataSize += (sizeLeft = 0x1000);
             dataOff = pzData - base_ctx->scx_data;
-            p = AGREALOC((void *)base_ctx, dataSize + 4 + sizeof(*base_ctx),
+            p = AGREALOC(VOIDP(base_ctx), dataSize + 4 + sizeof(*base_ctx),
                          "expand f buf");
 
             /*

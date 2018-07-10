@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -63,7 +63,7 @@ fswarn(char const * op, char const * fname)
 LOCAL char *
 aprf(char const * pzFmt, ...)
 {
-    char* pz;
+    char * pz;
     va_list ap;
     va_start(ap, pzFmt);
     (void)vasprintf(&pz, pzFmt, ap);
@@ -85,7 +85,7 @@ static void
 define_base_name(void)
 {
     char const *  pz;
-    char* pzD;
+    char * pzD;
 
     if (! ENABLED_OPT(DEFINITIONS)) {
         OPT_ARG(BASE_NAME) = DFT_BASE_NAME;
@@ -138,7 +138,7 @@ put_defines_into_env(void)
          */
         if (strchr(pz, '=') == NULL) {
             size_t siz = strlen(pz)+3;
-            char*  p   = AGALOC(siz, "env define");
+            char * p   = AGALOC(siz, "env define");
 
             strcpy(p, pz);
             strcpy(p+siz-3, DFT_ENV_VAL);
@@ -148,7 +148,7 @@ put_defines_into_env(void)
         /*
          *  Now put it in the environment
          */
-        putenv((char*)pz);
+        putenv((char *)pz);
     } while (--ct > 0);
 }
 
@@ -431,14 +431,13 @@ span_quote(char * in_q)
                 if (dp[-1] == 0x7F)  dp--;
                 in_q += ct;
 
-            } else {
+            } else
                 switch (*in_q) {
                 case '\\':
                 case '\'':
                 case '#':
                     dp[-1] = *in_q++;
                 }
-            }
             break;
 
         default:
@@ -472,7 +471,7 @@ skip_quote(char const * qstr)
             if (qc == '\'') {
                 /*
                  *  Single quoted strings process the backquote specially
-                 *  only in fron of these three characters:
+                 *  only in front of these three characters:
                  */
                 switch (*qstr) {
                 case '\\':

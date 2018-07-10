@@ -13,7 +13,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,7 +35,7 @@ static int        printJumpSignal = 0;
 
 /* = = = START-STATIC-FORWARD = = = */
 static ssize_t
-safePrintf(char** ppzBuf, char const * pzFmt, void** argV);
+safePrintf(char ** ppzBuf, char const * pzFmt, void ** argV);
 /* = = = END-STATIC-FORWARD = = = */
 
 #ifndef DEBUG_ENABLED
@@ -47,7 +47,7 @@ safePrintf(char** ppzBuf, char const * pzFmt, void** argV);
 #endif
 
 static ssize_t
-safePrintf(char** ppzBuf, char const * pzFmt, void** argV)
+safePrintf(char ** ppzBuf, char const * pzFmt, void ** argV)
 {
 #if ! defined(DEBUG_ENABLED)
     /*
@@ -77,7 +77,7 @@ safePrintf(char** ppzBuf, char const * pzFmt, void** argV)
      */
     if (sigsetjmp(printJumpEnv, 0) != 0) {
 #ifndef HAVE_STRSIGNAL
-        extern char* strsignal(int signo);
+        extern char * strsignal(int signo);
 #endif
         /*
          *  IF the fprintf command in the then clause has not failed yet,
@@ -95,7 +95,7 @@ safePrintf(char** ppzBuf, char const * pzFmt, void** argV)
 #endif /* ! defined(DEBUG_ENABLED) */
 
     {
-        int p_sz = asprintfv(ppzBuf, pzFmt, (snv_constpointer*)argV);
+        int p_sz = asprintfv(ppzBuf, pzFmt, (snv_constpointer *)argV);
         if (((unsigned)p_sz & ~0xFFFFFU) != 0) /* 1MB max */
             AG_ABEND(aprf(ASPRINTFV_FAIL_FMT, p_sz));
 
@@ -119,7 +119,7 @@ run_printf(char const * pzFmt, int len, SCM alist)
     if (len < 8)
         arglist = argp = args;
     else {
-        size_t sz = (size_t)((unsigned)(len+1) * sizeof(void*));
+        size_t sz = (size_t)((unsigned)(len+1) * sizeof(void *));
         arglist = argp = malloc(sz);
     }
 
@@ -129,24 +129,24 @@ run_printf(char const * pzFmt, int len, SCM alist)
         switch (ag_scm_type_e(car)) {
         default:
         case GH_TYPE_UNDEFINED:
-            *(argp++) = (char*)RUN_PRINTF_HUH;
+            *(argp++) = (char *)RUN_PRINTF_HUH;
             break;
 
         case GH_TYPE_BOOLEAN:
-            *(argp++) = (void*)((car == SCM_BOOL_F)
-                                ? SCM_FALSE_STR : SCM_TRUE_STR);
+            *(argp++) = VOIDP((car == SCM_BOOL_F)
+                              ? SCM_FALSE_STR : SCM_TRUE_STR);
             break;
 
         case GH_TYPE_CHAR:
-            *(char*)(argp++) = (char)AG_SCM_CHAR(car);
+            *(char *)(argp++) = (char)SCM_CHAR(car);
             break;
 
         case GH_TYPE_PAIR:
-            *(argp++) = (char*)(SCM_LIST_STR+1);
+            *(argp++) = (char *)(SCM_LIST_STR+1);
             break;
 
         case GH_TYPE_NUMBER:
-            *(unsigned long*)(argp++) = AG_SCM_TO_ULONG(car);
+            *(unsigned long *)(argp++) = AG_SCM_TO_ULONG(car);
             break;
 
         case GH_TYPE_SYMBOL:
@@ -155,12 +155,12 @@ run_printf(char const * pzFmt, int len, SCM alist)
             break;
 
         case GH_TYPE_PROCEDURE:
-            *(argp++) = (char*)SCM_PROC_CAST;
+            *(argp++) = (char *)SCM_PROC_CAST;
             break;
 
         case GH_TYPE_VECTOR:
         case GH_TYPE_LIST:
-            *(argp++) = (char*)SCM_LIST_STR;
+            *(argp++) = (char *)SCM_LIST_STR;
             break;
         }
     }
@@ -172,12 +172,12 @@ run_printf(char const * pzFmt, int len, SCM alist)
     {
         char *  bf;
         size_t  bf_sz = (size_t)safePrintf(&bf, pzFmt, arglist);
-        res = AG_SCM_STR2SCM(bf, bf_sz);
+        res = scm_from_latin1_stringn(bf, bf_sz);
         free(bf);
     }
 
     if (arglist != args)
-        AGFREE((void*)arglist);
+        AGFREE(arglist);
 
     return res;
 }
@@ -205,7 +205,6 @@ ag_scm_sprintf(SCM fmt, SCM alist)
     return run_printf(pzFmt, list_len, alist);
 }
 
-
 /*=gfunc printf
  *
  * what:  format to stdout
@@ -228,7 +227,6 @@ ag_scm_printf(SCM fmt, SCM alist)
     AG_SCM_DISPLAY(run_printf(pzFmt, list_len, alist));
     return SCM_UNDEFINED;
 }
-
 
 /*=gfunc fprintf
  *
@@ -253,7 +251,6 @@ ag_scm_fprintf(SCM port, SCM fmt, SCM alist)
     return  scm_display(res, port);
 }
 
-
 /*=gfunc hide_email
  *
  * what:  convert eaddr to javascript
@@ -271,27 +268,31 @@ ag_scm_hide_email(SCM display, SCM eaddr)
 {
     char *  disp    = ag_scm2zchars(display, "fmt");
     char *  end_adr = ag_scm2zchars(eaddr,   "eaddr");
-    ssize_t st_len  = HIDE_EMAIL_START_STR_LEN;
 
     ssize_t str_size = (ssize_t)(
-        (strlen(end_adr) * HTML_DEC_DIGIT_LEN)
-        + (size_t)st_len + HIDE_EMAIL_END_FMT_LEN + strlen(disp));
+        (strlen(end_adr) * 6) // e.g. "&#107;"
+        + HIDE_EMAIL_START_STR_LEN
+        + HIDE_EMAIL_END_FMT_LEN + strlen(disp));
 
     char *  res  = scribble_get(str_size);
     char *  scan = res;
+    char *  end  = res + (str_size - 1);
 
-    memcpy(scan, HIDE_EMAIL_START_STR, (size_t)st_len);
-    scan += st_len;
+    memcpy(scan, HIDE_EMAIL_START_STR, HIDE_EMAIL_START_STR_LEN);
+    scan += HIDE_EMAIL_START_STR_LEN;
 
-    for (;;) {
+    do {
         if (*end_adr == NUL)
             break;
-        scan += sprintf(scan, HTML_DEC_DIGIT, *(end_adr++));
-    }
+        scan += snprintf(scan, str_size - (scan - res),
+                         HTML_DEC_DIGIT, *(end_adr++));
+    } while (scan < end);
 
-    scan += sprintf(scan, HIDE_EMAIL_END_FMT, disp);
+    scan += snprintf(scan, str_size - (scan - res), HIDE_EMAIL_END_FMT, disp);
+    if (scan > end)
+        AG_ABEND(BOGUS_TAG);
 
-    return AG_SCM_STR2SCM(res, (size_t)(scan - res));
+    return scm_from_latin1_stringn(res, (size_t)(scan - res));
 }
 
 /*=gfunc   format_arg_count
@@ -324,7 +325,7 @@ ag_scm_hide_email(SCM display, SCM eaddr)
 SCM
 ag_scm_format_arg_count(SCM fmt)
 {
-    char* pzFmt = ag_scm2zchars(fmt, WORD_FORMAT);
+    char * pzFmt = ag_scm2zchars(fmt, WORD_FORMAT);
     int   ct    = 0;
     for (;;) {
         switch (*(pzFmt++)) {
@@ -336,7 +337,7 @@ ag_scm_format_arg_count(SCM fmt)
         }
     } scanDone:;
 
-    return AG_SCM_INT2SCM(ct);
+    return scm_from_int(ct);
 }
 /**
  * @}

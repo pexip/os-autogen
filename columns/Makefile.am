@@ -2,7 +2,7 @@
 ##
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Copyright (C) 1992-2014 by Bruce Korb
+## Copyright (C) 1992-2015 by Bruce Korb
 ##
 ## This file is part of AutoGen.
 ##
@@ -24,7 +24,7 @@ csrc            = opts.h columns.c opts.c
 nodist_columns_SOURCES = cols.c
 
 LO_LIB          = $(top_builddir)/autoopts/libopts.la
-columns_LDADD   = $(LO_LIB) $(LIBGUILE_LIBS)
+columns_LDADD   = $(LO_LIB) $(GUILE_LIBS)
 
 BUILT_SOURCES   = columns.menu columns.texi columns.1
 EXTRA_DIST      = opts.def $(csrc)

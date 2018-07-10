@@ -1,3 +1,189 @@
+autogen (1:5.18.12-3) unstable; urgency=medium
+
+  * Add ${perl:Depends} to autogen's Depends. (Thanks, Paul Hardy!)
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 30 Oct 2016 13:24:25 +0100
+
+autogen (1:5.18.12-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 17 Sep 2016 16:33:27 +0200
+
+autogen (1:5.18.12-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Drop 04_crossbuild.diff and 21_test.error.diff.
+    + Drop config/misc.def part of 05_cross_pkg_config.diff.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 03 Sep 2016 14:46:08 +0200
+
+autogen (1:5.18.10-4) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 06 Aug 2016 13:04:34 +0200
+
+autogen (1:5.18.10-3) experimental; urgency=low
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS. Closes: #833171
+    + Invoke the triplet prefixed pkg-config.
+    + Always assume that the libc comes with a working libregex as autogen
+      doesn't work at all without it.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 04 Aug 2016 19:24:27 +0200
+
+autogen (1:5.18.10-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 17 Jul 2016 13:19:19 +0200
+
+autogen (1:5.18.10-1) experimental; urgency=medium
+
+  * New upstream version, also pull 21_test.error.diff from upstream GIT. -
+    Should fix testsuite error on mips/armhf.
+    + Drop 20_remove-quotes-for-disabled-options-in-man-pages.patch.
+  * Point watchfile to rel([\d\.]+)/ subdirectory again.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 28 May 2016 07:47:14 +0200
+
+autogen (1:5.18.9-1) experimental; urgency=medium
+
+  * New upstream version.
+  * Set DEB_BUILD_MAINT_OPTIONS := hardening=+all.
+  * Update upstream signing key, store ascii-armored copy in
+    debian/upstream/signing-key.asc instead of a binary copy (with mention in
+    debian/source/include-binaries) in debian/upstream-signing-key.pgp.
+  * Pull 20_remove-quotes-for-disabled-options-in-man-pages.patch from
+    upstream GIT to fix broken formatting in autogen-erated manpages.
+    Closes: #817859
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 22 May 2016 18:17:34 +0200
+
+autogen (1:5.18.7-3) unstable; urgency=medium
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS: missing Build-Depends: autogen. Closes: #809728
+
+  [ Andreas Metzler ]
+  * Move Vcs-* from git/http to https.
+  * Add B-D on dpkg-dev (>= 1.17.14) and version debhelper B-D with
+    (>= 9.20141010). This is necessary for above-mentioned B-D on
+    "autogen <cross>".
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 10 Jan 2016 14:27:31 +0100
+
+autogen (1:5.18.7-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 26 Dec 2015 11:23:43 +0100
+
+autogen (1:5.18.7-1) experimental; urgency=medium
+
+  * Change watchfile to search for files ftp://ftp.gnu.org/gnu/autogen/
+    instead of relx.y subdirectories.
+  * New upstream version.
+    + Drop 01_fix_hurd_FTBFS.diff 02_fix_hurd_identifiermacro.diff,
+      03_no_rpath_multiarch.diff 11_man3_fix_date.diff
+      12_reprbuild_fs_dep.diff, unfuzz 10_libopts_tarball_perms.diff
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 08 Dec 2015 07:59:34 +0100
+
+autogen (1:5.18.6-4) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 25 Oct 2015 08:51:44 +0100
+
+autogen (1:5.18.6-3) experimental; urgency=medium
+
+  * undefine LC_ALL in debian/rules to let reproducible build CI tests pass,
+    which set LC_ALL in addition to LANG, preventing selective locale
+    overrides (LC_COLLATE) from doing their job.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 10 Oct 2015 16:34:24 +0200
+
+autogen (1:5.18.6-2) experimental; urgency=medium
+
+  * 11_man3_fix_date.diff: Add support for MAN_PAGE_DATE to .3 manpages.
+  * 12_reprbuild_fs_dep.diff: Fix filesystem dependent order in
+    autogen/usr/share/autogen/libopts-41.1.16.tar.gz -
+    libopts-41.1.16/Makefile.am
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 03 Oct 2015 12:12:58 +0200
+
+autogen (1:5.18.6-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Drop 20_nosetlocale.diff.
+  * Reproducible build changes:
+    + Use newly supported upstream MAN_PAGE_DATE environment variable instead
+      of editing the manpage after build. Specify -u in the respective date(1)
+      invocation.
+    + configure with --enable-timeout=78 (This is the maximum value found in
+      buildlogs, on mipsel.)
+    + export LC_COLLATE=C in debian/rules.
+    Closes: #794892 (Thanks, Valentin Lorentz)
+    + Also update 10_libopts_tarball_perms.diff to use tar --sort=name and add
+      the Build-Dependency on tar >= 1.28.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 30 Sep 2015 17:49:10 +0200
+
+autogen (1:5.18.6~pre3-3) unstable; urgency=low
+
+  * Use standard automake html target, which uses makeinfo instead of
+    texi2html to generate html docs. As a side-effect invalidates /
+    Closes: #635311 since the manual is split differently.
+  * Ship and generate pdf instead of ps docs.
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 19 Jul 2015 13:02:02 +0200
+
+autogen (1:5.18.6~pre3-2) experimental; urgency=medium
+
+  * Add 20_nosetlocale.diff, to really Closes: #787866.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 18 Jul 2015 16:13:36 +0200
+
+autogen (1:5.18.6~pre3-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Unwinds Guile wrapper macro removals, which should fix spurious
+      breakage. Closes: #787866
+
+ -- Andreas Metzler <ametzler@debian.org>  Mon, 29 Jun 2015 08:24:37 +0200
+
+autogen (1:5.18.5-3) unstable; urgency=medium
+
+  * 10_libopts_tarball_perms.diff: Sanitize file/directory permissions and
+    owner in libopts tarball. Override mtime with ${BUILD_DATE} which is
+    exported in debian/rules. Avoid gzip timestamp.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 23 Jun 2015 19:26:20 +0200
+
+autogen (1:5.18.5-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 16 May 2015 13:53:51 +0200
+
+autogen (1:5.18.5-1) experimental; urgency=medium
+
+  * Quote license grant headers in debian/copyright.
+  * New upstream version.
+    + Drop 10_licensing.diff, 11_fix_testsuite.error.diff and
+      15_add_missing_file_from_GIT.diff.
+    + Manual move of pkgconfig file to multiarch dir is unnecessary now.
+    + Ship tpl-config.tlib in usr/lib/multiarch-tuple/autogen/tpl-config.tlib.
+    + Update debian/copyright.
+  * Diverge from upstream by not shipping a second copy of tpl-config.tlib
+    in /usr/share/autogen/.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 09 May 2015 18:10:45 +0200
+
 autogen (1:5.18.4-3pexip1) pexip; urgency=low
 
   * Migrate to Jessie

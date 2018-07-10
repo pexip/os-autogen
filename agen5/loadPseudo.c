@@ -12,7 +12,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -55,19 +55,19 @@ copy_mark(char const * text, char * marker, size_t * ret_ct);
 static char const *
 do_scheme_expr(char const * text, char const * fname)
 {
-    char *    pzEnd = (char*)text + strlen(text);
+    char *    pzEnd = (char *)text + strlen(text);
     char      ch;
     macro_t * pCM   = cur_macro;
     macro_t   mac   = { (mac_func_t)~0, 0, 0, 0, 0, 0, 0, NULL };
 
     mac.md_line = tpl_line;
-    pzEnd       = (char*)skip_scheme(text, pzEnd);
+    pzEnd       = (char *)skip_scheme(text, pzEnd);
     ch          = *pzEnd;
     *pzEnd      = NUL;
     cur_macro   = &mac;
 
     ag_scm_c_eval_string_from_file_line(
-          (char*)text, fname, tpl_line );
+          (char *)text, fname, tpl_line );
 
     cur_macro = pCM;
     *pzEnd    = ch;
@@ -230,11 +230,12 @@ handle_hash_line(char const * pz)
          *  the SHELL environment variable to this executable.
          */
         if (access(nmbuf, X_OK) == 0) {
-            char * sp = malloc((size_t)(len + 7)); // len + "SHELL=" + NUL byte
-            sprintf(sp, HANDLE_HASH_ENV_FMT, HANDLE_HASH_SHELL, nmbuf);
+            char * sp = AGALOC(len + HANDLE_HASH_SHELL_LEN + 1, "set shell");
+            memcpy(sp, HANDLE_HASH_SHELL, HANDLE_HASH_SHELL_LEN);
+            memcpy(sp + HANDLE_HASH_SHELL_LEN, nmbuf, len + 1);
             putenv(sp);
-            AGDUPSTR(shell_program, nmbuf, "prog shell");
-            AGDUPSTR(server_args[0],  nmbuf, "shell name");
+            AGDUPSTR(shell_program,  nmbuf, "prog shell");
+            AGDUPSTR(server_args[0], nmbuf, "shell name");
         }
     }
 
@@ -419,8 +420,8 @@ load_pseudo_mac(char const * text, char const * fname)
         switch (trans) {
         case PM_TR_SKIP_ED_MODE:
         {
-            char* pzEnd = strstr(text + 3, PSEUDO_MAC_MODE_MARK);
-            char* pzNL  = strchr(text + 3, NL);
+            char * pzEnd = strstr(text + 3, PSEUDO_MAC_MODE_MARK);
+            char * pzNL  = strchr(text + 3, NL);
             if ((pzEnd == NULL) || (pzNL < pzEnd))
                 BAD_MARKER(PSEUDO_MAC_BAD_MODE);
 

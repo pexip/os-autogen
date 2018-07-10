@@ -1,46 +1,35 @@
-New in 5.18.4 - August 2014
+New in 5.18.12 - August 2016
 
-* Do Not Edit (dne) warning:  the default of printing a date in the
-  warning has now changed to not doing so.  The "-d" option to
-  suppress the date is now deprecated (ignored).  A new option, "-D"
-  will cause the date to be included.  The environment variable,
-  "AUTOGEN_DNE_DATE" overrides everything.
-* The RETURN function was not completely implemented and only
-  partially worked.  It is working now.
-* optionPrintVersionAndReturn() is a new function for applications
-  that wish to extend the behavior of the "--version" option.
-* mdoc and man pages have been greatly improved.
-* libopts tear-off library used stdnoreturn.h and now includes
-  infrastructure for systems deficient in that area
-* new function: insert-file  It will simply insert the contents of
-  a file (or list of files) into the output stream.
+* several configury fixes to enable cross platform building.
+* fompletion of a change in "char-mapper" to enable bootstrapping
 
-New in 5.18.3 May 2014
+New in 5.18.11 May 2016
 
-* ATTRIBUTE_FORMAT_ARG is a configured attribute that wraps
-  __attribute__((__format_arg__(n))) procedure declaration attributes.
-  To configure it, the ag_macros.m4 has a new macroo,
-  AG_COMPILE_FORMAT_ARG (which is a compile only test probe).
+* fix up tests that got broken in 5.18.10
+* in the make gperf script, LDFLAGS sometimes rely on CFLAGS
+* correct misuse of guile version information in configure
 
-* Auto-edit Guile headers that depend upon configure values
-  most especially:  noreturn
-  but check for "ptrdiff_t" in our configure too, so that Guile does
-  not create its own duplicate definition.
+New in 5.18.10 May 2016
 
-* Abort from the failing function so that stack traces are useful
-* The libopts m4 configure code must configure the libopts/Makefile
-* Happy 2014 New Year
-* make sure library option handling code does nothing when the
-  library is just trying to get information about an option.
-* Only apply texi2mdoc when it is needed.
-* The aoGetsText() emitted i18n helper function needs its argument
-  to have the "format_arg" attribute.
+* NUL terminate CGI definitions text
 
-New in 5.18.2 October 2013
+New in 5.18.9 April 2016
 
-* documentation clarifications
-* properly create generated main procedures from user supplied code.
-* ChangeLog files have been removed from GIT sources
-  (though still obtainable with tagged checkouts).
-* LIBGUILE_PATH is not needed and its derivation is wrong on
-  where binaries and libraries have different prefixes.
+* When parsing CGI, do not allow spaces to be lost
+* In producing usage text, check more rigorously that
+  option "values" are really not flag characters.
+
+New in 5.18.8 March 2016
+
+* Ensure testing vars start as unset for testing
+* happy new year & de-uglifications
+
+New in 5.18.7 December 2015
+
+* Guile 1.6 support was removed
+* bootstrapping was made idempotent
+* add --enable-static-autogen config option
+* add (max-file-time) scheme function (max source file time)
+* Allow MAN_PAGE_DATE to override using the date program in
+  man page templates
+* Enable byte-for-byte build reproducibility

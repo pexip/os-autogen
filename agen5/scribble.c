@@ -1,4 +1,21 @@
 
+/*  This file is part of AutoGen.
+ *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *
+ * AutoGen is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * AutoGen is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "scribble.h"
@@ -93,7 +110,7 @@ new_scribble_block(size_t min_size)
      *  The "sb_size" field is read-only.  Override this during allocation.
      */
     {
-        size_t * psz = (void *)&(res->sb_size);
+        size_t * psz = VOIDP(&(res->sb_size));
         *psz = min_size - hdr_sz;
     }
 
@@ -103,7 +120,7 @@ new_scribble_block(size_t min_size)
 /**
  * Get some scribble space.  Allocates a new scribble buffer, if needed.
  * The allocation gets incremented by one and then rounded to a multiple
- * of sizeof(void*).
+ * of sizeof(void *).
  *
  * @param size thesize required.
  * @returns the allocated chunk.
@@ -131,7 +148,7 @@ scribble_get(ssize_t size)
         sb   = sb->sb_next;
     }
 
-    buf = (char*)(sb->sb_buf + sb->sb_off);
+    buf = (char *)(sb->sb_buf + sb->sb_off);
     sb->sb_off += size;
     return buf;
 }

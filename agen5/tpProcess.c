@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ * AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -159,13 +159,13 @@ do_stdout_tpl(templ_t * tpl)
          *  a content-type: prefix.  If not, we supply our own HTML prefix.
          */
         res   = ag_scm_out_pop(SCM_BOOL_T);
-        pzRes = AG_SCM_CHARS(res);
+        pzRes = scm_i_string_chars(res);
 
         /* 13 char prefix is:  "content-type:" */
         if (strneqvcmp(pzRes, DO_STDOUT_TPL_CONTENT, 13) != 0)
             fputs(DO_STDOUT_TPL_CONTENT, stdout);
 
-        fwrite(pzRes, AG_SCM_STRLEN(res), 1, stdout);
+        fwrite(pzRes, scm_c_string_length(res), 1, stdout);
     }
 
     fclose(stdout);
@@ -201,6 +201,8 @@ process_tpl(templ_t * tpl)
     }
 
     do  {
+        out_spec_t * os;
+
         /*
          * We cannot be in Scheme processing.  We've either just started
          * or we've made a long jump from our own code.  If we've made a
@@ -214,22 +216,21 @@ process_tpl(templ_t * tpl)
          */
         switch (setjmp(abort_jmp_buf)) {
         case SUCCESS:
-        {
-            out_spec_t * ospec = output_specs;
+            os = output_specs;
 
             if (OPT_VALUE_TRACE >= TRACE_EVERYTHING) {
-                fprintf(trace_fp, PROC_TPL_START, ospec->os_sfx);
+                fprintf(trace_fp, PROC_TPL_START, os->os_sfx);
                 fflush(trace_fp);
             }
             /*
              *  Set the output file name buffer.
              *  It may get switched inside open_output.
              */
-            open_output(ospec);
+            open_output(os);
             memcpy(&out_root, cur_fpstack, sizeof(out_root));
             AGFREE(cur_fpstack);
             cur_fpstack    = &out_root;
-            curr_sfx       = ospec->os_sfx;
+            curr_sfx       = os->os_sfx;
             curr_def_ctx   = root_def_ctx;
             cur_fpstack->stk_flags &= ~FPF_FREE;
             cur_fpstack->stk_prev   = NULL;
@@ -239,13 +240,11 @@ process_tpl(templ_t * tpl)
                 out_close(false);  /* keep output */
             } while (cur_fpstack->stk_prev != NULL);
 
-            output_specs = next_out_spec(ospec);
+            output_specs = next_out_spec(os);
             break;
-        }
 
         case PROBLEM:
-        {
-            out_spec_t * os = output_specs;
+            os = output_specs;
             /*
              *  We got here by a long jump.  Close/purge the open files
              *  and go on to the next output.
@@ -256,7 +255,6 @@ process_tpl(templ_t * tpl)
             last_scm_cmd = NULL; /* "problem" means "drop current output". */
             output_specs = next_out_spec(os);
             break;
-        }
 
         default:
             fprintf(trace_fp, PROC_TPL_BOGUS_RET, oops_pfx);
@@ -264,8 +262,7 @@ process_tpl(templ_t * tpl)
             /* FALLTHROUGH */
 
         case FAILURE:
-        {
-            out_spec_t * os = output_specs;
+            os = output_specs;
 
             /*
              *  We got here by a long jump.  Close/purge the open files.
@@ -283,7 +280,6 @@ process_tpl(templ_t * tpl)
 
             exit(EXIT_FAILURE);
             /* NOTREACHED */
-        }
         }
     } while (output_specs != NULL);
 }
@@ -333,15 +329,15 @@ out_close(bool purge)
      *  Do not deallocate statically allocated names
      */
     if ((cur_fpstack->stk_flags & FPF_STATIC_NM) == 0)
-        AGFREE((void*)cur_fpstack->stk_fname);
+        AGFREE(cur_fpstack->stk_fname);
 
     /*
      *  Do not deallocate the root entry.  It is not allocated!!
      */
     if ((cur_fpstack->stk_flags & FPF_FREE) != 0) {
-        out_stack_t* p = cur_fpstack;
+        out_stack_t * p = cur_fpstack;
         cur_fpstack = p->stk_prev;
-        AGFREE((void*)p);
+        AGFREE(p);
     }
 }
 
@@ -416,7 +412,7 @@ open_output(out_spec_t * spec)
     }
 
     open_output_file(out_file, strlen(out_file), write_mode, 0);
-    free((void *)out_file);
+    free(VOIDP(out_file));
 }
 /**
  * @}

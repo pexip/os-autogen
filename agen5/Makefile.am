@@ -3,7 +3,7 @@
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -18,6 +18,7 @@
 ## You should have received a copy of the GNU General Public License along
 ## with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+libdatadir       = $(libdir)/@PACKAGE@
 SUBDIRS         = test
 AM_CPPFLAGS     = @INCLIST@
 FSMTPL          = fsm.tpl  fsm-macro.tlib fsm-trans.tlib
@@ -60,9 +61,9 @@ SNV_LIB         = $(top_builddir)/snprintfv/libsnprintfv.la
 
 nodist_autogen_SOURCES = ag.c
 autogen_SOURCES = $(gen_csrc)
-autogen_LDADD   = $(LO_LIB) $(SNV_LIB) $(LIBGUILE_LIBS)
-autogen_LDFLAGS = $(DYNAMIC_AG)
-autogen_CFLAGS  = $(LIBGUILE_CFLAGS)
+autogen_LDADD   = $(LO_LIB) $(SNV_LIB) $(GUILE_LIBS)
+autogen_LDFLAGS = $(DYNAMIC_AG) $(AG_STATIC_AUTOGEN)
+autogen_CFLAGS  = $(GUILE_CFLAGS)
 
 AM_YFLAGS = -d
 
@@ -70,6 +71,8 @@ ag.c : Makefile
 	exec > $@ ; \
 	echo '#undef   PKGDATADIR' ; \
 	echo '#define  PKGDATADIR "$(pkgdatadir)"' ; \
+	echo '#undef   LIBDATADIR' ; \
+	echo '#define  LIBDATADIR "$(libdatadir)"' ; \
 	mk=`set -- $(MAKE) ; command -v $$1` ; \
 	echo 'static char const make_prog[] = "'$$mk'";' ; \
 	printf '\n#define  DEFINING 1\n' ; \

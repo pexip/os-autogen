@@ -1,7 +1,7 @@
 /* -*- buffer-read-only: t -*- vi: set ro:
  *
  * Prototypes for agen5
- * Generated Sat Aug 30 10:36:46 PDT 2014
+ * Generated Mon Aug 29 14:35:43 PDT 2016
  */
 #ifndef AGEN5_PROTO_H_GUARD
 #define AGEN5_PROTO_H_GUARD 1
@@ -10,7 +10,7 @@
  *  Extracted from agCgi.c
  */
 static void
-loadCgi(void);
+load_cgi(void);
 
 /*
  *  Extracted from agDep.c
@@ -125,7 +125,7 @@ static te_dp_event
 yylex(void);
 
 static void
-yyerror(char* s);
+yyerror(char * s);
 
 /*
  *  Extracted from defLoad.c
@@ -234,7 +234,7 @@ load_pseudo_mac(char const * text, char const * fname);
  *  Extracted from tpLoad.c
  */
 static templ_t *
-find_tpl(char const * pzTemplName);
+find_tpl(char const * tpl_name);
 
 static tSuccess
 find_file(char const * in_name,

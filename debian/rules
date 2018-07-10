@@ -1,24 +1,32 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/architecture.mk
+export DEB_BUILD_MAINT_OPTIONS := hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND := -Wl,--as-needed
 export DEB_CFLAGS_MAINT_APPEND := -Wall -Wno-format-contains-nul
-DATECHLOG := $(shell date \
-	-d "`dpkg-parsechangelog | \
-	sed -n '/^Date: /s/^Date: //p'`" \
-	+%Y-%m-%d)
+export LC_COLLATE=C
+undefine LC_ALL
+# Used by 10_libopts_tarball_perms.diff
+export BUILD_DATE := $(shell dpkg-parsechangelog --show-field Date)
+export MAN_PAGE_DATE = $(shell env LC_ALL=C date -u -d '$(BUILD_DATE)' +%Y-%m-%d)
+
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+export libopts_cv_with_libregex=yes
+endif
 
 override_dh_auto_configure:
 	dh_auto_configure --verbose -- \
 		--disable-silent-rules \
-		--with-libxml2-libs="$(shell pkg-config --libs libxml-2.0)" \
-		--with-libxml2-cflags="$(shell pkg-config --cflags libxml-2.0)"
+		--enable-timeout=78 \
+		--with-libxml2-libs="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --libs libxml-2.0)" \
+		--with-libxml2-cflags="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --cflags libxml-2.0)"
 
 override_dh_auto_build:
 	dh_auto_build --verbose
 	$(MAKE) -C doc info
 ifneq (,$(filter autogen-doc, $(shell dh_listpackages)))
-	$(MAKE) -C doc autogen.ps
-	cd doc && texi2html -split=chapter -subdir=html autogen.texi
+	$(MAKE) -C doc pdf
+	$(MAKE) -C doc html
 endif
 
 
@@ -33,14 +41,9 @@ override_dh_auto_clean:
 
 override_dh_auto_install:
 	dh_auto_install  --verbose
-	mv -v $(CURDIR)/debian/tmp/usr/share/pkgconfig \
-		`dirname $(CURDIR)/debian/tmp/usr/lib/*/libopts.la`
 	rm -vf $(CURDIR)/debian/tmp/usr/share/info/dir \
-		$(CURDIR)/debian/tmp/usr/lib/*/libopts.la
-	find debian/tmp/usr/share/man/ -type f -exec \
-		sed -i -e "s:\(^\.TH .*\) 2[[:digit:]][[:digit:]][[:digit:]]-[01][[:digit:]]-[0123][[:digit:]] :\1 $(DATECHLOG) :" \
-		{} +
-
+		$(CURDIR)/debian/tmp/usr/lib/*/libopts.la \
+		$(CURDIR)/debian/tmp/usr/share/autogen/tpl-config.tlib
 
 override_dh_install:
 	dh_install --fail-missing

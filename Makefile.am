@@ -2,7 +2,7 @@
 ## Makefile.am --- process this file with automake to produce Makefile.in
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -43,11 +43,14 @@ misc_extra     = \
     autoopts/parse-duration.c autoopts/parse-duration.h \
     config/ag_macros.m4       config/bootstrap \
     config/bootstrap.local    config/bootstrap.shlib \
-    config/config.rpath       config/gnulib-cache.m4 \
+    config/config.rpath       config/confmacs.tlib \
+    config/conftest.tpl       config/gnulib-cache.m4 \
     config/gnulib-cache.m4    config/gnulib-comp.m4 \
     config/guile.m4           config/install-defs.sh \
-    config/lib-link.m4        config/libopts.m4 \
-    config/liboptschk.m4      config/snprintfv.m4 \
+    config/lib-link.m4        config/libopts.def \
+    config/libopts.m4         config/liboptschk.m4 \
+    config/misc.def           config/mk-shdefs.in \
+    config/pkg.m4             config/snprintfv.m4 \
     config/unlocked-io.m4
 EXTRA_DIST     = $(misc_extra) $(pkgdata_DATA)
 DISTCLEANFILES = stamp-h

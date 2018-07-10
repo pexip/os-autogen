@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -33,7 +33,10 @@ static for_state_t *
 find_for_state(SCM which_scm);
 
 static bool
-next_def(bool invert, def_ent_t** de_lst);
+next_def(bool invert, def_ent_t ** de_lst);
+
+static inline t_word
+set_loop_limit(def_ent_t * found);
 
 static int
 for_by_step(templ_t * pT, macro_t * pMac, def_ent_t * found);
@@ -56,7 +59,7 @@ static for_state_t *
 find_for_state(SCM which_scm)
 {
     ivk_info_t * srch = curr_ivk_info;
-    char const * which = AG_SCM_STRING_P(which_scm)
+    char const * which = scm_is_string(which_scm)
         ? ag_scm2zchars(which_scm, "which for") : NULL;
 
     for (; srch != NULL; srch = srch->ii_prev) {
@@ -98,7 +101,7 @@ ag_scm_first_for_p(SCM which)
     if (p == NULL)
         return SCM_UNDEFINED;
 
-    if (! AG_SCM_STRING_P(which))
+    if (! scm_is_string(which))
         return (for_state->for_isfirst) ? SCM_BOOL_T : SCM_BOOL_F;
 
     which = p->for_isfirst ? SCM_BOOL_T : SCM_BOOL_F;
@@ -162,7 +165,7 @@ ag_scm_for_index(SCM which)
     if (p == NULL)
         return SCM_UNDEFINED;
 
-    which = AG_SCM_INT2SCM(p->for_index);
+    which = scm_from_int(p->for_index);
     return which;
 }
 
@@ -179,10 +182,10 @@ ag_scm_for_index(SCM which)
 SCM
 ag_scm_for_from(SCM from)
 {
-    if ((! for_state->for_loading) || (! AG_SCM_NUM_P(from)))
+    if ((! for_state->for_loading) || (! scm_is_number(from)))
         return SCM_UNDEFINED;
 
-    for_state->for_from = AG_SCM_TO_INT(from);
+    for_state->for_from = scm_to_int(from);
     return SCM_BOOL_T;
 }
 
@@ -200,10 +203,10 @@ ag_scm_for_from(SCM from)
 SCM
 ag_scm_for_to(SCM to)
 {
-    if ((! for_state->for_loading) || (! AG_SCM_NUM_P(to)))
+    if ((! for_state->for_loading) || (! scm_is_number(to)))
         return SCM_UNDEFINED;
 
-    for_state->for_to = AG_SCM_TO_INT(to);
+    for_state->for_to = scm_to_int(to);
     return SCM_BOOL_T;
 }
 
@@ -221,10 +224,10 @@ ag_scm_for_to(SCM to)
 SCM
 ag_scm_for_by(SCM by)
 {
-    if ((! for_state->for_loading) || (! AG_SCM_NUM_P(by)))
+    if ((! for_state->for_loading) || (! scm_is_number(by)))
         return SCM_UNDEFINED;
 
-    for_state->for_by = AG_SCM_TO_INT(by);
+    for_state->for_by = scm_to_int(by);
     return SCM_BOOL_T;
 }
 
@@ -242,7 +245,7 @@ ag_scm_for_by(SCM by)
 SCM
 ag_scm_for_sep(SCM obj)
 {
-    if ((! for_state->for_loading) || (! AG_SCM_STRING_P(obj)))
+    if ((! for_state->for_loading) || (! scm_is_string(obj)))
         return SCM_UNDEFINED;
 
     AGDUPSTR(for_state->for_sep_str, ag_scm2zchars(obj, "sep"), "seps");
@@ -258,10 +261,10 @@ ag_scm_for_sep(SCM obj)
  * @param[in,out] de_lst  linked list of definitions
  */
 static bool
-next_def(bool invert, def_ent_t** de_lst)
+next_def(bool invert, def_ent_t ** de_lst)
 {
-    bool     haveMatch = false;
-    def_ent_t*  ent     = *de_lst;
+    bool     matched = false;
+    def_ent_t * ent  = *de_lst;
 
     while (ent != NULL) {
         /*
@@ -271,7 +274,7 @@ next_def(bool invert, def_ent_t** de_lst)
          *  THEN break out and use it
          */
         if (ent->de_index == for_state->for_index) {
-            haveMatch = true;
+            matched = true;
             break;
         }
 
@@ -290,7 +293,7 @@ next_def(bool invert, def_ent_t** de_lst)
              */
             if (for_state->for_by == 0) {
                 for_state->for_index = (int)ent->de_index;
-                haveMatch = true;
+                matched = true;
             }
             break;
         }
@@ -306,43 +309,46 @@ next_def(bool invert, def_ent_t** de_lst)
      *  Save our restart point and return the find indication
      */
     *de_lst = ent;
-    return haveMatch;
+    return matched;
+}
+
+/**
+ *  IF the for-from and for-to values have not been set,
+ *  THEN we set them from the indices of the first and last
+ *       entries of the twin set.
+ */
+static inline t_word
+set_loop_limit(def_ent_t * found)
+{
+    t_word res  = OPT_VALUE_LOOP_LIMIT;
+    bool invert = (for_state->for_by < 0) ? true : false;
+
+    def_ent_t * lde = (found->de_etwin != NULL) ? found->de_etwin : found;
+
+    if (for_state->for_from == UNASSIGNED)
+        for_state->for_from =
+            invert ? (int)lde->de_index : (int)found->de_index;
+
+    if (for_state->for_to == UNASSIGNED)
+        for_state->for_to = invert ? (int)found->de_index : (int)lde->de_index;
+
+    /*
+     *  "loop limit" is intended to catch runaway ending conditions.
+     *  However, if you really have a gazillion entries, who am I
+     *  to stop you?
+     */
+    if (res <  lde->de_index - found->de_index)
+        res = (lde->de_index - found->de_index) + 1;
+    return res;
 }
 
 static int
 for_by_step(templ_t * pT, macro_t * pMac, def_ent_t * found)
 {
     int         loopCt    = 0;
-    def_ent_t   textDef;
     bool        invert    = (for_state->for_by < 0) ? true : false;
-    t_word      loopLimit = OPT_VALUE_LOOP_LIMIT;
     macro_t *   end_mac   = pT->td_macros + pMac->md_end_idx;
-
-    /*
-     *  IF the for-from and for-to values have not been set,
-     *  THEN we set them from the indices of the first and last
-     *       entries of the twin set.
-     */
-    {
-        def_ent_t * lde = (found->de_etwin != NULL)
-                          ? found->de_etwin : found;
-
-        if (for_state->for_from == UNASSIGNED)
-            for_state->for_from = (invert)
-                ? (int)lde->de_index : (int)found->de_index;
-
-        if (for_state->for_to == UNASSIGNED)
-            for_state->for_to = (invert)
-                ? (int)found->de_index : (int)lde->de_index;
-
-        /*
-         *  "loopLimit" is intended to catch runaway ending conditions.
-         *  However, if you really have a gazillion entries, who am I
-         *  to stop you?
-         */
-        if (loopLimit <  lde->de_index - found->de_index)
-            loopLimit = (lde->de_index - found->de_index) + 1;
-    }
+    t_word      loop_lim = set_loop_limit(found);
 
     /*
      *  Make sure we have some work to do before we start.
@@ -363,9 +369,11 @@ for_by_step(templ_t * pT, macro_t * pMac, def_ent_t * found)
      */
     for (;;) {
         int  next_ix;
+        def_ent_t textDef;
+
         for_state->for_not_found = ! next_def(invert, &found);
 
-        if (loopLimit-- < 0) {
+        if (loop_lim-- < 0) {
             fprintf(trace_fp, TRACE_FOR_STEP_TOO_FAR,
                     pT->td_name, pMac->md_line);
             fprintf(trace_fp, TRACE_FOR_BY_STEP,
@@ -416,7 +424,7 @@ for_by_step(templ_t * pT, macro_t * pMac, def_ent_t * found)
             curr_def_ctx.dcx_prev = &for_state->for_ctx;
         }
 
-        for_state->for_islast = (invert)
+        for_state->for_islast = invert
             ? ((next_ix < for_state->for_to) ? true : false)
             : ((next_ix > for_state->for_to) ? true : false);
 
@@ -538,9 +546,9 @@ for_each(templ_t * tpl, macro_t * mac, def_ent_t * def_ent)
 static void
 load_for_in(char const * pzSrc, size_t srcLen, templ_t * pT, macro_t * pMac)
 {
-    char* pzName = pT->td_text + pMac->md_name_off;
-    int   ix     = 0;
-    char* pz;
+    char * pzName = pT->td_text + pMac->md_name_off;
+    int    ix     = 0;
+    char * pz;
     def_ent_t * prev_ent = NULL;
 
     /*
@@ -565,7 +573,7 @@ load_for_in(char const * pzSrc, size_t srcLen, templ_t * pT, macro_t * pMac)
     pz[srcLen] = NUL;
 
     do  {
-        def_ent_t* pDef = new_def_ent();
+        def_ent_t * pDef = new_def_ent();
 
         pDef->de_name    = pzName;
         pDef->de_index   = ix++;
@@ -821,7 +829,7 @@ new_for_context(void)
     }
 
     res = curr_ivk_info->ii_for_data + (curr_ivk_info->ii_for_depth - 1);
-    memset((void*)res, 0, sizeof(for_state_t));
+    memset(VOIDP(res), 0, sizeof(for_state_t));
     res->for_isfirst = true;
     res->for_ctx     = curr_def_ctx;
     curr_def_ctx.dcx_prev = &res->for_ctx;
@@ -866,8 +874,8 @@ macro_t *
 mLoad_For(templ_t * tpl, macro_t * mac, char const ** p_scan)
 {
     char *        scan_out = tpl->td_scan; /* next text dest   */
-    char const *  scan_in  = (char const*)mac->md_txt_off; /* macro text */
-    size_t        in_len   = (size_t)mac->md_res;          /* macro len  */
+    char const *  scan_in  = (char const *)mac->md_txt_off; /* macro text */
+    size_t        in_len   = (size_t)mac->md_res;           /* macro len  */
 
     /*
      *  Save the global macro loading mode
@@ -884,7 +892,7 @@ mLoad_For(templ_t * tpl, macro_t * mac, char const ** p_scan)
      *  functions that are enabled only while processing a FOR macro
      */
     if (load_for_macro_procs[0] == NULL) {
-        memcpy((void*)load_for_macro_procs, base_load_table,
+        memcpy(VOIDP(load_for_macro_procs), base_load_table,
                sizeof(base_load_table));
         load_for_macro_procs[ FTYP_ENDFOR ] = &mLoad_Ending;
     }
@@ -914,7 +922,7 @@ mLoad_For(templ_t * tpl, macro_t * mac, char const ** p_scan)
      *  Skip space to the start of the text following the iterator name
      */
     scan_in = SPN_WHITESPACE_CHARS(scan_in);
-    in_len -= (size_t)(scan_in - (char*)mac->md_txt_off);
+    in_len -= (size_t)(scan_in - (char *)mac->md_txt_off);
 
     /* * * * *
      *

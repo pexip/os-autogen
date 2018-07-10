@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * Copyright (C) 1992-2014 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2016 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -181,7 +181,6 @@ rm_target_file(char const * pz)
 LOCAL void
 start_dep_file(void)
 {
-
     /*
      * Set dep_file to a temporary file name
      */
@@ -255,10 +254,14 @@ start_dep_file(void)
             bnm = dep_target;
 
         {
-            size_t sz = strlen(pnm) + strlen(bnm) + 2; // underscore + NUL
+            size_t pnm_sz = strlen(pnm);
+            size_t bnm_sz = strlen(bnm);
 
-            pz_targ_base = pz = AGALOC(sz, "t list");
-            sprintf(pz, DEP_FILE_TARG_FMT, pnm, bnm);
+            pz_targ_base = pz = AGALOC(pnm_sz + bnm_sz + 2, "t list");
+            memcpy(pz, pnm, pnm_sz);
+            pz += pnm_sz;
+            *(pz++) = '_';
+            memcpy(pz, bnm, bnm_sz + 1);
         }
 
         /*

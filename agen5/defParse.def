@@ -1,6 +1,6 @@
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -102,5 +102,5 @@ transition =
                       ttype = start_block; },
 { tst  = need_value;  tev   = delete_ent; next  = need_name; },
 { tst  = have_value;  tev   = lit_semi;   next  = need_name; ttype = noop; },
-{ tst  = have_value;  tev   = lit_comma;  next  = need_value;ttype = next_val;};
+{ tst  = have_value;  tev   = lit_comma;  next = need_value;ttype = next_val;};
 /* end of agen5/defParse.def */

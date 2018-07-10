@@ -2,7 +2,7 @@
 
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under either of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -102,6 +102,18 @@ test -d "${DESTpkgdatadir}" && {
         getopt.tpl     | options.tpl  | str2init.tlib | usage.tlib)
             sed "${rmbuild}" $f > $f.tmp
             mv -f $f.tmp $f
+            ;;
+
+        tpl-config.tlib )
+            sed '/define top-[a-z]*-dir/d' $f > $f.tmp
+            mv -f $f.tmp $f
+            test -n "${DESTlibdatadir}" && {
+                test -d ${DESTlibdatadir} || \
+                    mkdir -p ${DESTlibdatadir} || \
+                    continue
+
+                cp $f ${DESTlibdatadir}/.
+            }
             ;;
 
         *.* ) : ;;

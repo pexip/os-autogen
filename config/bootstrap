@@ -4,7 +4,7 @@
 # bootstrap --- maintainer's bootstrap script
 #
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -39,12 +39,13 @@
 # forgotten!).
 #
 # In an ideal world, running this bootstrap script (including any extra
-# scripts it executes) should leave a freshly checked out CVS source tree
+# scripts it executes) should leave a freshly checked out repository tree
 # in the same state as a freshly unrolled tarball.  In this way, one
 # no longer has to maintain generated files under source control, they
 # can be generated after checkout using this bootstrap procedure.
 
-PS4='>bsl-${FUNCNAME}> '
+PS4='>${FUNCNAME:-bstp}> '
+
 top_srcdir=$(
     cd $(dirname $0)/.. >/dev/null
     pwd )
@@ -55,35 +56,14 @@ PS4='>bs-${FUNCNAME}> '
 
 config_tools()
 {
-    top_srcdir=$(pwd)
-    top_builddir=${top_srcdir}
-    srcdir=${top_srcdir}
     config_file=configure.ac
     conf_dir=${top_srcdir}/config
-    test -f "${srcdir}/${config_file}" || die "${config_file} not in ${srcdir}"
+    test -f "${top_srcdir}/${config_file}.pre" || \
+        die "${config_file}.pre not in ${top_srcdir}"
 
     #  This missing function is used in many places
     #
-    export config_file srcdir top_srcdir top_builddir
-
-    #  Check for AutoGen version 5.
-    #
-    AGexe=$(command -v autogen)
-    test -x "$AGexe" || \
-        die "AutoGen requires autogen to bootstrap"
-
-    v="$($AGexe --version || :)"
-    v=$(echo "$v" | sed 's/.* //;1q')
-    case "$v" in
-    5.* ) : ;;
-    * ) die "OUT OF DATE AutoGen: $v" ;;
-    esac
-
-    GDexe=$(command -v getdefs)
-    CLexe=$(command -v columns)
-    test -x "${GDexe}" -a -x "${CLexe}" || \
-        die "autogen support programs are missing"
-    export AGexe GDexe CLexe
+    export config_file top_srcdir top_builddir
 
     # ------------------------------------------------------------------
     # Make sure all of the maintainer tools required for bootstrap are
@@ -110,6 +90,15 @@ config_tools()
     export char_mapper
 
     echo bootstrapping in ${PWD}
+    temp_dir=`mktemp -d ${TMPDIR:-/tmp}/bs-XXXXXX`
+    test -d "$temp_dir" || {
+        temp_dir=${TMPDIR:-/tmp}/bs-$$
+        rm -rf ${temp_dir}
+        mkdir ${temp_dir}
+        chmod 700 ${temp_dir}
+    }
+
+    trap "rm -rf ${temp_dir}" 0
     set +e
 }
 
@@ -118,92 +107,86 @@ config_tools()
 # environment variable to see whether it should run the sections
 # to be called before the main script, or afterwards.
 #
+source_bs() {
+    file=${2}
+    cd ${file%/*}
+    (
+        PS4=">${1#./}-\${FUNCNAME}> "
+        shift 2
+        . ${file##*/} ${1+"$@"} || die ${file} failed
+    )
+    file=${PWD##*/}
+    cd - >/dev/null
+}
+
 pre_local()
 {
-    BOOTSTRAP=pre
+    BOOTSTRAP=pre REQUEST_METHOD=
     export BOOTSTRAP
-
-    local PS4='>pbs-${FUNCNAME}> '
-    . ${conf_dir}/bootstrap.local ${1+"$@"} || \
-        die FAILED: ${conf_dir}/bootstrap.local
-
-    cd autoopts
-    PS4='>aobs-${FUNCNAME}> '
-    . ./bootstrap.dir aoconf
+    unset REQUEST_METHOD
+    source_bs pbs  ${conf_dir}/bootstrap.local pre
+    source_bs aobs autoopts/bootstrap.dir aoconf
 }
 
 post_local()
 {
-    for f in $(find . -name bootstrap.dir)
-    do  (
-        ${setx}
-        cd $(dirname $f)
-        srcdir=`pwd`
-        echo running POST-bootstrap.dir in ${srcdir}
-        PS4='>Abs-${FUNCNAME}> '
-        . ./bootstrap.dir recursive || :
-        )
+    bslist=`find . -name bootstrap.dir`
+    for f in ${bslist}
+    do
+        source_bs ${f%/bootstrap.dir} $f recursive
     done
 
-    local BOOTSTRAP=post
-    local PS4='>Abs-${FUNCNAME}> '
-    . ${conf_dir}/bootstrap.local ${1+"$@"}
+    source_bs Abs ${conf_dir}/bootstrap.local post
 }
 
-filter_autotool_chaff() {
-    set +x
-    pat='^configure.ac:.*warning'
-    while IFS='' read line
-    do
-        [[ $line =~ $pat ]] && break
-        echo "$line"
-    done
-    pat='running POST-bootstrap.dir in '
-    while IFS='' read line
-    do
-        [[ $line =~ $pat ]] && break
-        echo "$line"
-    done > autotool-chaff.txt
-    local chaffct=$(wc -l < autotool-chaff.txt)
-    if (( chaffct <= 4 )) || grep -i -w error autotool-chaff.txt >/dev/null
-    then cat autotool-chaff.txt
+filter_chaff() {
+    cat > ${temp_dir}/config-log.txt
+    if test -f configure
+    then
+        sedcmd='/configure.ac:.*no .* detected/,/configure.ac:.*top level/d'
+        sed "$sedcmd" ${temp_dir}/config-log.txt
     else
-        echo "<< $chaffct lines of autotool chaff deleted >>"
+        cat ${temp_dir}/config-log.txt
     fi
-    echo "$line"
-    cat
 }
 
 run_autotools()
 {
+    cd ${top_builddir}
     # remove any stale config.cache
     doit rm -f config.cache
 
-    test -n "$auxdir" || auxdir=${srcdir}
+    test -n "$auxdir" || auxdir=${top_srcdir}
     test -d $auxdir   || auxdir=.
 
-    doit $LIBTOOLIZE    --force
-    doit $ACLOCAL       -I config
-    doit $AUTOHEADER
-    doit $AUTOMAKE      --gnu --add-missing
-    doit $AUTOCONF
+    {
+        doit $LIBTOOLIZE    --force
+        doit $ACLOCAL       -I config
+        doit $AUTOHEADER
+        doit $AUTOMAKE      --gnu --add-missing
+        doit $AUTOCONF
+    } 2>&1 | filter_chaff
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 #    M A I N
 #
-config_tools
-( pre_local )
-run_autotools 2>&1 | filter_autotool_chaff 1>&2
-post_local
+{
+    config_tools
+    pre_local
+    run_autotools 2>&1
+    post_local
 
-trap '' 0
-( exit 0 ) ; exit
-
+    trap '' 0
+    echo 'bootstrap complete'
+    rm -rf ${temp_dir}
+    ( exit 0 ) ; exit
+}
 # Local Variables:
-# mode: shell-script
-# sh-indentation: 2
+# mode:shell-script
+# sh-indentation:4
+# sh-basic-offset:4
 # indent-tabs-mode: nil
 # End:
 

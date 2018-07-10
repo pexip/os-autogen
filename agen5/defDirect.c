@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -29,8 +29,8 @@ AG_ABEND(aprf(DIRECT_NOMATCH_FMT, cctx->scx_fname, cctx->scx_line, _typ))
 
 /**
  * "ifdef" processing level.  Blocks of text being skipped do not increment
- * the value.  Thus, transitioning from skip mode to process mode increments it,
- * and the reverse decrements it.
+ * the value.  Thus, transitioning from skip mode to process mode increments
+ * it, and the reverse decrements it.
  */
 static int  ifdef_lvl = 0;
 
@@ -296,12 +296,18 @@ file_size(char const * fname)
         fswarn("stat", fname);
         return 0;
     }
+
     if (! S_ISREG(stbf.st_mode)) {
         fswarn("regular file check", fname);
         return 0;
     }
-    if (outfile_time < stbf.st_mtime)
+
+    if ((outfile_time < stbf.st_mtime) && ENABLED_OPT(SOURCE_TIME))
         outfile_time = stbf.st_mtime;
+
+    if (maxfile_time < stbf.st_mtime)
+        maxfile_time = stbf.st_mtime;
+
     return stbf.st_size;
 }
 
@@ -451,7 +457,7 @@ doDir_assert(directive_enum_t id, char const * dir, char * scan_next)
             break; /* not a valid script */
 
         *pzR = NUL;
-        pzS = shell_cmd((char const*)pzS);
+        pzS = shell_cmd((char const *)pzS);
         check_assert_str(pzS, dir);
         AGFREE(pzS);
         break;
@@ -677,9 +683,9 @@ doDir_include(directive_enum_t id, char const * dir, char * scan_next)
      */
     {
         size_t sz = sizeof(scan_ctx_t) + 4 + inc_sz;
-        new_ctx = (scan_ctx_t*)AGALOC(sz, "inc def head");
+        new_ctx = (scan_ctx_t *)AGALOC(sz, "inc def head");
 
-        memset((void*)new_ctx, 0, sz);
+        memset(VOIDP(new_ctx), 0, sz);
         new_ctx->scx_line = 1;
     }
 
@@ -710,7 +716,7 @@ doDir_include(directive_enum_t id, char const * dir, char * scan_next)
             add_source_file(full_name);
 
         do  {
-            size_t rdct = fread((void*)pz, (size_t)1, inc_sz, fp);
+            size_t rdct = fread(VOIDP(pz), (size_t)1, inc_sz, fp);
 
             if (rdct == 0)
                 AG_CANT(DIRECT_INC_CANNOT_READ, full_name);
@@ -831,7 +837,7 @@ doDir_shell(directive_enum_t id, char const * arg, char * scan_next)
      *  The output time will always be the current time.
      *  The dynamic content is always current :)
      */
-    outfile_time = time(NULL);
+    maxfile_time = outfile_time = time(NULL);
 
     /*
      *  IF there are no data after the '#shell' directive,
@@ -861,7 +867,7 @@ doDir_shell(directive_enum_t id, char const * arg, char * scan_next)
      */
     scan_next = strchr(scan_next + endshell_len, NL);
     if (scan_next == NULL)
-        scan_next = (void*)zNil;
+        scan_next = VOIDP(zNil);
 
     /*
      *  Save the scan pointer into the current context
@@ -886,7 +892,7 @@ doDir_shell(directive_enum_t id, char const * arg, char * scan_next)
      *  This is an extra allocation and copy, but easier than rewriting
      *  'loadData()' for this special context.
      */
-    pCtx = (scan_ctx_t*)AGALOC(sizeof(scan_ctx_t) + strlen(pzText) + 4,
+    pCtx = (scan_ctx_t *)AGALOC(sizeof(scan_ctx_t) + strlen(pzText) + 4,
                              "shell output");
 
     /*

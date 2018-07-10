@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -60,7 +60,7 @@ handle_eol(char ** ppzi, char ** ppzo, char tabch, char * bol)
      *  on the next non-empty line.
      */
     {
-        char* pz = pzScn;
+        char * pz = pzScn;
         while (IS_WHITESPACE_CHAR(*pz)) {
             if (*(pz++) == NL)
                 pzScn = pz;
@@ -344,7 +344,7 @@ ag_scm_makefile_script(SCM text_scm)
     size_t sz   = script_size(&text, &tabch);
 
     if (sz == 0)
-        return AG_SCM_STR02SCM(zNil);
+        return scm_from_latin1_string(zNil);
 
     bol = out = res_str = scribble_get((ssize_t)sz);
 
@@ -417,7 +417,7 @@ ag_scm_makefile_script(SCM text_scm)
     }
 
     {
-        SCM res = AG_SCM_STR2SCM(res_str, (size_t)(out - res_str));
+        SCM res = scm_from_latin1_stringn(res_str, (size_t)(out - res_str));
         return res;
     }
 }

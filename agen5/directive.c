@@ -39,7 +39,7 @@
  * @{
  */
 
-/* ANSI-C code produced by gperf version 3.0.3 */
+/* ANSI-C code produced by gperf version 3.0.4 */
 /* Command-line: gperf directive.gp  */
 /* Computed positions: -k'2,4' */
 

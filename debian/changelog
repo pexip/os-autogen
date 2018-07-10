@@ -1,3 +1,9 @@
+autogen (1:5.18.12-3pexip1) pexip; urgency=medium
+
+  * Migrate to Stretch
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 10 Jul 2018 00:38:19 +0000
+
 autogen (1:5.18.12-3) unstable; urgency=medium
 
   * Add ${perl:Depends} to autogen's Depends. (Thanks, Paul Hardy!)

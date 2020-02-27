@@ -1,3 +1,9 @@
+autogen (1:5.18.12-4pexip1) pexip; urgency=medium
+
+  * Migrate to Buster
+
+ -- Vincent Sanders <vince@pexip.com>  Thu, 27 Feb 2020 17:59:00 +0000
+
 autogen (1:5.18.12-4) unstable; urgency=medium
 
   * Repository moved to salsa.

@@ -5,7 +5,7 @@
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -61,7 +61,7 @@ _EOF_
 echo creating $testname.tpl
 cat > $testname.tpl <<'_EOF_'
 [= AutoGen5 Template test =]
-[=
+[= INCLUDE "define.tlib" =][=
 
 DEFINE nest     =][=
   IF (exist? "name") =]
@@ -142,7 +142,7 @@ level 3 iteration 1 Nested Name:  tertiary
 Done.
 _EOF_
 
-run_ag x --lib=$testname.tlib $testname.def || \
+run_ag x $testname.def || \
   failure "autogen failed"
 set -x
 cmp -s $testname.samp $testname.test || \

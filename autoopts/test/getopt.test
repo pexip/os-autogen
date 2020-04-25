@@ -7,7 +7,7 @@
 #
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -160,7 +160,7 @@ gnu-usage;
 no-libopts;
 
 copyright = {
-    date  = "2003-2014";
+    date  = "2003-2018";
     owner = "Odyssey Computing Concepts, Inc.";
     author= "Bruce Korb";
     eaddr = "bkorb@gnu.org";
@@ -243,7 +243,7 @@ static char z_opts[] = "o:s:FXM2hv";
 /*
  *  AutoOpts library replacement routines:
  */
-void
+noreturn void
 optionUsage (tOptions * pOptions, int status)
 {
   if (status != 0)
@@ -267,13 +267,13 @@ Usage:  test_getopt { -<flag> [<val>] }...\n\n\
   exit (status);
 }
 
-void
+noreturn void
 optionPrintVersion (tOptions * pOptions, tOptDesc * pOptDesc)
 {
   char const * pz_by =
     _("test_getopt 1.2.3\n\
 Written by Bruce Korb.\n\n\
-Copyright (C) 2003-2014 Odyssey Computing Concepts, Inc.\n\
+Copyright (C) 2003-2018 Odyssey Computing Concepts, Inc.\n\
 This is free software; see the source for copying conditions.  There is NO\n\
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
 
@@ -475,7 +475,7 @@ static char z_opts[] = "o:s:h";
 /*
  *  AutoOpts library replacement routines:
  */
-void
+noreturn void
 optionUsage (tOptions * pOptions, int status)
 {
   if (status != 0)
@@ -501,13 +501,13 @@ hyphen and the flag character.\n\
   exit (status);
 }
 
-void
+noreturn void
 optionPrintVersion (tOptions * pOptions, tOptDesc * pOptDesc)
 {
   char const * pz_by =
     _("test_getopt 1.2.3\n\
 Written by Bruce Korb.\n\n\
-Copyright (C) 2003-2014 Odyssey Computing Concepts, Inc.\n\
+Copyright (C) 2003-2018 Odyssey Computing Concepts, Inc.\n\
 This is free software; see the source for copying conditions.  There is NO\n\
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
 

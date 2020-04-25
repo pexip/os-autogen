@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,36 +25,10 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* = = = START-STATIC-FORWARD = = = */
-static bool
-read_okay(char const * fname);
-
-static char const *
-expand_dir(char const ** dir_pp, char * name_buf);
-
-static inline bool
-file_search_dirs(
-    char const * in_name,
-    char *       res_name,
-    char const * const * sfx_list,
-    char const * referring_tpl,
-    size_t       nm_len,
-    bool         no_suffix);
-
-static size_t
-cnt_macros(char const * pz);
-
-static void
-load_macs(templ_t * tpl, char const * fname, char const * pzData);
-
-static templ_t *
-digest_tpl(tmap_info_t * minfo, char * fname);
-/* = = = END-STATIC-FORWARD = = = */
-
 /**
  * Return the template structure matching the name passed in.
  */
-LOCAL templ_t *
+static templ_t *
 find_tpl(char const * tpl_name)
 {
     templ_t * pT = named_tpls;
@@ -225,7 +199,7 @@ file_search_dirs(
  *  @returns  \a SUCCESS when \a res_name is valid
  *  @returns  \a FAILURE when the file is not found.
  */
-LOCAL tSuccess
+static tSuccess
 find_file(char const * in_name,
           char *       res_name,
           char const * const * sfx_list,
@@ -449,7 +423,7 @@ digest_tpl(tmap_info_t * minfo, char * fname)
  *  Starting with the current directory, search the directory
  *  list trying to find the base template file name.
  */
-LOCAL templ_t *
+static templ_t *
 tpl_load(char const * fname, char const * referrer)
 {
     static tmap_info_t map_info;
@@ -481,9 +455,9 @@ tpl_load(char const * fname, char const * referrer)
             AG_CANT(LOAD_TPL_IRREGULAR, fname);
         }
 
-        if (outfile_time < stbf.st_mtime)
+        if (time_is_before(outfile_time, stbf.st_mtime))
             outfile_time = stbf.st_mtime;
-        if (maxfile_time < stbf.st_mtime)
+        if (time_is_before(maxfile_time, stbf.st_mtime))
             maxfile_time = stbf.st_mtime;
     }
 
@@ -518,7 +492,7 @@ tpl_load(char const * fname, char const * referrer)
  *
  *  @param[in] tpl  the template to unload
  */
-LOCAL void
+static void
 tpl_unload(templ_t * tpl)
 {
     macro_t * mac = tpl->td_macros;
@@ -552,7 +526,7 @@ tpl_unload(templ_t * tpl)
  *
  *  @param[in] tpl  the last template standing
  */
-LOCAL void
+static void
 cleanup(templ_t * tpl)
 {
     if (HAVE_OPT(USED_DEFINES))

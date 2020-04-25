@@ -5,7 +5,7 @@
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -28,48 +28,71 @@ gsrcs           = xmlopts.c fork.c
 BUILT_SOURCES   = x.c
 nodist_xml2ag_SOURCES = $(BUILT_SOURCES)
 SUBDIRS         = test
-EXTRA_DIST      = xmlopts.def fork.tpl fork.c xml2ag.c
+EXTRA_DIST      = xmlopts.def fork.tpl $(gsrcs) $(csrcs)
 xml2ag_LDADD    = $(top_builddir)/autoopts/libopts.la $(LIBXML2_LIBS)
 man_MANS        = $(TARG).1
-DOCFILES        = invoke-$(TARG).texi invoke-$(TARG).menu $(TARG).1
+TEXI_FILES      = invoke-$(TARG).texi invoke-$(TARG).menu
+DOCFILES        = $(TEXI_FILES) $(man_MANS)
 DISTCLEANFILES  = $(DOCFILES) $(nodist_xml2ag_SOURCES) stamp-*
 AM_CPPFLAGS     = @INCLIST@ $(LIBXML2_CFLAGS)
-BOOTENV     = top_srcdir="$(top_srcdir)" top_builddir="$(top_builddir)" \
-	PATH=`cd ../columns;pwd`:"$$PATH" CLexe="$(CLexe)"
-
-RUNAG       = $(BOOTENV) $(AGexe) $(AGDEPS) \
-	-L$(top_srcdir)/autoopts/tpl -L$(top_builddir)/autoopts/tpl \
-	--definition=$(srcdir)/xmlopts.def
+AM_CFLAGS       = @WARN_CFLAGS@
+AG_ENV          =  top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" \
+	VERBOSE="$(V)"
+RUN_AG       = $(AG_ENV) $(SHELL) "${top_srcdir}/build-aux/run-ag.sh"
 DOC_TIMEOUT     = -DLEVEL=section --timeout=`expr $(AG_TIMEOUT) '*' 3`
-CLEAN_RULES = \
-	clean-stamp-opts clean-stamp-texi clean-stamp-man clean-stamp-fork
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stamp-opts.d@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stamp-texi.d@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stamp-man.d@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stamp-fork.d@am__quote@
-@AMDEP_TRUE@clean-local : $(CLEAN_RULES)
-
-@AMDEP_TRUE@AGDEPS      = -MF$(DEPDIR)/$@.d -MT$@ -MP
-@AMDEP_FALSE@AGDEPS     =
 
 all 	    : gen
 gen 	    : $(gsrcs) $(DOCFILES)
 
+if AMDEP
+DEPFL_OPTS      = $(DEPDIR)/opts-dep.mk
+DEPFL_MAN       = $(DEPDIR)/man-dep.mk
+DEPFL_TEXI      = $(DEPDIR)/texi-dep.mk
+DEPFL_FORK      = $(DEPDIR)/fork-dep.mk
+
+$(DEPFL_OPTS) :
+	$(RUN_AG) "$@"
+
+$(DEPFL_MAN)  :
+	$(RUN_AG) "$@"
+
+$(DEPFL_TEXI) :
+	$(RUN_AG) "$@"
+
+$(DEPFL_FORK) :
+	$(RUN_AG) "$@"
+
+include $(DEPDIR)/opts-dep.mk
+include $(DEPDIR)/man-dep.mk
+include $(DEPDIR)/texi-dep.mk
+include $(DEPDIR)/fork-dep.mk
+else
+DEPFL_OPTS      = $@
+DEPFL_MAN       = $@
+DEPFL_TEXI      = $@
+DEPFL_FORK      = $@
+endif
+
+AGARG_OPTS      = -MF$(DEPFL_OPTS) -MT$@ -MP
+AGARG_MAN       = -MF$(DEPFL_MAN)  -MT$@ -MP -Tagman-cmd
+AGARG_TEXI      = -MF$(DEPFL_TEXI) -MT$@ -MP -Tagtexi-cmd $(DOC_TIMEOUT)
+AGARG_FORK      = -MF$(DEPFL_FORK) -MT$@ -MP -L$(srcdir) -Tfork.tpl
+
 $(getdefs_OBJECTS) xmlopts.c xmlopts.h : stamp-opts
-stamp-opts  : xmlopts.def $(CLexe)
-	$(RUNAG)
-
-fork.c      : stamp-fork
-stamp-fork  : fork.tpl xmlopts.def $(CLexe)
-	$(RUNAG) -L$(srcdir) -Tfork.tpl
-
-invoke-$(TARG).texi invoke-$(TARG).menu : stamp-texi
-stamp-texi  : xmlopts.def $(TARG)$(EXEEXT) ../columns/columns$(EXEEXT)
-	$(RUNAG) -Tagtexi-cmd $(DOC_TIMEOUT)
+stamp-opts  : xmlopts.def
+	$(RUN_AG) $(AGARG_OPTS) "$(srcdir)/xmlopts.def"
 
 $(TARG).1   : stamp-man
 stamp-man   : xmlopts.def $(TARG)$(EXEEXT) ../columns/columns$(EXEEXT)
-	$(RUNAG) -Tagman-cmd
+	$(RUN_AG) $(AGARG_MAN) "$(srcdir)/xmlopts.def"
+
+invoke-$(TARG).texi invoke-$(TARG).menu : stamp-texi
+stamp-texi  : xmlopts.def $(TARG)$(EXEEXT) ../columns/columns$(EXEEXT)
+	$(RUN_AG) $(AGARG_TEXI) "$(srcdir)/xmlopts.def"
+
+fork.c      : stamp-fork
+stamp-fork  : fork.tpl xmlopts.def $(CLexe)
+	$(RUN_AG) $(AGARG_FORK) "$(srcdir)/xmlopts.def"
 
 $(CLexe)    :
 	cd ../columns ; $(MAKE) $(CLnam)

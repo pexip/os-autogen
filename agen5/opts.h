@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:1:16 templates.
+ * Generated from AutoOpts 42:1:17 templates.
  *
  *  AutoOpts is a copyrighted work.  This header file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -19,7 +19,7 @@
  * The autogen program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1992-2015 Bruce Korb, all rights reserved.
+ *  Copyright (C) 1992-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -61,11 +61,17 @@
  *  tolerable version is at least as old as what was current when the header
  *  template was released.
  */
-#define AO_TEMPLATE_VERSION 167937
+#define AO_TEMPLATE_VERSION 172033
 #if (AO_TEMPLATE_VERSION < OPTIONS_MINIMUM_VERSION) \
  || (AO_TEMPLATE_VERSION > OPTIONS_STRUCT_VERSION)
 # error option template version mismatches autoopts/options.h header
   Choke Me.
+#endif
+
+#if GCC_VERSION > 40400
+#define NOT_REACHED __builtin_unreachable();
+#else
+#define NOT_REACHED
 #endif
 
 /**
@@ -74,26 +80,26 @@
 typedef enum {
     INDEX_OPT_TEMPL_DIRS     =  1,
     INDEX_OPT_OVERRIDE_TPL   =  2,
-    INDEX_OPT_LIB_TEMPLATE   =  3,
-    INDEX_OPT_DEFINITIONS    =  4,
-    INDEX_OPT_SHELL          =  5,
-    INDEX_OPT_NO_FMEMOPEN    =  6,
-    INDEX_OPT_EQUATE         =  7,
-    INDEX_OPT_BASE_NAME      =  9,
-    INDEX_OPT_SOURCE_TIME    = 10,
-    INDEX_OPT_WRITABLE       = 11,
-    INDEX_OPT_LOOP_LIMIT     = 13,
-    INDEX_OPT_TIMEOUT        = 14,
-    INDEX_OPT_TRACE          = 15,
-    INDEX_OPT_TRACE_OUT      = 16,
-    INDEX_OPT_SHOW_DEFS      = 17,
-    INDEX_OPT_USED_DEFINES   = 18,
-    INDEX_OPT_CORE           = 19,
-    INDEX_OPT_SKIP_SUFFIX    = 21,
-    INDEX_OPT_SELECT_SUFFIX  = 22,
-    INDEX_OPT_DEFINE         = 23,
-    INDEX_OPT_UNDEFINE       = 24,
-    INDEX_OPT_MAKE_DEP       = 26,
+    INDEX_OPT_DEFINITIONS    =  3,
+    INDEX_OPT_SHELL          =  4,
+    INDEX_OPT_NO_FMEMOPEN    =  5,
+    INDEX_OPT_EQUATE         =  6,
+    INDEX_OPT_BASE_NAME      =  8,
+    INDEX_OPT_SOURCE_TIME    =  9,
+    INDEX_OPT_WRITABLE       = 10,
+    INDEX_OPT_LOOP_LIMIT     = 12,
+    INDEX_OPT_TIMEOUT        = 13,
+    INDEX_OPT_TRACE          = 14,
+    INDEX_OPT_TRACE_OUT      = 15,
+    INDEX_OPT_SHOW_DEFS      = 16,
+    INDEX_OPT_USED_DEFINES   = 17,
+    INDEX_OPT_CORE           = 18,
+    INDEX_OPT_SKIP_SUFFIX    = 20,
+    INDEX_OPT_SELECT_SUFFIX  = 21,
+    INDEX_OPT_DEFINE         = 22,
+    INDEX_OPT_UNDEFINE       = 23,
+    INDEX_OPT_MAKE_DEP       = 25,
+    INDEX_OPT_NO_ABORT       = 27,
     INDEX_OPT_RESET_OPTION   = 28,
     INDEX_OPT_VERSION        = 29,
     INDEX_OPT_HELP           = 30,
@@ -105,9 +111,9 @@ typedef enum {
 /** count of all options for autogen */
 #define OPTION_CT    35
 /** autogen version */
-#define AUTOGEN_VERSION       "5.18.12"
+#define AUTOGEN_VERSION       "5.18.16"
 /** Full autogen version text */
-#define AUTOGEN_FULL_VERSION  "autogen (GNU AutoGen) 5.18.12"
+#define AUTOGEN_FULL_VERSION  "autogen (GNU AutoGen) 5.18.16"
 
 /**
  *  Interface defines for all options.  Replace "n" with the UPPER_CASED
@@ -176,11 +182,10 @@ typedef enum {
         (*(DESC(TEMPL_DIRS).pOptProc))(&autogenOptions, \
                 autogenOptions.pOptDesc + 1); )
 #define VALUE_OPT_OVERRIDE_TPL   'T'
-#define VALUE_OPT_LIB_TEMPLATE   'l'
 #define VALUE_OPT_DEFINITIONS    0x1001
 
 #define SET_OPT_DEFINITIONS(a)   STMTS( \
-        DESC(DEFINITIONS).optActualIndex = 4; \
+        DESC(DEFINITIONS).optActualIndex = 3; \
         DESC(DEFINITIONS).optActualValue = VALUE_OPT_DEFINITIONS; \
         DESC(DEFINITIONS).fOptState &= OPTST_PERSISTENT_MASK; \
         DESC(DEFINITIONS).fOptState |= OPTST_SET; \
@@ -197,7 +202,7 @@ typedef enum {
 #define VALUE_OPT_WRITABLE       0x1005
 
 #define SET_OPT_WRITABLE   STMTS( \
-        DESC(WRITABLE).optActualIndex = 11; \
+        DESC(WRITABLE).optActualIndex = 10; \
         DESC(WRITABLE).optActualValue = VALUE_OPT_WRITABLE; \
         DESC(WRITABLE).fOptState &= OPTST_PERSISTENT_MASK; \
         DESC(WRITABLE).fOptState |= OPTST_SET )
@@ -230,17 +235,17 @@ typedef enum {
 #define VALUE_OPT_DEFINE         'D'
 
 #define SET_OPT_DEFINE(a)   STMTS( \
-        DESC(DEFINE).optActualIndex = 23; \
+        DESC(DEFINE).optActualIndex = 22; \
         DESC(DEFINE).optActualValue = VALUE_OPT_DEFINE; \
         DESC(DEFINE).fOptState &= OPTST_PERSISTENT_MASK; \
         DESC(DEFINE).fOptState |= OPTST_SET; \
         DESC(DEFINE).optArg.argString = (a); \
         (*(DESC(DEFINE).pOptProc))(&autogenOptions, \
-                autogenOptions.pOptDesc + 23); )
+                autogenOptions.pOptDesc + 22); )
 #define VALUE_OPT_UNDEFINE       'U'
 
 #define SET_OPT_UNDEFINE(a)   STMTS( \
-        DESC(DEFINE).optActualIndex = 24; \
+        DESC(DEFINE).optActualIndex = 23; \
         DESC(DEFINE).optActualValue = VALUE_OPT_UNDEFINE; \
         DESC(DEFINE).fOptState &= OPTST_PERSISTENT_MASK; \
         DESC(DEFINE).fOptState |= OPTST_SET | OPTST_EQUIVALENCE; \
@@ -250,13 +255,14 @@ typedef enum {
 #define VALUE_OPT_MAKE_DEP       'M'
 
 #define SET_OPT_MAKE_DEP(a)   STMTS( \
-        DESC(MAKE_DEP).optActualIndex = 26; \
+        DESC(MAKE_DEP).optActualIndex = 25; \
         DESC(MAKE_DEP).optActualValue = VALUE_OPT_MAKE_DEP; \
         DESC(MAKE_DEP).fOptState &= OPTST_PERSISTENT_MASK; \
         DESC(MAKE_DEP).fOptState |= OPTST_SET; \
         DESC(MAKE_DEP).optArg.argString = (a); \
         (*(DESC(MAKE_DEP).pOptProc))(&autogenOptions, \
-                autogenOptions.pOptDesc + 26); )
+                autogenOptions.pOptDesc + 25); )
+#define VALUE_OPT_NO_ABORT       0x100B
 /** option flag (value) for help-value option */
 #define VALUE_OPT_HELP          '?'
 /** option flag (value) for more-help-value option */
@@ -310,15 +316,18 @@ extern tOptions autogenOptions;
 # ifndef _
 #   define _(_s)  _s
 # endif
-#ifndef  noreturn
-# define noreturn
-#endif
 
-extern noreturn void vusage_message(char const * fmt, va_list ap);
-extern noreturn void usage_message(char const * fmt, ...);
-extern noreturn void vdie( int exit_code, char const * fmt, va_list);
-extern noreturn void die(  int exit_code, char const * fmt, ...);
-extern noreturn void fserr(int exit_code, char const * op, char const * fn);
+
+noreturn extern void
+vusage_message(char const * fmt, va_list ap);
+noreturn extern void
+usage_message(char const * fmt, ...);
+noreturn extern void
+vdie( int exit_code, char const * fmt, va_list);
+noreturn extern void
+die(  int exit_code, char const * fmt, ...);
+noreturn extern void
+fserr(int exit_code, char const * op, char const * fn);
 
 /**
  * Print a AUTOGEN_EXIT_NO_MEM fatal error message and die.
@@ -327,8 +336,7 @@ extern noreturn void fserr(int exit_code, char const * op, char const * fn);
  * @param[in] what   what that object was going to be
  * @noreturn
  */
-static inline void
-nomem_err(size_t sz, char const * what)
+noreturn static inline void nomem_err(size_t sz, char const * what)
 {
     char const * fmt = _("could not allocate %zu bytes for %s\n");
     die(AUTOGEN_EXIT_NO_MEM, fmt, sz, what);

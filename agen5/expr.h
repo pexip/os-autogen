@@ -6,7 +6,7 @@
  *  From the definitions    expr.def
  *  and the template file   snarf.tpl
  *
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the

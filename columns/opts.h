@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:1:16 templates.
+ * Generated from AutoOpts 42:1:17 templates.
  *
  *  AutoOpts is a copyrighted work.  This header file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -19,7 +19,7 @@
  * The columns program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1999-2014 Bruce Korb, all rights reserved.
+ *  Copyright (C) 1999-2017 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -50,6 +50,8 @@
 #ifndef AUTOOPTS_OPTS_H_GUARD
 #define AUTOOPTS_OPTS_H_GUARD 1
 #include <autoopts/options.h>
+#include <stdarg.h>
+#include <stdnoreturn.h>
 
 /**
  *  Ensure that the library used for compiling this generated header is at
@@ -58,11 +60,17 @@
  *  tolerable version is at least as old as what was current when the header
  *  template was released.
  */
-#define AO_TEMPLATE_VERSION 167937
+#define AO_TEMPLATE_VERSION 172033
 #if (AO_TEMPLATE_VERSION < OPTIONS_MINIMUM_VERSION) \
  || (AO_TEMPLATE_VERSION > OPTIONS_STRUCT_VERSION)
 # error option template version mismatches autoopts/options.h header
   Choke Me.
+#endif
+
+#if GCC_VERSION > 40400
+#define NOT_REACHED __builtin_unreachable();
+#else
+#define NOT_REACHED
 #endif
 
 /**
@@ -227,6 +235,13 @@ extern tOptions columnsOptions;
 #   define _(_s)  _s
 # endif
 
+
+noreturn extern void
+vdie( int exit_code, char const * fmt, va_list);
+noreturn extern void
+die(  int exit_code, char const * fmt, ...);
+noreturn extern void
+fserr(int exit_code, char const * op, char const * fn);
 #ifdef  __cplusplus
 }
 #endif

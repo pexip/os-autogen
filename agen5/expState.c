@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -45,28 +45,11 @@
 # endif
 #endif
 
-/* = = = START-STATIC-FORWARD = = = */
-static int
-entry_length(char * name);
-
-static int
-count_entries(char * name);
-
-static SCM
-find_entry_value(SCM op, SCM obj, SCM test);
-
-static ver_type_t
-str2int_ver(char * pz);
-
-static SCM
-do_tpl_file_line(int line_delta, char const * fmt);
-/* = = = END-STATIC-FORWARD = = = */
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  EXPRESSION EVALUATION SUPPORT ROUTINES
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-static int
+MOD_LOCAL int
 entry_length(char * name)
 {
     def_ent_t ** defs = find_def_ent_list(name);
@@ -87,8 +70,7 @@ entry_length(char * name)
     return res;
 }
 
-
-static int
+MOD_LOCAL int
 count_entries(char * name)
 {
     def_ent_t ** defs = find_def_ent_list(name);
@@ -109,7 +91,7 @@ count_entries(char * name)
 /**
  * Find a definition with a specific value
  */
-static SCM
+MOD_LOCAL SCM
 find_entry_value(SCM op, SCM obj, SCM test)
 {
     bool        has_idx;
@@ -247,7 +229,7 @@ ag_scm_base_name(void)
  *       (version-compare > "5.8.5-pre10" "5.8.5-pre4")
  *       @end example
 =*/
-static ver_type_t
+MOD_LOCAL ver_type_t
 str2int_ver(char * pz)
 {
     char * pzStr = pz;
@@ -459,7 +441,7 @@ ag_scm_get(SCM v_name, SCM alt_v_name)
     } else if (OPT_VALUE_TRACE > TRACE_NOTHING)
         fprintf(trace_fp, GET_NOTHING_FMT, current_tpl->td_file,
                 (unsigned)cur_macro->md_line);
-    
+
     if (scm_is_string(alt_v_name))
         return alt_v_name;
     return scm_from_latin1_string(zNil);
@@ -671,7 +653,7 @@ ag_scm_tpl_file(SCM full)
 /**
  * guts of the template file/line functions
  */
-static SCM
+MOD_LOCAL SCM
 do_tpl_file_line(int line_delta, char const * fmt)
 {
     unsigned int ln_no = (unsigned int)cur_macro->md_line;
@@ -756,7 +738,12 @@ ag_scm_tpl_file_next_line(SCM fmt_scm)
 SCM
 ag_scm_max_file_time(void)
 {
-    return scm_from_uint32((uint32_t)maxfile_time);
+#ifdef HAVE_UTIMENSAT
+    uint32_t t = maxfile_time.tv_sec;
+#else
+    uint32_t t = maxfile_time;
+#endif
+    return scm_from_uint32(t);
 }
 
 /*=gfunc def_file_line

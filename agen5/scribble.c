@@ -1,6 +1,6 @@
 
 /*  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,9 +35,9 @@ struct scrib_buf_s {
     unsigned char   sb_buf[1];
 };
 
-static scrib_buf_t *  bufs     = NULL;
-static scrib_buf_t ** next_buf = &bufs;
-static size_t const   hdr_sz   =
+MOD_LOCAL scrib_buf_t *  bufs     = NULL;
+MOD_LOCAL scrib_buf_t ** next_buf = &bufs;
+MOD_LOCAL size_t const   hdr_sz   =
     (&(((scrib_buf_t *)NULL)->sb_buf[0])) - ((unsigned char *)NULL);
 
 /**
@@ -89,7 +89,7 @@ scribble_free(void)
  * @param min_size  minimum size required for current allocation
  * @returns a pointer to the new buffer
  */
-static scrib_buf_t *
+MOD_LOCAL scrib_buf_t *
 new_scribble_block(size_t min_size)
 {
     scrib_buf_t * res = NULL;

@@ -7,7 +7,7 @@
 #
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -107,7 +107,7 @@ purge()
   set -- $bad
   test "x${RANDOM}" = "x${RANDOM}" && RANDOM=`expr 0${RANDOM} + 1 2>/dev/null`
 
-  f=ZZPURGE-${1}-${RANDOM}-${progpid}
+  f=zzPURGE-${1}-${RANDOM}-${progpid}
   if test $# -gt 1
   then mkdir "${f}"
        mv $* "${f}/."

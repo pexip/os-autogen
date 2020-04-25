@@ -90,7 +90,7 @@ with a status code of 0.
 
 @exampleindent 0
 @example
-xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.12
+xml2ag (GNU AutoGen) - XML to AutoGen Definiton Converter - Ver. 5.18.16
 Usage:  xml2ag [ -<flag> [<val>] | --<name>[@{=| @}<val>] ]... [ <def-file> ]
 
 All other options are derived from autogen:
@@ -158,8 +158,8 @@ line option * a top level XML attribute named, "template"
 
 The ``base-name'' for the output will similarly be either: * the
 ``--base-name'' command line option * the base name of the .xml file
-Packaged by Bruce (2016-08-29)
-Report xml2ag bugs to bkorb@@gnu.org
+
+Please send bug reports to:  <autogen-users@@lists.sourceforge.net>
 @end example
 @exampleindent 4
 
@@ -203,23 +203,6 @@ Pass-through AutoGen argument
 This is the ``use @file{tpl-file} for the template'' option.
 This option takes a string argument @file{TPL-FILE}.
 Pass-through AutoGen argument
-@subsubheading lib-template option (-l).
-@anchor{xml2ag lib-template}
-@cindex xml2ag-lib-template
-
-This is the ``load autogen macros from @file{tpl-file}'' option.
-This option takes a string argument @file{TPL-FILE}.
-
-@noindent
-This option has some usage constraints.  It:
-@itemize @bullet
-@item
-may appear an unlimited number of times.
-@end itemize
-
-Pass-through AutoGen argument
-
-@strong{NOTE}@strong{: THIS OPTION IS DEPRECATED}
 @subsubheading definitions option.
 @anchor{xml2ag definitions}
 @cindex xml2ag-definitions
@@ -308,7 +291,8 @@ The available keywords are:
     everything
 @end example
 
-or their numeric equivalent.@end itemize
+or their numeric equivalent.
+@end itemize
 
 Pass-through AutoGen argument
 @subsubheading trace-out option.

@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,7 +35,7 @@
  * @param  type  a string describing the string
  * @return a NUL terminated string, or it aborts.
  */
-LOCAL char *
+static char *
 ag_scm2zchars(SCM s, const char * type)
 {
     size_t len;
@@ -63,7 +63,7 @@ ag_scm2zchars(SCM s, const char * type)
  * @param typ the SCM for which we wish to know the type
  * @returns teGuileType -- our own enumeration, since Guile does not have one.
  */
-LOCAL teGuileType
+static teGuileType
 ag_scm_type_e(SCM typ)
 {
     if (scm_is_bool(    typ)) return GH_TYPE_BOOLEAN;
@@ -79,8 +79,7 @@ ag_scm_type_e(SCM typ)
     return GH_TYPE_UNDEFINED;
 }
 
-
-LOCAL SCM
+static SCM
 ag_scm_c_eval_string_from_file_line(
     char const * pzExpr, char const * pzFile, int line)
 {

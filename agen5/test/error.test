@@ -6,7 +6,7 @@
 # Author:            Bruce Korb <bkorb@gnu.org>
 #
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ strip_variable_msgs() {
 	/^Aborte.*core dumped/q
 	p'
 
+  rm -f core core.*
   ${SED} -n "${sedcmd}" $1
 }
 

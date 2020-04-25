@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:1:16 templates.
+ * Generated from AutoOpts 42:1:17 templates.
  *
  *  AutoOpts is a copyrighted work.  This source file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -19,7 +19,7 @@
  * The autogen program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1992-2015 Bruce Korb, all rights reserved.
+ *  Copyright (C) 1992-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -46,11 +46,15 @@
 #define OPTION_CODE_COMPILE 1
 #include "opts.h"
 #include <sys/types.h>
+#include <sys/stat.h>
 
+#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -101,9 +105,9 @@ bool      trace_is_to_pipe = false;
 /**
  *  static const strings for autogen options
  */
-static char const autogen_opt_strs[3237] =
-/*     0 */ "autogen (GNU AutoGen) 5.18.12\n"
-            "Copyright (C) 1992-2015 Bruce Korb, all rights reserved.\n"
+static char const autogen_opt_strs[3212] =
+/*     0 */ "autogen (GNU AutoGen) 5.18.16\n"
+            "Copyright (C) 1992-2018 Bruce Korb, all rights reserved.\n"
             "This is free software. It is licensed for use, modification and\n"
             "redistribution under the terms of the GNU General Public License,\n"
             "version 3 or later <http://gnu.org/licenses/gpl.html>\n\0"
@@ -125,108 +129,108 @@ static char const autogen_opt_strs[3237] =
 /*  1006 */ "Use TPL-FILE for the template\0"
 /*  1036 */ "OVERRIDE_TPL\0"
 /*  1049 */ "override-tpl\0"
-/*  1062 */ "Load AutoGen macros from TPL-FILE (deprecated)\0"
-/*  1109 */ "LIB_TEMPLATE\0"
-/*  1122 */ "lib-template\0"
-/*  1135 */ "Read definitions from FILE\0"
-/*  1162 */ "DEFINITIONS\0"
-/*  1174 */ "no-definitions\0"
-/*  1189 */ "no\0"
-/*  1192 */ "name or path name of shell to use\0"
-/*  1226 */ "SHELL\0"
-/*  1232 */ "shell\0"
-/*  1238 */ "Do not use in-mem streams\0"
-/*  1264 */ "NO_FMEMOPEN\0"
-/*  1276 */ "no-fmemopen\0"
-/*  1288 */ "characters considered equivalent\0"
-/*  1321 */ "EQUATE\0"
-/*  1328 */ "equate\0"
-/*  1335 */ "_-^\0"
-/*  1339 */ "The following options modify how output is handled:\0"
-/*  1391 */ "Specify NAME as the base name for output\0"
-/*  1432 */ "BASE_NAME\0"
-/*  1442 */ "base-name\0"
-/*  1452 */ "set mod times to latest source\0"
-/*  1483 */ "SOURCE_TIME\0"
-/*  1495 */ "no-source-time\0"
-/*  1510 */ "Allow output files to be writable\0"
-/*  1544 */ "WRITABLE\0"
-/*  1553 */ "not-writable\0"
-/*  1566 */ "not\0"
-/*  1570 */ "The following options are often useful while debugging new templates:\0"
-/*  1640 */ "Limit on increment loops\0"
-/*  1665 */ "LOOP_LIMIT\0"
-/*  1676 */ "loop-limit\0"
-/*  1687 */ "Limit server shell operations to SECONDS\0"
-/*  1728 */ "TIMEOUT\0"
-/*  1736 */ "timeout\0"
-/*  1744 */ "tracing level of detail\0"
-/*  1768 */ "TRACE\0"
-/*  1774 */ "trace\0"
-/*  1780 */ "tracing output file or filter\0"
-/*  1810 */ "TRACE_OUT\0"
-/*  1820 */ "trace-out\0"
-/*  1830 */ "Show the definition tree\0"
-/*  1855 */ "SHOW_DEFS\0"
-/*  1865 */ "show-defs\0"
-/*  1875 */ "Show the definitions used\0"
-/*  1901 */ "USED_DEFINES\0"
-/*  1914 */ "used-defines\0"
-/*  1927 */ "Leave a core dump on a failure exit\0"
-/*  1963 */ "CORE\0"
-/*  1968 */ "core\0"
-/*  1973 */ "These options can be used to control what gets processed in the\n"
+/*  1062 */ "Read definitions from FILE\0"
+/*  1089 */ "DEFINITIONS\0"
+/*  1101 */ "no-definitions\0"
+/*  1116 */ "no\0"
+/*  1119 */ "name or path name of shell to use\0"
+/*  1153 */ "SHELL\0"
+/*  1159 */ "shell\0"
+/*  1165 */ "Do not use in-mem streams\0"
+/*  1191 */ "NO_FMEMOPEN\0"
+/*  1203 */ "no-fmemopen\0"
+/*  1215 */ "characters considered equivalent\0"
+/*  1248 */ "EQUATE\0"
+/*  1255 */ "equate\0"
+/*  1262 */ "_-^\0"
+/*  1266 */ "The following options modify how output is handled:\0"
+/*  1318 */ "Specify NAME as the base name for output\0"
+/*  1359 */ "BASE_NAME\0"
+/*  1369 */ "base-name\0"
+/*  1379 */ "set mod times to latest source\0"
+/*  1410 */ "SOURCE_TIME\0"
+/*  1422 */ "no-source-time\0"
+/*  1437 */ "Allow output files to be writable\0"
+/*  1471 */ "WRITABLE\0"
+/*  1480 */ "not-writable\0"
+/*  1493 */ "not\0"
+/*  1497 */ "The following options are often useful while debugging new templates:\0"
+/*  1567 */ "Limit on increment loops\0"
+/*  1592 */ "LOOP_LIMIT\0"
+/*  1603 */ "loop-limit\0"
+/*  1614 */ "Limit server shell operations to SECONDS\0"
+/*  1655 */ "TIMEOUT\0"
+/*  1663 */ "timeout\0"
+/*  1671 */ "tracing level of detail\0"
+/*  1695 */ "TRACE\0"
+/*  1701 */ "trace\0"
+/*  1707 */ "tracing output file or filter\0"
+/*  1737 */ "TRACE_OUT\0"
+/*  1747 */ "trace-out\0"
+/*  1757 */ "Show the definition tree\0"
+/*  1782 */ "SHOW_DEFS\0"
+/*  1792 */ "show-defs\0"
+/*  1802 */ "Show the definitions used\0"
+/*  1828 */ "USED_DEFINES\0"
+/*  1841 */ "used-defines\0"
+/*  1854 */ "Leave a core dump on a failure exit\0"
+/*  1890 */ "CORE\0"
+/*  1895 */ "core\0"
+/*  1900 */ "These options can be used to control what gets processed in the\n"
             "definitions files and template files:\0"
-/*  2075 */ "Skip the file with this SUFFIX\0"
-/*  2106 */ "SKIP_SUFFIX\0"
-/*  2118 */ "skip-suffix\0"
-/*  2130 */ "specify this output suffix\0"
-/*  2157 */ "SELECT_SUFFIX\0"
-/*  2171 */ "select-suffix\0"
-/*  2185 */ "name to add to definition list\0"
-/*  2216 */ "DEFINE\0"
-/*  2223 */ "define\0"
-/*  2230 */ "definition list removal pattern\0"
-/*  2262 */ "UNDEFINE\0"
-/*  2271 */ "undefine\0"
-/*  2280 */ "This option is used to automate dependency tracking:\0"
-/*  2333 */ "emit make dependency file\0"
-/*  2359 */ "MAKE_DEP\0"
-/*  2368 */ "make-dep\0"
-/*  2377 */ "help, version and option handling:\0"
-/*  2412 */ "display extended usage information and exit\0"
-/*  2456 */ "help\0"
-/*  2461 */ "extended usage information passed thru pager\0"
-/*  2506 */ "more-help\0"
-/*  2516 */ "output version information and exit\0"
-/*  2552 */ "version\0"
-/*  2560 */ "reset an option's state\0"
-/*  2584 */ "reset-option\0"
-/*  2597 */ "abbreviated usage to stdout\0"
-/*  2625 */ "usage\0"
-/*  2631 */ "save the option state to a config file\0"
-/*  2670 */ "save-opts\0"
-/*  2680 */ "load options from a config file\0"
-/*  2712 */ "LOAD_OPTS\0"
-/*  2722 */ "no-load-opts\0"
-/*  2735 */ "AUTOGEN\0"
-/*  2743 */ "autogen (GNU AutoGen) - The Automated Program Generator - Ver. 5.18.12\n"
+/*  2002 */ "Skip the file with this SUFFIX\0"
+/*  2033 */ "SKIP_SUFFIX\0"
+/*  2045 */ "skip-suffix\0"
+/*  2057 */ "specify this output suffix\0"
+/*  2084 */ "SELECT_SUFFIX\0"
+/*  2098 */ "select-suffix\0"
+/*  2112 */ "name to add to definition list\0"
+/*  2143 */ "DEFINE\0"
+/*  2150 */ "define\0"
+/*  2157 */ "definition list removal pattern\0"
+/*  2189 */ "UNDEFINE\0"
+/*  2198 */ "undefine\0"
+/*  2207 */ "This option is used to automate dependency tracking:\0"
+/*  2260 */ "emit make dependency file\0"
+/*  2286 */ "MAKE_DEP\0"
+/*  2295 */ "make-dep\0"
+/*  2304 */ "help, version, option and error handling:\0"
+/*  2346 */ "Do not abort on errors\0"
+/*  2369 */ "NO_ABORT\0"
+/*  2378 */ "no-abort\0"
+/*  2387 */ "display extended usage information and exit\0"
+/*  2431 */ "help\0"
+/*  2436 */ "extended usage information passed thru pager\0"
+/*  2481 */ "more-help\0"
+/*  2491 */ "output version information and exit\0"
+/*  2527 */ "version\0"
+/*  2535 */ "reset an option's state\0"
+/*  2559 */ "reset-option\0"
+/*  2572 */ "abbreviated usage to stdout\0"
+/*  2600 */ "usage\0"
+/*  2606 */ "save the option state to a config file\0"
+/*  2645 */ "save-opts\0"
+/*  2655 */ "load options from a config file\0"
+/*  2687 */ "LOAD_OPTS\0"
+/*  2697 */ "no-load-opts\0"
+/*  2710 */ "AUTOGEN\0"
+/*  2718 */ "autogen (GNU AutoGen) - The Automated Program Generator - Ver. 5.18.16\n"
             "Usage:  %s [ -<flag> [<val>] | --<name>[{=| }<val>] ]... [ <def-file> ]\n\0"
-/*  2887 */ "$HOME\0"
-/*  2893 */ ".\0"
-/*  2895 */ ".autogenrc\0"
-/*  2906 */ "autogen-users@lists.sourceforge.net\0"
-/*  2942 */ "AutoGen creates text files from templates using external definitions.\n\0"
-/*  3013 */ "AutoGen is a tool designed for generating program files that contain\n"
+/*  2862 */ "$HOME\0"
+/*  2868 */ ".\0"
+/*  2870 */ ".autogenrc\0"
+/*  2881 */ "autogen-users@lists.sourceforge.net\0"
+/*  2917 */ "AutoGen creates text files from templates using external definitions.\n\0"
+/*  2988 */ "AutoGen is a tool designed for generating program files that contain\n"
             "repetitive text with varied substitutions.\n\0"
-/*  3126 */ "autogen (GNU AutoGen) 5.18.12\0"
-/*  3156 */ "nothing\0"
-/*  3164 */ "debug-message\0"
-/*  3178 */ "server-shell\0"
-/*  3191 */ "templates\0"
-/*  3201 */ "block-macros\0"
-/*  3214 */ "expressions\0"
-/*  3226 */ "everything";
+/*  3101 */ "autogen (GNU AutoGen) 5.18.16\0"
+/*  3131 */ "nothing\0"
+/*  3139 */ "debug-message\0"
+/*  3153 */ "server-shell\0"
+/*  3166 */ "templates\0"
+/*  3176 */ "block-macros\0"
+/*  3189 */ "expressions\0"
+/*  3201 */ "everything";
 
 /**
  *  input-select option description:
@@ -263,29 +267,16 @@ static char const autogen_opt_strs[3237] =
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
 
 /**
- *  lib-template option description:
- */
-/** Descriptive text for the lib-template option */
-#define LIB_TEMPLATE_DESC      (autogen_opt_strs+1062)
-/** Upper-cased name for the lib-template option */
-#define LIB_TEMPLATE_NAME      (autogen_opt_strs+1109)
-/** Name string for the lib-template option */
-#define LIB_TEMPLATE_name      (autogen_opt_strs+1122)
-/** Compiled in flag settings for the lib-template option */
-#define LIB_TEMPLATE_FLAGS     (OPTST_DISABLED | OPTST_DEPRECATED \
-        | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
-
-/**
  *  definitions option description:
  */
 /** Descriptive text for the definitions option */
-#define DEFINITIONS_DESC      (autogen_opt_strs+1135)
+#define DEFINITIONS_DESC      (autogen_opt_strs+1062)
 /** Upper-cased name for the definitions option */
-#define DEFINITIONS_NAME      (autogen_opt_strs+1162)
+#define DEFINITIONS_NAME      (autogen_opt_strs+1089)
 /** disablement name for the definitions option */
-#define NOT_DEFINITIONS_name  (autogen_opt_strs+1174)
+#define NOT_DEFINITIONS_name  (autogen_opt_strs+1101)
 /** disablement prefix for the definitions option */
-#define NOT_DEFINITIONS_PFX   (autogen_opt_strs+1189)
+#define NOT_DEFINITIONS_PFX   (autogen_opt_strs+1116)
 /** Name string for the definitions option */
 #define DEFINITIONS_name      (NOT_DEFINITIONS_name + 3)
 /** Compiled in flag settings for the definitions option */
@@ -297,11 +288,11 @@ static char const autogen_opt_strs[3237] =
  */
 #ifdef SHELL_ENABLED
 /** Descriptive text for the shell option */
-#define SHELL_DESC      (autogen_opt_strs+1192)
+#define SHELL_DESC      (autogen_opt_strs+1119)
 /** Upper-cased name for the shell option */
-#define SHELL_NAME      (autogen_opt_strs+1226)
+#define SHELL_NAME      (autogen_opt_strs+1153)
 /** Name string for the shell option */
-#define SHELL_name      (autogen_opt_strs+1232)
+#define SHELL_name      (autogen_opt_strs+1159)
 /** Compiled in flag settings for the shell option */
 #define SHELL_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -317,11 +308,11 @@ static char const autogen_opt_strs[3237] =
  *  no-fmemopen option description:
  */
 /** Descriptive text for the no-fmemopen option */
-#define NO_FMEMOPEN_DESC      (autogen_opt_strs+1238)
+#define NO_FMEMOPEN_DESC      (autogen_opt_strs+1165)
 /** Upper-cased name for the no-fmemopen option */
-#define NO_FMEMOPEN_NAME      (autogen_opt_strs+1264)
+#define NO_FMEMOPEN_NAME      (autogen_opt_strs+1191)
 /** Name string for the no-fmemopen option */
-#define NO_FMEMOPEN_name      (autogen_opt_strs+1276)
+#define NO_FMEMOPEN_name      (autogen_opt_strs+1203)
 /** Compiled in flag settings for the no-fmemopen option */
 #define NO_FMEMOPEN_FLAGS     (OPTST_DISABLED)
 
@@ -329,13 +320,13 @@ static char const autogen_opt_strs[3237] =
  *  equate option description:
  */
 /** Descriptive text for the equate option */
-#define EQUATE_DESC      (autogen_opt_strs+1288)
+#define EQUATE_DESC      (autogen_opt_strs+1215)
 /** Upper-cased name for the equate option */
-#define EQUATE_NAME      (autogen_opt_strs+1321)
+#define EQUATE_NAME      (autogen_opt_strs+1248)
 /** Name string for the equate option */
-#define EQUATE_name      (autogen_opt_strs+1328)
+#define EQUATE_name      (autogen_opt_strs+1255)
 /** The compiled in default value for the equate option argument */
-#define EQUATE_DFT_ARG   (autogen_opt_strs+1335)
+#define EQUATE_DFT_ARG   (autogen_opt_strs+1262)
 /** Compiled in flag settings for the equate option */
 #define EQUATE_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -344,18 +335,18 @@ static char const autogen_opt_strs[3237] =
  *  out-handling option description:
  */
 /** out-handling option separation text */
-#define OUT_HANDLING_DESC      (autogen_opt_strs+1339)
+#define OUT_HANDLING_DESC      (autogen_opt_strs+1266)
 #define OUT_HANDLING_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)
 
 /**
  *  base-name option description:
  */
 /** Descriptive text for the base-name option */
-#define BASE_NAME_DESC      (autogen_opt_strs+1391)
+#define BASE_NAME_DESC      (autogen_opt_strs+1318)
 /** Upper-cased name for the base-name option */
-#define BASE_NAME_NAME      (autogen_opt_strs+1432)
+#define BASE_NAME_NAME      (autogen_opt_strs+1359)
 /** Name string for the base-name option */
-#define BASE_NAME_name      (autogen_opt_strs+1442)
+#define BASE_NAME_name      (autogen_opt_strs+1369)
 /** Compiled in flag settings for the base-name option */
 #define BASE_NAME_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -364,13 +355,13 @@ static char const autogen_opt_strs[3237] =
  *  source-time option description:
  */
 /** Descriptive text for the source-time option */
-#define SOURCE_TIME_DESC      (autogen_opt_strs+1452)
+#define SOURCE_TIME_DESC      (autogen_opt_strs+1379)
 /** Upper-cased name for the source-time option */
-#define SOURCE_TIME_NAME      (autogen_opt_strs+1483)
+#define SOURCE_TIME_NAME      (autogen_opt_strs+1410)
 /** disablement name for the source-time option */
-#define NOT_SOURCE_TIME_name  (autogen_opt_strs+1495)
+#define NOT_SOURCE_TIME_name  (autogen_opt_strs+1422)
 /** disablement prefix for the source-time option */
-#define NOT_SOURCE_TIME_PFX   (autogen_opt_strs+1189)
+#define NOT_SOURCE_TIME_PFX   (autogen_opt_strs+1116)
 /** Name string for the source-time option */
 #define SOURCE_TIME_name      (NOT_SOURCE_TIME_name + 3)
 /** Compiled in flag settings for the source-time option */
@@ -380,13 +371,13 @@ static char const autogen_opt_strs[3237] =
  *  writable option description:
  */
 /** Descriptive text for the writable option */
-#define WRITABLE_DESC      (autogen_opt_strs+1510)
+#define WRITABLE_DESC      (autogen_opt_strs+1437)
 /** Upper-cased name for the writable option */
-#define WRITABLE_NAME      (autogen_opt_strs+1544)
+#define WRITABLE_NAME      (autogen_opt_strs+1471)
 /** disablement name for the writable option */
-#define NOT_WRITABLE_name  (autogen_opt_strs+1553)
+#define NOT_WRITABLE_name  (autogen_opt_strs+1480)
 /** disablement prefix for the writable option */
-#define NOT_WRITABLE_PFX   (autogen_opt_strs+1566)
+#define NOT_WRITABLE_PFX   (autogen_opt_strs+1493)
 /** Name string for the writable option */
 #define WRITABLE_name      (NOT_WRITABLE_name + 4)
 /** Compiled in flag settings for the writable option */
@@ -396,18 +387,18 @@ static char const autogen_opt_strs[3237] =
  *  debug-tpl option description:
  */
 /** debug-tpl option separation text */
-#define DEBUG_TPL_DESC      (autogen_opt_strs+1570)
+#define DEBUG_TPL_DESC      (autogen_opt_strs+1497)
 #define DEBUG_TPL_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)
 
 /**
  *  loop-limit option description:
  */
 /** Descriptive text for the loop-limit option */
-#define LOOP_LIMIT_DESC      (autogen_opt_strs+1640)
+#define LOOP_LIMIT_DESC      (autogen_opt_strs+1567)
 /** Upper-cased name for the loop-limit option */
-#define LOOP_LIMIT_NAME      (autogen_opt_strs+1665)
+#define LOOP_LIMIT_NAME      (autogen_opt_strs+1592)
 /** Name string for the loop-limit option */
-#define LOOP_LIMIT_name      (autogen_opt_strs+1676)
+#define LOOP_LIMIT_name      (autogen_opt_strs+1603)
 /** The compiled in default value for the loop-limit option argument */
 #define LOOP_LIMIT_DFT_ARG   ((char const*)256)
 /** Compiled in flag settings for the loop-limit option */
@@ -420,11 +411,11 @@ static char const autogen_opt_strs[3237] =
  */
 #ifdef SHELL_ENABLED
 /** Descriptive text for the timeout option */
-#define TIMEOUT_DESC      (autogen_opt_strs+1687)
+#define TIMEOUT_DESC      (autogen_opt_strs+1614)
 /** Upper-cased name for the timeout option */
-#define TIMEOUT_NAME      (autogen_opt_strs+1728)
+#define TIMEOUT_NAME      (autogen_opt_strs+1655)
 /** Name string for the timeout option */
-#define TIMEOUT_name      (autogen_opt_strs+1736)
+#define TIMEOUT_name      (autogen_opt_strs+1663)
 /** Compiled in flag settings for the timeout option */
 #define TIMEOUT_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_NUMERIC))
@@ -440,11 +431,11 @@ static char const autogen_opt_strs[3237] =
  *  trace option description:
  */
 /** Descriptive text for the trace option */
-#define TRACE_DESC      (autogen_opt_strs+1744)
+#define TRACE_DESC      (autogen_opt_strs+1671)
 /** Upper-cased name for the trace option */
-#define TRACE_NAME      (autogen_opt_strs+1768)
+#define TRACE_NAME      (autogen_opt_strs+1695)
 /** Name string for the trace option */
-#define TRACE_name      (autogen_opt_strs+1774)
+#define TRACE_name      (autogen_opt_strs+1701)
 /** The compiled in default value for the trace option argument */
 #define TRACE_DFT_ARG   ((char const*)TRACE_NOTHING)
 /** Compiled in flag settings for the trace option */
@@ -455,11 +446,11 @@ static char const autogen_opt_strs[3237] =
  *  trace-out option description:
  */
 /** Descriptive text for the trace-out option */
-#define TRACE_OUT_DESC      (autogen_opt_strs+1780)
+#define TRACE_OUT_DESC      (autogen_opt_strs+1707)
 /** Upper-cased name for the trace-out option */
-#define TRACE_OUT_NAME      (autogen_opt_strs+1810)
+#define TRACE_OUT_NAME      (autogen_opt_strs+1737)
 /** Name string for the trace-out option */
-#define TRACE_OUT_name      (autogen_opt_strs+1820)
+#define TRACE_OUT_name      (autogen_opt_strs+1747)
 /** Compiled in flag settings for the trace-out option */
 #define TRACE_OUT_FLAGS     (OPTST_DISABLED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -469,11 +460,11 @@ static char const autogen_opt_strs[3237] =
  */
 #ifdef DEBUG_ENABLED
 /** Descriptive text for the show-defs option */
-#define SHOW_DEFS_DESC      (autogen_opt_strs+1830)
+#define SHOW_DEFS_DESC      (autogen_opt_strs+1757)
 /** Upper-cased name for the show-defs option */
-#define SHOW_DEFS_NAME      (autogen_opt_strs+1855)
+#define SHOW_DEFS_NAME      (autogen_opt_strs+1782)
 /** Name string for the show-defs option */
-#define SHOW_DEFS_name      (autogen_opt_strs+1865)
+#define SHOW_DEFS_name      (autogen_opt_strs+1792)
 /** Compiled in flag settings for the show-defs option */
 #define SHOW_DEFS_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT)
 
@@ -482,18 +473,18 @@ static char const autogen_opt_strs[3237] =
 #define SHOW_DEFS_NAME      NULL
 /** Descriptive text for the show-defs option */
 #define SHOW_DEFS_DESC      (NULL)
-#define SHOW_DEFS_name      (autogen_opt_strs+1865)
+#define SHOW_DEFS_name      (autogen_opt_strs+1792)
 #endif  /* DEBUG_ENABLED */
 
 /**
  *  used-defines option description:
  */
 /** Descriptive text for the used-defines option */
-#define USED_DEFINES_DESC      (autogen_opt_strs+1875)
+#define USED_DEFINES_DESC      (autogen_opt_strs+1802)
 /** Upper-cased name for the used-defines option */
-#define USED_DEFINES_NAME      (autogen_opt_strs+1901)
+#define USED_DEFINES_NAME      (autogen_opt_strs+1828)
 /** Name string for the used-defines option */
-#define USED_DEFINES_name      (autogen_opt_strs+1914)
+#define USED_DEFINES_name      (autogen_opt_strs+1841)
 /** Compiled in flag settings for the used-defines option */
 #define USED_DEFINES_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT)
 
@@ -502,11 +493,11 @@ static char const autogen_opt_strs[3237] =
  */
 #ifdef HAVE_SYS_RESOURCE_H
 /** Descriptive text for the core option */
-#define CORE_DESC      (autogen_opt_strs+1927)
+#define CORE_DESC      (autogen_opt_strs+1854)
 /** Upper-cased name for the core option */
-#define CORE_NAME      (autogen_opt_strs+1963)
+#define CORE_NAME      (autogen_opt_strs+1890)
 /** Name string for the core option */
-#define CORE_name      (autogen_opt_strs+1968)
+#define CORE_name      (autogen_opt_strs+1895)
 /** Compiled in flag settings for the core option */
 #define CORE_FLAGS     (OPTST_DISABLED)
 
@@ -521,7 +512,7 @@ static char const autogen_opt_strs[3237] =
  *  processing option description:
  */
 /** processing option separation text */
-#define PROCESSING_DESC      (autogen_opt_strs+1973)
+#define PROCESSING_DESC      (autogen_opt_strs+1900)
 #define PROCESSING_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)
 
 /**
@@ -529,11 +520,11 @@ static char const autogen_opt_strs[3237] =
  *  "Must also have options" and "Incompatible options":
  */
 /** Descriptive text for the skip-suffix option */
-#define SKIP_SUFFIX_DESC      (autogen_opt_strs+2075)
+#define SKIP_SUFFIX_DESC      (autogen_opt_strs+2002)
 /** Upper-cased name for the skip-suffix option */
-#define SKIP_SUFFIX_NAME      (autogen_opt_strs+2106)
+#define SKIP_SUFFIX_NAME      (autogen_opt_strs+2033)
 /** Name string for the skip-suffix option */
-#define SKIP_SUFFIX_name      (autogen_opt_strs+2118)
+#define SKIP_SUFFIX_name      (autogen_opt_strs+2045)
 /** Other options that appear in conjunction with the skip-suffix option */
 static int const aSkip_SuffixCantList[] = {
     INDEX_OPT_SELECT_SUFFIX, NO_EQUIVALENT };
@@ -545,11 +536,11 @@ static int const aSkip_SuffixCantList[] = {
  *  select-suffix option description:
  */
 /** Descriptive text for the select-suffix option */
-#define SELECT_SUFFIX_DESC      (autogen_opt_strs+2130)
+#define SELECT_SUFFIX_DESC      (autogen_opt_strs+2057)
 /** Upper-cased name for the select-suffix option */
-#define SELECT_SUFFIX_NAME      (autogen_opt_strs+2157)
+#define SELECT_SUFFIX_NAME      (autogen_opt_strs+2084)
 /** Name string for the select-suffix option */
-#define SELECT_SUFFIX_name      (autogen_opt_strs+2171)
+#define SELECT_SUFFIX_name      (autogen_opt_strs+2098)
 /** Compiled in flag settings for the select-suffix option */
 #define SELECT_SUFFIX_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -558,11 +549,11 @@ static int const aSkip_SuffixCantList[] = {
  *  define option description:
  */
 /** Descriptive text for the define option */
-#define DEFINE_DESC      (autogen_opt_strs+2185)
+#define DEFINE_DESC      (autogen_opt_strs+2112)
 /** Upper-cased name for the define option */
-#define DEFINE_NAME      (autogen_opt_strs+2216)
+#define DEFINE_NAME      (autogen_opt_strs+2143)
 /** Name string for the define option */
-#define DEFINE_name      (autogen_opt_strs+2223)
+#define DEFINE_name      (autogen_opt_strs+2150)
 /** Compiled in flag settings for the define option */
 #define DEFINE_FLAGS     (OPTST_DISABLED | OPTST_STACKED \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -571,11 +562,11 @@ static int const aSkip_SuffixCantList[] = {
  *  undefine option description:
  */
 /** Descriptive text for the undefine option */
-#define UNDEFINE_DESC      (autogen_opt_strs+2230)
+#define UNDEFINE_DESC      (autogen_opt_strs+2157)
 /** Upper-cased name for the undefine option */
-#define UNDEFINE_NAME      (autogen_opt_strs+2262)
+#define UNDEFINE_NAME      (autogen_opt_strs+2189)
 /** Name string for the undefine option */
-#define UNDEFINE_name      (autogen_opt_strs+2271)
+#define UNDEFINE_name      (autogen_opt_strs+2198)
 /** Compiled in flag settings for the undefine option */
 #define UNDEFINE_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING))
@@ -584,18 +575,18 @@ static int const aSkip_SuffixCantList[] = {
  *  dep-track option description:
  */
 /** dep-track option separation text */
-#define DEP_TRACK_DESC      (autogen_opt_strs+2280)
+#define DEP_TRACK_DESC      (autogen_opt_strs+2207)
 #define DEP_TRACK_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)
 
 /**
  *  make-dep option description:
  */
 /** Descriptive text for the make-dep option */
-#define MAKE_DEP_DESC      (autogen_opt_strs+2333)
+#define MAKE_DEP_DESC      (autogen_opt_strs+2260)
 /** Upper-cased name for the make-dep option */
-#define MAKE_DEP_NAME      (autogen_opt_strs+2359)
+#define MAKE_DEP_NAME      (autogen_opt_strs+2286)
 /** Name string for the make-dep option */
-#define MAKE_DEP_name      (autogen_opt_strs+2368)
+#define MAKE_DEP_name      (autogen_opt_strs+2295)
 /** Compiled in flag settings for the make-dep option */
 #define MAKE_DEP_FLAGS     (OPTST_DISABLED | OPTST_NO_INIT \
         | OPTST_SET_ARGTYPE(OPARG_TYPE_STRING) | OPTST_ARG_OPTIONAL)
@@ -604,17 +595,29 @@ static int const aSkip_SuffixCantList[] = {
  *  autoopts-opts option description:
  */
 /** autoopts-opts option separation text */
-#define AUTOOPTS_OPTS_DESC      (autogen_opt_strs+2377)
+#define AUTOOPTS_OPTS_DESC      (autogen_opt_strs+2304)
 #define AUTOOPTS_OPTS_FLAGS     (OPTST_DOCUMENT | OPTST_NO_INIT)
+
+/**
+ *  no-abort option description:
+ */
+/** Descriptive text for the no-abort option */
+#define NO_ABORT_DESC      (autogen_opt_strs+2346)
+/** Upper-cased name for the no-abort option */
+#define NO_ABORT_NAME      (autogen_opt_strs+2369)
+/** Name string for the no-abort option */
+#define NO_ABORT_name      (autogen_opt_strs+2378)
+/** Compiled in flag settings for the no-abort option */
+#define NO_ABORT_FLAGS     (OPTST_DISABLED)
 
 /*
  *  Help/More_Help/Version option descriptions:
  */
-#define HELP_DESC       (autogen_opt_strs+2412)
-#define HELP_name       (autogen_opt_strs+2456)
+#define HELP_DESC       (autogen_opt_strs+2387)
+#define HELP_name       (autogen_opt_strs+2431)
 #ifdef HAVE_WORKING_FORK
-#define MORE_HELP_DESC  (autogen_opt_strs+2461)
-#define MORE_HELP_name  (autogen_opt_strs+2506)
+#define MORE_HELP_DESC  (autogen_opt_strs+2436)
+#define MORE_HELP_name  (autogen_opt_strs+2481)
 #define MORE_HELP_FLAGS (OPTST_IMM | OPTST_NO_INIT)
 #else
 #define MORE_HELP_DESC  HELP_DESC
@@ -627,19 +630,19 @@ static int const aSkip_SuffixCantList[] = {
 #  define VER_FLAGS     (OPTST_SET_ARGTYPE(OPARG_TYPE_STRING) | \
                          OPTST_ARG_OPTIONAL | OPTST_IMM | OPTST_NO_INIT)
 #endif
-#define VER_DESC        (autogen_opt_strs+2516)
-#define VER_name        (autogen_opt_strs+2552)
-#define RESET_DESC      (autogen_opt_strs+2560)
-#define RESET_name      (autogen_opt_strs+2584)
+#define VER_DESC        (autogen_opt_strs+2491)
+#define VER_name        (autogen_opt_strs+2527)
+#define RESET_DESC      (autogen_opt_strs+2535)
+#define RESET_name      (autogen_opt_strs+2559)
 #define RESET_FLAGS     (OPTST_SET_ARGTYPE(OPARG_TYPE_STRING)|OPTST_NO_INIT)
-#define USAGE_DESC      (autogen_opt_strs+2597)
-#define USAGE_name      (autogen_opt_strs+2625)
-#define SAVE_OPTS_DESC  (autogen_opt_strs+2631)
-#define SAVE_OPTS_name  (autogen_opt_strs+2670)
-#define LOAD_OPTS_DESC     (autogen_opt_strs+2680)
-#define LOAD_OPTS_NAME     (autogen_opt_strs+2712)
-#define NO_LOAD_OPTS_name  (autogen_opt_strs+2722)
-#define LOAD_OPTS_pfx      (autogen_opt_strs+1189)
+#define USAGE_DESC      (autogen_opt_strs+2572)
+#define USAGE_name      (autogen_opt_strs+2600)
+#define SAVE_OPTS_DESC  (autogen_opt_strs+2606)
+#define SAVE_OPTS_name  (autogen_opt_strs+2645)
+#define LOAD_OPTS_DESC     (autogen_opt_strs+2655)
+#define LOAD_OPTS_NAME     (autogen_opt_strs+2687)
+#define NO_LOAD_OPTS_name  (autogen_opt_strs+2697)
+#define LOAD_OPTS_pfx      (autogen_opt_strs+1116)
 #define LOAD_OPTS_name     (NO_LOAD_OPTS_name + 3)
 /**
  *  Declare option callback procedures
@@ -660,8 +663,8 @@ extern tOptProc
     optionResetOpt,     optionStackArg,     optionTimeDate,
     optionTimeVal,      optionUnstackArg,   optionVendorOption;
 static tOptProc
-    doOptLib_Template,  doOptLoop_Limit,    doOptOverride_Tpl,
-    doOptSelect_Suffix, doOptTrace,         doUsageOpt;
+    doOptLoop_Limit,    doOptOverride_Tpl,  doOptSelect_Suffix,
+    doOptTrace,         doUsageOpt;
 #define VER_PROC        optionPrintVersion
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -707,20 +710,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ OVERRIDE_TPL_DESC, OVERRIDE_TPL_NAME, OVERRIDE_TPL_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 3, VALUE_OPT_LIB_TEMPLATE,
-     /* equiv idx, value */ 3, VALUE_OPT_LIB_TEMPLATE,
-     /* equivalenced to  */ NO_EQUIVALENT,
-     /* min, max, act ct */ 0, NOLIMIT, 0,
-     /* opt state flags  */ LIB_TEMPLATE_FLAGS, 0,
-     /* last opt argumnt */ { NULL }, /* --lib-template */
-     /* arg list/cookie  */ NULL,
-     /* must/cannot opts */ NULL, NULL,
-     /* option proc      */ doOptLib_Template,
-     /* desc, NAME, name */ LIB_TEMPLATE_DESC, LIB_TEMPLATE_NAME, LIB_TEMPLATE_name,
-     /* disablement strs */ NULL, NULL },
-
-  {  /* entry idx, value */ 4, VALUE_OPT_DEFINITIONS,
-     /* equiv idx, value */ 4, VALUE_OPT_DEFINITIONS,
+  {  /* entry idx, value */ 3, VALUE_OPT_DEFINITIONS,
+     /* equiv idx, value */ 3, VALUE_OPT_DEFINITIONS,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ DEFINITIONS_FLAGS, 0,
@@ -731,8 +722,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ DEFINITIONS_DESC, DEFINITIONS_NAME, DEFINITIONS_name,
      /* disablement strs */ NOT_DEFINITIONS_name, NOT_DEFINITIONS_PFX },
 
-  {  /* entry idx, value */ 5, VALUE_OPT_SHELL,
-     /* equiv idx, value */ 5, VALUE_OPT_SHELL,
+  {  /* entry idx, value */ 4, VALUE_OPT_SHELL,
+     /* equiv idx, value */ 4, VALUE_OPT_SHELL,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ SHELL_FLAGS, 0,
@@ -743,8 +734,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ SHELL_DESC, SHELL_NAME, SHELL_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 6, VALUE_OPT_NO_FMEMOPEN,
-     /* equiv idx, value */ 6, VALUE_OPT_NO_FMEMOPEN,
+  {  /* entry idx, value */ 5, VALUE_OPT_NO_FMEMOPEN,
+     /* equiv idx, value */ 5, VALUE_OPT_NO_FMEMOPEN,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ NO_FMEMOPEN_FLAGS, 0,
@@ -755,8 +746,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ NO_FMEMOPEN_DESC, NO_FMEMOPEN_NAME, NO_FMEMOPEN_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 7, VALUE_OPT_EQUATE,
-     /* equiv idx, value */ 7, VALUE_OPT_EQUATE,
+  {  /* entry idx, value */ 6, VALUE_OPT_EQUATE,
+     /* equiv idx, value */ 6, VALUE_OPT_EQUATE,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ EQUATE_FLAGS, 0,
@@ -779,8 +770,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ OUT_HANDLING_DESC, NULL, NULL,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 9, VALUE_OPT_BASE_NAME,
-     /* equiv idx, value */ 9, VALUE_OPT_BASE_NAME,
+  {  /* entry idx, value */ 8, VALUE_OPT_BASE_NAME,
+     /* equiv idx, value */ 8, VALUE_OPT_BASE_NAME,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ BASE_NAME_FLAGS, 0,
@@ -791,8 +782,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ BASE_NAME_DESC, BASE_NAME_NAME, BASE_NAME_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 10, VALUE_OPT_SOURCE_TIME,
-     /* equiv idx, value */ 10, VALUE_OPT_SOURCE_TIME,
+  {  /* entry idx, value */ 9, VALUE_OPT_SOURCE_TIME,
+     /* equiv idx, value */ 9, VALUE_OPT_SOURCE_TIME,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ SOURCE_TIME_FLAGS, 0,
@@ -803,8 +794,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ SOURCE_TIME_DESC, SOURCE_TIME_NAME, SOURCE_TIME_name,
      /* disablement strs */ NOT_SOURCE_TIME_name, NOT_SOURCE_TIME_PFX },
 
-  {  /* entry idx, value */ 11, VALUE_OPT_WRITABLE,
-     /* equiv idx, value */ 11, VALUE_OPT_WRITABLE,
+  {  /* entry idx, value */ 10, VALUE_OPT_WRITABLE,
+     /* equiv idx, value */ 10, VALUE_OPT_WRITABLE,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ WRITABLE_FLAGS, 0,
@@ -827,8 +818,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ DEBUG_TPL_DESC, NULL, NULL,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 13, VALUE_OPT_LOOP_LIMIT,
-     /* equiv idx, value */ 13, VALUE_OPT_LOOP_LIMIT,
+  {  /* entry idx, value */ 12, VALUE_OPT_LOOP_LIMIT,
+     /* equiv idx, value */ 12, VALUE_OPT_LOOP_LIMIT,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ LOOP_LIMIT_FLAGS, 0,
@@ -839,8 +830,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ LOOP_LIMIT_DESC, LOOP_LIMIT_NAME, LOOP_LIMIT_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 14, VALUE_OPT_TIMEOUT,
-     /* equiv idx, value */ 14, VALUE_OPT_TIMEOUT,
+  {  /* entry idx, value */ 13, VALUE_OPT_TIMEOUT,
+     /* equiv idx, value */ 13, VALUE_OPT_TIMEOUT,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ TIMEOUT_FLAGS, 0,
@@ -851,8 +842,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ TIMEOUT_DESC, TIMEOUT_NAME, TIMEOUT_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 15, VALUE_OPT_TRACE,
-     /* equiv idx, value */ 15, VALUE_OPT_TRACE,
+  {  /* entry idx, value */ 14, VALUE_OPT_TRACE,
+     /* equiv idx, value */ 14, VALUE_OPT_TRACE,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ TRACE_FLAGS, 0,
@@ -863,8 +854,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ TRACE_DESC, TRACE_NAME, TRACE_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 16, VALUE_OPT_TRACE_OUT,
-     /* equiv idx, value */ 16, VALUE_OPT_TRACE_OUT,
+  {  /* entry idx, value */ 15, VALUE_OPT_TRACE_OUT,
+     /* equiv idx, value */ 15, VALUE_OPT_TRACE_OUT,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ TRACE_OUT_FLAGS, 0,
@@ -875,8 +866,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ TRACE_OUT_DESC, TRACE_OUT_NAME, TRACE_OUT_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 17, VALUE_OPT_SHOW_DEFS,
-     /* equiv idx, value */ 17, VALUE_OPT_SHOW_DEFS,
+  {  /* entry idx, value */ 16, VALUE_OPT_SHOW_DEFS,
+     /* equiv idx, value */ 16, VALUE_OPT_SHOW_DEFS,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ SHOW_DEFS_FLAGS, 0,
@@ -887,8 +878,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ SHOW_DEFS_DESC, SHOW_DEFS_NAME, SHOW_DEFS_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 18, VALUE_OPT_USED_DEFINES,
-     /* equiv idx, value */ 18, VALUE_OPT_USED_DEFINES,
+  {  /* entry idx, value */ 17, VALUE_OPT_USED_DEFINES,
+     /* equiv idx, value */ 17, VALUE_OPT_USED_DEFINES,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ USED_DEFINES_FLAGS, 0,
@@ -899,8 +890,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ USED_DEFINES_DESC, USED_DEFINES_NAME, USED_DEFINES_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 19, VALUE_OPT_CORE,
-     /* equiv idx, value */ 19, VALUE_OPT_CORE,
+  {  /* entry idx, value */ 18, VALUE_OPT_CORE,
+     /* equiv idx, value */ 18, VALUE_OPT_CORE,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, 1, 0,
      /* opt state flags  */ CORE_FLAGS, 0,
@@ -923,8 +914,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ PROCESSING_DESC, NULL, NULL,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 21, VALUE_OPT_SKIP_SUFFIX,
-     /* equiv idx, value */ 21, VALUE_OPT_SKIP_SUFFIX,
+  {  /* entry idx, value */ 20, VALUE_OPT_SKIP_SUFFIX,
+     /* equiv idx, value */ 20, VALUE_OPT_SKIP_SUFFIX,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, NOLIMIT, 0,
      /* opt state flags  */ SKIP_SUFFIX_FLAGS, 0,
@@ -935,8 +926,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ SKIP_SUFFIX_DESC, SKIP_SUFFIX_NAME, SKIP_SUFFIX_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 22, VALUE_OPT_SELECT_SUFFIX,
-     /* equiv idx, value */ 22, VALUE_OPT_SELECT_SUFFIX,
+  {  /* entry idx, value */ 21, VALUE_OPT_SELECT_SUFFIX,
+     /* equiv idx, value */ 21, VALUE_OPT_SELECT_SUFFIX,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, NOLIMIT, 0,
      /* opt state flags  */ SELECT_SUFFIX_FLAGS, 0,
@@ -947,8 +938,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ SELECT_SUFFIX_DESC, SELECT_SUFFIX_NAME, SELECT_SUFFIX_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 23, VALUE_OPT_DEFINE,
-     /* equiv idx, value */ 23, VALUE_OPT_DEFINE,
+  {  /* entry idx, value */ 22, VALUE_OPT_DEFINE,
+     /* equiv idx, value */ 22, VALUE_OPT_DEFINE,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, NOLIMIT, 0,
      /* opt state flags  */ DEFINE_FLAGS, 0,
@@ -959,7 +950,7 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ DEFINE_DESC, DEFINE_NAME, DEFINE_name,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 24, VALUE_OPT_UNDEFINE,
+  {  /* entry idx, value */ 23, VALUE_OPT_UNDEFINE,
      /* equiv idx, value */ NOLIMIT, NOLIMIT,
      /* equivalenced to  */ INDEX_OPT_DEFINE,
      /* min, max, act ct */ 0, NOLIMIT, 0,
@@ -983,8 +974,8 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* desc, NAME, name */ DEP_TRACK_DESC, NULL, NULL,
      /* disablement strs */ NULL, NULL },
 
-  {  /* entry idx, value */ 26, VALUE_OPT_MAKE_DEP,
-     /* equiv idx, value */ 26, VALUE_OPT_MAKE_DEP,
+  {  /* entry idx, value */ 25, VALUE_OPT_MAKE_DEP,
+     /* equiv idx, value */ 25, VALUE_OPT_MAKE_DEP,
      /* equivalenced to  */ NO_EQUIVALENT,
      /* min, max, act ct */ 0, NOLIMIT, 0,
      /* opt state flags  */ MAKE_DEP_FLAGS, 0,
@@ -1005,6 +996,18 @@ static tOptDesc optDesc[OPTION_CT] = {
      /* must/cannot opts */ NULL, NULL,
      /* option proc      */ NULL,
      /* desc, NAME, name */ AUTOOPTS_OPTS_DESC, NULL, NULL,
+     /* disablement strs */ NULL, NULL },
+
+  {  /* entry idx, value */ 27, VALUE_OPT_NO_ABORT,
+     /* equiv idx, value */ 27, VALUE_OPT_NO_ABORT,
+     /* equivalenced to  */ NO_EQUIVALENT,
+     /* min, max, act ct */ 0, 1, 0,
+     /* opt state flags  */ NO_ABORT_FLAGS, 0,
+     /* last opt argumnt */ { NULL }, /* --no-abort */
+     /* arg list/cookie  */ NULL,
+     /* must/cannot opts */ NULL, NULL,
+     /* option proc      */ NULL,
+     /* desc, NAME, name */ NO_ABORT_DESC, NO_ABORT_NAME, NO_ABORT_name,
      /* disablement strs */ NULL, NULL },
 
   {  /* entry idx, value */ INDEX_OPT_RESET_OPTION, VALUE_OPT_RESET_OPTION,
@@ -1099,25 +1102,25 @@ static tOptDesc optDesc[OPTION_CT] = {
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /** Reference to the upper cased version of autogen. */
-#define zPROGNAME       (autogen_opt_strs+2735)
+#define zPROGNAME       (autogen_opt_strs+2710)
 /** Reference to the title line for autogen usage. */
-#define zUsageTitle     (autogen_opt_strs+2743)
+#define zUsageTitle     (autogen_opt_strs+2718)
 /** autogen configuration file name. */
-#define zRcName         (autogen_opt_strs+2895)
+#define zRcName         (autogen_opt_strs+2870)
 /** Directories to search for autogen config files. */
 static char const * const apzHomeList[3] = {
-    autogen_opt_strs+2887,
-    autogen_opt_strs+2893,
+    autogen_opt_strs+2862,
+    autogen_opt_strs+2868,
     NULL };
 /** The autogen program bug email address. */
-#define zBugsAddr       (autogen_opt_strs+2906)
+#define zBugsAddr       (autogen_opt_strs+2881)
 /** Clarification/explanation of what autogen does. */
-#define zExplain        (autogen_opt_strs+2942)
+#define zExplain        (autogen_opt_strs+2917)
 /** Extra detail explaining what autogen does. */
-#define zDetail         (autogen_opt_strs+3013)
+#define zDetail         (autogen_opt_strs+2988)
 /** The full version string for autogen. */
-#define zFullVersion    (autogen_opt_strs+3126)
-/* extracted from optcode.tlib near line 364 */
+#define zFullVersion    (autogen_opt_strs+3101)
+/* extracted from optcode.tlib near line 342 */
 
 #define OPTPROC_BASE OPTPROC_NONE
 #define translate_option_strings NULL
@@ -1130,7 +1133,6 @@ static opt_arg_union_t const original_autogen_defaults[ OPTION_CT ] = {
     { NULL }, /* doc opt */
     { NULL }, /* --templ-dirs */
     { NULL }, /* --override-tpl */
-    { NULL }, /* --lib-template */
     { NULL }, /* --definitions */
     { NULL }, /* --shell */
     { NULL }, /* --no-fmemopen */
@@ -1155,6 +1157,7 @@ static opt_arg_union_t const original_autogen_defaults[ OPTION_CT ] = {
     { NULL }, /* doc opt */
     { NULL }, /* --make-dep */
     { NULL }, /* doc opt */
+    { NULL }, /* --no-abort */
     { NULL }, /* resettable */
     { NULL }, /* version */
     { NULL }, /* help */
@@ -1223,35 +1226,6 @@ doOptOverride_Tpl(tOptions* pOptions, tOptDesc* pOptDesc)
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**
- * Code to handle the lib-template option.
- * DEFINE macros are saved from this template file for use in processing
- * the main macro file.  Template text aside from the DEFINE macros is
- * is ignored.
- *
- * Do not use this.  Instead, use the INCLUDE macro in your template.
- * @param[in] pOptions the autogen options data structure
- * @param[in,out] pOptDesc the option descriptor for this option.
- */
-static void
-doOptLib_Template(tOptions* pOptions, tOptDesc* pOptDesc)
-{
-    /*
-     * Be sure the flag-code[0] handles special values for the options pointer
-     * viz. (poptions <= OPTPROC_EMIT_LIMIT) *and also* the special flag bit
-     * ((poptdesc->fOptState & OPTST_RESET) != 0) telling the option to
-     * reset its state.
-     */
-    /* extracted from opts.def, line 211 */
-    templ_t * tpl;
-    processing_state = PROC_STATE_LIB_LOAD;
-    tpl = tpl_load(pOptDesc->optArg.argString, NULL);
-    tpl_unload(tpl);
-    processing_state = PROC_STATE_OPTIONS;
-    (void)pOptions;
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**
  * Code to handle the shell option, when SHELL_ENABLED is #define-d.
  * By default, when AutoGen is built, the configuration is probed for a
  * reasonable Bourne-like shell to use for shell script processing.  If
@@ -1271,7 +1245,7 @@ doOptShell(tOptions* pOptions, tOptDesc* pOptDesc)
      * ((poptdesc->fOptState & OPTST_RESET) != 0) telling the option to
      * reset its state.
      */
-    /* extracted from opts.def, line 261 */
+    /* extracted from opts.def, line 231 */
     shell_program = pOptDesc->optArg.argString;
     (void)pOptions;
 }
@@ -1416,9 +1390,9 @@ doOptTrace(tOptions* pOptions, tOptDesc* pOptDesc)
 
 /* extracted from optmain.tlib near line 945 */
     static char const * const names[7] = {
-        autogen_opt_strs+3156, autogen_opt_strs+3164, autogen_opt_strs+3178,
-        autogen_opt_strs+3191, autogen_opt_strs+3201, autogen_opt_strs+3214,
-        autogen_opt_strs+3226 };
+        autogen_opt_strs+3131, autogen_opt_strs+3139, autogen_opt_strs+3153,
+        autogen_opt_strs+3166, autogen_opt_strs+3176, autogen_opt_strs+3189,
+        autogen_opt_strs+3201 };
 
     if (pOptions <= OPTPROC_EMIT_LIMIT) {
         (void) optionEnumerationVal(pOptions, pOptDesc, names, 7);
@@ -1449,7 +1423,7 @@ doOptSelect_Suffix(tOptions* pOptions, tOptDesc* pOptDesc)
      * ((poptdesc->fOptState & OPTST_RESET) != 0) telling the option to
      * reset its state.
      */
-    /* extracted from opts.def, line 624 */
+    /* extracted from opts.def, line 594 */
     char const * arg = pOptDesc->optArg.argString;
     if ((arg != NULL) && (*arg != NUL))
         (void)do_suffix(arg, NULL, -1);
@@ -1466,15 +1440,15 @@ doOptSelect_Suffix(tOptions* pOptions, tOptDesc* pOptDesc)
  * @param[in] ap  the var-arg list.
  * @noreturn
  */
-void
+noreturn extern void
 vusage_message(char const * fmt, va_list ap)
 {
     char const * er_leader = _("autogen usage error:\n");
     fputs(er_leader, stderr);
     vfprintf(stderr, fmt, ap);
     optionUsage(&autogenOptions, AUTOGEN_EXIT_USAGE_ERROR);
-    /* NOTREACHED */
-    exit(1);
+    /* NOTREACHED, but C11 compilers cannot tell. */
+    abort();
 }
 
 /**
@@ -1485,14 +1459,12 @@ vusage_message(char const * fmt, va_list ap)
  * @param[in] ... the argument list for the message
  * @noreturn
  */
-void
+noreturn extern void
 usage_message(char const * fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
     vusage_message(fmt, ap);
-    /* NOTREACHED */
-    va_end(ap);
 }
 
 /**
@@ -1503,7 +1475,7 @@ usage_message(char const * fmt, ...)
  * @param[in] ap         the argument list for the message
  * @noreturn
  */
-void
+noreturn extern void
 vdie(int exit_code, char const * fmt, va_list ap)
 {
     char const * die_leader = _("autogen fatal error:\n");
@@ -1511,7 +1483,6 @@ vdie(int exit_code, char const * fmt, va_list ap)
     vfprintf(stderr, fmt, ap);
     fflush(stderr);
     exit(exit_code);
-    /* NOTREACHED */
 }
 
 /**
@@ -1522,14 +1493,12 @@ vdie(int exit_code, char const * fmt, va_list ap)
  * @param[in] ...        the list of arguments for the message
  * @noreturn
  */
-void
+noreturn extern void
 die(int exit_code, char const * fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
     vdie(exit_code, fmt, ap);
-    /* NOTREACHED */
-    va_end(ap);
 }
 
 /**
@@ -1540,12 +1509,11 @@ die(int exit_code, char const * fmt, ...)
  * @param[in] fname      the file name the operation was on.
  * @noreturn
  */
-void
+noreturn extern void
 fserr(int exit_code, char const * op, char const * fname)
 {
     char const * fserr_fmt = _("fserr %d (%s) performing '%s' on %s\n");
     die(exit_code, fserr_fmt, errno, strerror(errno), op, fname);
-    /* NOTREACHED */
 }
 
 /**

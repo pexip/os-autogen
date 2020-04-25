@@ -19,7 +19,7 @@
  * @{
  */
 /*  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -63,6 +63,8 @@
 #pragma  GCC diagnostic pop
 #endif
 
+#define DEFINE_FSM
+
 #include "ag-text.h"
 #include "opts.h"
 #include "expr.h"
@@ -70,6 +72,7 @@
 #include "directive.h"
 #include "snprintfv/printf.h"
 #include "scribble.h"
+#include "pseudo-fsm.h"
 
 #define  LOG10_2to32  10  /* rounded up */
 
@@ -400,8 +403,36 @@ MODE char const *   curr_sfx         VALUE( NULL );
 /**
  * The time to set for the modification times of the output files.
  */
-MODE time_t         outfile_time     VALUE( 0 );
-MODE time_t         maxfile_time     VALUE( 0 );
+#ifndef HAVE_CLOCK_GETTIME
+#undef  HAVE_UTIMENSAT
+#endif
+
+#ifndef HAVE_UTIMENSAT
+MODE time_t             outfile_time     VALUE( 0 );
+MODE time_t             maxfile_time     VALUE( 0 );
+#define time_is_before(_f, _s) ((_f) < (_s))
+
+#else  // HAVE_UTIMENSAT
+#ifdef DEFINING
+MODE struct timespec    outfile_time     = {0, UTIME_OMIT};
+MODE struct timespec    maxfile_time     = {0, UTIME_OMIT};
+#else
+MODE struct timespec    outfile_time, maxfile_time;
+#endif
+
+#define time_is_before(_f, _s) (                \
+    ((_f).tv_sec < (_s).tv_sec)                 \
+    || (  (((_f).tv_sec == (_s).tv_sec))        \
+       && (((_f).tv_nsec < (_s).tv_nsec)) )     \
+    )
+#undef  st_atime
+#define st_atime st_atim
+#undef  st_mtime
+#define st_mtime st_mtim
+#undef  st_ctime
+#define st_ctime st_ctim
+#endif // HAVE_UTIMENSAT
+
 /**
  * The original time autogen started
  */
@@ -556,7 +587,6 @@ MODE v2c_t p2p VALUE( { NULL } );
  *  Code variations based on the version of Guile:
  */
 #include "guile-iface.h"
-
 #include "proto.h"
 
 /**
@@ -599,7 +629,6 @@ static inline SCM ag_eval(char const * str)
  */
 #define HIDE_FN(_t)  _t
 
-#define LOCAL static
 #endif /* AUTOGEN_BUILD */
 /** @}
  *

@@ -10,8 +10,8 @@ Abstract: AutoGen is a tool designed for generating program files that
 Section: Programming
 
 Format: PDF
-Files: /usr/share/doc/autogen-doc/autogen.pdf.gz
+Files: /usr/share/doc/autogen/autogen.pdf.gz
 
 Format: HTML
-Index: /usr/share/doc/autogen-doc/autogen.html/index.html
-Files: /usr/share/doc/autogen-doc/autogen.html/*
+Index: /usr/share/doc/autogen/autogen.html/index.html
+Files: /usr/share/doc/autogen/autogen.html/*

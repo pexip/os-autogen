@@ -1,3 +1,53 @@
+autogen (1:5.18.16-4) unstable; urgency=low
+
+  * Improved reproducible build on merged /usr system, pass paths for shell
+    and grep as arguments to ./configure. (Thanks, Vagrant Cascadian)
+    Closes: #950410
+  * [lintian] Drop DEB_LDFLAGS_MAINT_APPEND -Wl,--as-needed, default behavior
+    in bullseye toolchain.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 25 Apr 2020 17:55:37 +0200
+
+autogen (1:5.18.16-3) unstable; urgency=medium
+
+  * Fix cross build.
+    + 30_ag_macros.m4_syntax_error.diff
+    + 31_allow_overriding_AGexe_for_crossbuild.diff
+    (Report and patches by Helmut Grohne - Thanks!)
+    Closes: #941025
+  * [lintian] Fix syntax errors in debian/copyright.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 05 Oct 2019 14:46:05 +0200
+
+autogen (1:5.18.16-2) unstable; urgency=low
+
+  * Set Rules-Requires-Root: no.
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 22 Sep 2019 11:09:39 +0200
+
+autogen (1:5.18.16-1) experimental; urgency=low
+
+  [ Andreas Metzler ]
+  * [lintian] Fix syntax errors in debian/copyright.
+    (dep5-copyright-license-name-not-unique).
+  * New upstream version.
+    + Drop 05_cross_pkg_config.diff.
+    + Refresh 10_libopts_tarball_perms.diff.
+    + 20_no_Werror.diff: Disable building with -Werror.
+  * Add new upstream signing key
+    3EEE51D1355B8EC40D9F3122495143D05D0712D1.
+  * Build against guile-2.2. Closes: #885189
+  * Delete rpath setting from binaries. (lintian
+    binary-or-shlib-defines-rpath)
+  * [lintian] Delete trailing empty lines in changelog.
+  * Use dh compat 12.
+
+  [ Ondřej Nový ]
+  * d/control: Set Vcs-* to salsa.debian.org
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 21 Sep 2019 14:44:07 +0200
+
 autogen (1:5.18.12-4) unstable; urgency=medium
 
   * Repository moved to salsa.
@@ -1287,5 +1337,3 @@ autogen (4.5.3-1) unstable; urgency=low
   * Initial Release.
 
  -- James R. Van Zandt <jrv@vanzandt.mv.com>  Fri, 18 Jun 1999 22:09:00 -0400
-
-

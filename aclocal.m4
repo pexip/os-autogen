@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.15 -*- Autoconf -*-
+# generated automatically by aclocal 1.16.1 -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2018 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -20,353 +20,8 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
 
-# lib-ld.m4 serial 6
-dnl Copyright (C) 1996-2003, 2009-2015 Free Software Foundation, Inc.
-dnl This file is free software; the Free Software Foundation
-dnl gives unlimited permission to copy and/or distribute it,
-dnl with or without modifications, as long as this notice is preserved.
-
-dnl Subroutines of libtool.m4,
-dnl with replacements s/_*LT_PATH/AC_LIB_PROG/ and s/lt_/acl_/ to avoid
-dnl collision with libtool.m4.
-
-dnl From libtool-2.4. Sets the variable with_gnu_ld to yes or no.
-AC_DEFUN([AC_LIB_PROG_LD_GNU],
-[AC_CACHE_CHECK([if the linker ($LD) is GNU ld], [acl_cv_prog_gnu_ld],
-[# I'd rather use --version here, but apparently some GNU lds only accept -v.
-case `$LD -v 2>&1 </dev/null` in
-*GNU* | *'with BFD'*)
-  acl_cv_prog_gnu_ld=yes
-  ;;
-*)
-  acl_cv_prog_gnu_ld=no
-  ;;
-esac])
-with_gnu_ld=$acl_cv_prog_gnu_ld
-])
-
-dnl From libtool-2.4. Sets the variable LD.
-AC_DEFUN([AC_LIB_PROG_LD],
-[AC_REQUIRE([AC_PROG_CC])dnl
-AC_REQUIRE([AC_CANONICAL_HOST])dnl
-
-AC_ARG_WITH([gnu-ld],
-    [AS_HELP_STRING([--with-gnu-ld],
-        [assume the C compiler uses GNU ld [default=no]])],
-    [test "$withval" = no || with_gnu_ld=yes],
-    [with_gnu_ld=no])dnl
-
-# Prepare PATH_SEPARATOR.
-# The user is always right.
-if test "${PATH_SEPARATOR+set}" != set; then
-  # Determine PATH_SEPARATOR by trying to find /bin/sh in a PATH which
-  # contains only /bin. Note that ksh looks also at the FPATH variable,
-  # so we have to set that as well for the test.
-  PATH_SEPARATOR=:
-  (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 \
-    && { (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 \
-           || PATH_SEPARATOR=';'
-       }
-fi
-
-ac_prog=ld
-if test "$GCC" = yes; then
-  # Check if gcc -print-prog-name=ld gives a path.
-  AC_MSG_CHECKING([for ld used by $CC])
-  case $host in
-  *-*-mingw*)
-    # gcc leaves a trailing carriage return which upsets mingw
-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
-  *)
-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
-  esac
-  case $ac_prog in
-    # Accept absolute paths.
-    [[\\/]]* | ?:[[\\/]]*)
-      re_direlt='/[[^/]][[^/]]*/\.\./'
-      # Canonicalize the pathname of ld
-      ac_prog=`echo "$ac_prog"| sed 's%\\\\%/%g'`
-      while echo "$ac_prog" | grep "$re_direlt" > /dev/null 2>&1; do
-        ac_prog=`echo $ac_prog| sed "s%$re_direlt%/%"`
-      done
-      test -z "$LD" && LD="$ac_prog"
-      ;;
-  "")
-    # If it fails, then pretend we aren't using GCC.
-    ac_prog=ld
-    ;;
-  *)
-    # If it is relative, then search for the first ld in PATH.
-    with_gnu_ld=unknown
-    ;;
-  esac
-elif test "$with_gnu_ld" = yes; then
-  AC_MSG_CHECKING([for GNU ld])
-else
-  AC_MSG_CHECKING([for non-GNU ld])
-fi
-AC_CACHE_VAL([acl_cv_path_LD],
-[if test -z "$LD"; then
-  acl_save_ifs="$IFS"; IFS=$PATH_SEPARATOR
-  for ac_dir in $PATH; do
-    IFS="$acl_save_ifs"
-    test -z "$ac_dir" && ac_dir=.
-    if test -f "$ac_dir/$ac_prog" || test -f "$ac_dir/$ac_prog$ac_exeext"; then
-      acl_cv_path_LD="$ac_dir/$ac_prog"
-      # Check to see if the program is GNU ld.  I'd rather use --version,
-      # but apparently some variants of GNU ld only accept -v.
-      # Break only if it was the GNU/non-GNU ld that we prefer.
-      case `"$acl_cv_path_LD" -v 2>&1 </dev/null` in
-      *GNU* | *'with BFD'*)
-        test "$with_gnu_ld" != no && break
-        ;;
-      *)
-        test "$with_gnu_ld" != yes && break
-        ;;
-      esac
-    fi
-  done
-  IFS="$acl_save_ifs"
-else
-  acl_cv_path_LD="$LD" # Let the user override the test with a path.
-fi])
-LD="$acl_cv_path_LD"
-if test -n "$LD"; then
-  AC_MSG_RESULT([$LD])
-else
-  AC_MSG_RESULT([no])
-fi
-test -z "$LD" && AC_MSG_ERROR([no acceptable ld found in \$PATH])
-AC_LIB_PROG_LD_GNU
-])
-
-# lib-prefix.m4 serial 7 (gettext-0.18)
-dnl Copyright (C) 2001-2005, 2008-2015 Free Software Foundation, Inc.
-dnl This file is free software; the Free Software Foundation
-dnl gives unlimited permission to copy and/or distribute it,
-dnl with or without modifications, as long as this notice is preserved.
-
-dnl From Bruno Haible.
-
-dnl AC_LIB_ARG_WITH is synonymous to AC_ARG_WITH in autoconf-2.13, and
-dnl similar to AC_ARG_WITH in autoconf 2.52...2.57 except that is doesn't
-dnl require excessive bracketing.
-ifdef([AC_HELP_STRING],
-[AC_DEFUN([AC_LIB_ARG_WITH], [AC_ARG_WITH([$1],[[$2]],[$3],[$4])])],
-[AC_DEFUN([AC_][LIB_ARG_WITH], [AC_ARG_WITH([$1],[$2],[$3],[$4])])])
-
-dnl AC_LIB_PREFIX adds to the CPPFLAGS and LDFLAGS the flags that are needed
-dnl to access previously installed libraries. The basic assumption is that
-dnl a user will want packages to use other packages he previously installed
-dnl with the same --prefix option.
-dnl This macro is not needed if only AC_LIB_LINKFLAGS is used to locate
-dnl libraries, but is otherwise very convenient.
-AC_DEFUN([AC_LIB_PREFIX],
-[
-  AC_BEFORE([$0], [AC_LIB_LINKFLAGS])
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_CANONICAL_HOST])
-  AC_REQUIRE([AC_LIB_PREPARE_MULTILIB])
-  AC_REQUIRE([AC_LIB_PREPARE_PREFIX])
-  dnl By default, look in $includedir and $libdir.
-  use_additional=yes
-  AC_LIB_WITH_FINAL_PREFIX([
-    eval additional_includedir=\"$includedir\"
-    eval additional_libdir=\"$libdir\"
-  ])
-  AC_LIB_ARG_WITH([lib-prefix],
-[  --with-lib-prefix[=DIR] search for libraries in DIR/include and DIR/lib
-  --without-lib-prefix    don't search for libraries in includedir and libdir],
-[
-    if test "X$withval" = "Xno"; then
-      use_additional=no
-    else
-      if test "X$withval" = "X"; then
-        AC_LIB_WITH_FINAL_PREFIX([
-          eval additional_includedir=\"$includedir\"
-          eval additional_libdir=\"$libdir\"
-        ])
-      else
-        additional_includedir="$withval/include"
-        additional_libdir="$withval/$acl_libdirstem"
-      fi
-    fi
-])
-  if test $use_additional = yes; then
-    dnl Potentially add $additional_includedir to $CPPFLAGS.
-    dnl But don't add it
-    dnl   1. if it's the standard /usr/include,
-    dnl   2. if it's already present in $CPPFLAGS,
-    dnl   3. if it's /usr/local/include and we are using GCC on Linux,
-    dnl   4. if it doesn't exist as a directory.
-    if test "X$additional_includedir" != "X/usr/include"; then
-      haveit=
-      for x in $CPPFLAGS; do
-        AC_LIB_WITH_FINAL_PREFIX([eval x=\"$x\"])
-        if test "X$x" = "X-I$additional_includedir"; then
-          haveit=yes
-          break
-        fi
-      done
-      if test -z "$haveit"; then
-        if test "X$additional_includedir" = "X/usr/local/include"; then
-          if test -n "$GCC"; then
-            case $host_os in
-              linux* | gnu* | k*bsd*-gnu) haveit=yes;;
-            esac
-          fi
-        fi
-        if test -z "$haveit"; then
-          if test -d "$additional_includedir"; then
-            dnl Really add $additional_includedir to $CPPFLAGS.
-            CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I$additional_includedir"
-          fi
-        fi
-      fi
-    fi
-    dnl Potentially add $additional_libdir to $LDFLAGS.
-    dnl But don't add it
-    dnl   1. if it's the standard /usr/lib,
-    dnl   2. if it's already present in $LDFLAGS,
-    dnl   3. if it's /usr/local/lib and we are using GCC on Linux,
-    dnl   4. if it doesn't exist as a directory.
-    if test "X$additional_libdir" != "X/usr/$acl_libdirstem"; then
-      haveit=
-      for x in $LDFLAGS; do
-        AC_LIB_WITH_FINAL_PREFIX([eval x=\"$x\"])
-        if test "X$x" = "X-L$additional_libdir"; then
-          haveit=yes
-          break
-        fi
-      done
-      if test -z "$haveit"; then
-        if test "X$additional_libdir" = "X/usr/local/$acl_libdirstem"; then
-          if test -n "$GCC"; then
-            case $host_os in
-              linux*) haveit=yes;;
-            esac
-          fi
-        fi
-        if test -z "$haveit"; then
-          if test -d "$additional_libdir"; then
-            dnl Really add $additional_libdir to $LDFLAGS.
-            LDFLAGS="${LDFLAGS}${LDFLAGS:+ }-L$additional_libdir"
-          fi
-        fi
-      fi
-    fi
-  fi
-])
-
-dnl AC_LIB_PREPARE_PREFIX creates variables acl_final_prefix,
-dnl acl_final_exec_prefix, containing the values to which $prefix and
-dnl $exec_prefix will expand at the end of the configure script.
-AC_DEFUN([AC_LIB_PREPARE_PREFIX],
-[
-  dnl Unfortunately, prefix and exec_prefix get only finally determined
-  dnl at the end of configure.
-  if test "X$prefix" = "XNONE"; then
-    acl_final_prefix="$ac_default_prefix"
-  else
-    acl_final_prefix="$prefix"
-  fi
-  if test "X$exec_prefix" = "XNONE"; then
-    acl_final_exec_prefix='${prefix}'
-  else
-    acl_final_exec_prefix="$exec_prefix"
-  fi
-  acl_save_prefix="$prefix"
-  prefix="$acl_final_prefix"
-  eval acl_final_exec_prefix=\"$acl_final_exec_prefix\"
-  prefix="$acl_save_prefix"
-])
-
-dnl AC_LIB_WITH_FINAL_PREFIX([statement]) evaluates statement, with the
-dnl variables prefix and exec_prefix bound to the values they will have
-dnl at the end of the configure script.
-AC_DEFUN([AC_LIB_WITH_FINAL_PREFIX],
-[
-  acl_save_prefix="$prefix"
-  prefix="$acl_final_prefix"
-  acl_save_exec_prefix="$exec_prefix"
-  exec_prefix="$acl_final_exec_prefix"
-  $1
-  exec_prefix="$acl_save_exec_prefix"
-  prefix="$acl_save_prefix"
-])
-
-dnl AC_LIB_PREPARE_MULTILIB creates
-dnl - a variable acl_libdirstem, containing the basename of the libdir, either
-dnl   "lib" or "lib64" or "lib/64",
-dnl - a variable acl_libdirstem2, as a secondary possible value for
-dnl   acl_libdirstem, either the same as acl_libdirstem or "lib/sparcv9" or
-dnl   "lib/amd64".
-AC_DEFUN([AC_LIB_PREPARE_MULTILIB],
-[
-  dnl There is no formal standard regarding lib and lib64.
-  dnl On glibc systems, the current practice is that on a system supporting
-  dnl 32-bit and 64-bit instruction sets or ABIs, 64-bit libraries go under
-  dnl $prefix/lib64 and 32-bit libraries go under $prefix/lib. We determine
-  dnl the compiler's default mode by looking at the compiler's library search
-  dnl path. If at least one of its elements ends in /lib64 or points to a
-  dnl directory whose absolute pathname ends in /lib64, we assume a 64-bit ABI.
-  dnl Otherwise we use the default, namely "lib".
-  dnl On Solaris systems, the current practice is that on a system supporting
-  dnl 32-bit and 64-bit instruction sets or ABIs, 64-bit libraries go under
-  dnl $prefix/lib/64 (which is a symlink to either $prefix/lib/sparcv9 or
-  dnl $prefix/lib/amd64) and 32-bit libraries go under $prefix/lib.
-  AC_REQUIRE([AC_CANONICAL_HOST])
-  acl_libdirstem=lib
-  acl_libdirstem2=
-  case "$host_os" in
-    solaris*)
-      dnl See Solaris 10 Software Developer Collection > Solaris 64-bit Developer's Guide > The Development Environment
-      dnl <http://docs.sun.com/app/docs/doc/816-5138/dev-env?l=en&a=view>.
-      dnl "Portable Makefiles should refer to any library directories using the 64 symbolic link."
-      dnl But we want to recognize the sparcv9 or amd64 subdirectory also if the
-      dnl symlink is missing, so we set acl_libdirstem2 too.
-      AC_CACHE_CHECK([for 64-bit host], [gl_cv_solaris_64bit],
-        [AC_EGREP_CPP([sixtyfour bits], [
-#ifdef _LP64
-sixtyfour bits
-#endif
-           ], [gl_cv_solaris_64bit=yes], [gl_cv_solaris_64bit=no])
-        ])
-      if test $gl_cv_solaris_64bit = yes; then
-        acl_libdirstem=lib/64
-        case "$host_cpu" in
-          sparc*)        acl_libdirstem2=lib/sparcv9 ;;
-          i*86 | x86_64) acl_libdirstem2=lib/amd64 ;;
-        esac
-      fi
-      ;;
-    *)
-      searchpath=`(LC_ALL=C $CC -print-search-dirs) 2>/dev/null | sed -n -e 's,^libraries: ,,p' | sed -e 's,^=,,'`
-      if test -n "$searchpath"; then
-        acl_save_IFS="${IFS= 	}"; IFS=":"
-        for searchdir in $searchpath; do
-          if test -d "$searchdir"; then
-            case "$searchdir" in
-              */lib64/ | */lib64 ) acl_libdirstem=lib64 ;;
-              */../ | */.. )
-                # Better ignore directories of this form. They are misleading.
-                ;;
-              *) searchdir=`cd "$searchdir" && pwd`
-                 case "$searchdir" in
-                   */lib64 ) acl_libdirstem=lib64 ;;
-                 esac ;;
-            esac
-          fi
-        done
-        IFS="$acl_save_IFS"
-      fi
-      ;;
-  esac
-  test -n "$acl_libdirstem2" || acl_libdirstem2="$acl_libdirstem"
-])
-
 # longlong.m4 serial 17
-dnl Copyright (C) 1999-2007, 2009-2015 Free Software Foundation, Inc.
+dnl Copyright (C) 1999-2007, 2009-2016 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -479,7 +134,7 @@ AC_DEFUN([_AC_TYPE_LONG_LONG_SNIPPET],
               | (ullmax / ull) | (ullmax % ull));]])
 ])
 
-# Copyright (C) 2002-2014 Free Software Foundation, Inc.
+# Copyright (C) 2002-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -491,10 +146,10 @@ AC_DEFUN([_AC_TYPE_LONG_LONG_SNIPPET],
 # generated from the m4 files accompanying Automake X.Y.
 # (This private macro should not be called outside this file.)
 AC_DEFUN([AM_AUTOMAKE_VERSION],
-[am__api_version='1.15'
+[am__api_version='1.16'
 dnl Some users find AM_AUTOMAKE_VERSION and mistake it for a way to
 dnl require some minimum version.  Point them to the right macro.
-m4_if([$1], [1.15], [],
+m4_if([$1], [1.16.1], [],
       [AC_FATAL([Do not call $0, use AM_INIT_AUTOMAKE([$1]).])])dnl
 ])
 
@@ -510,14 +165,14 @@ m4_define([_AM_AUTOCONF_VERSION], [])
 # Call AM_AUTOMAKE_VERSION and AM_AUTOMAKE_VERSION so they can be traced.
 # This function is AC_REQUIREd by AM_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-[AM_AUTOMAKE_VERSION([1.15])dnl
+[AM_AUTOMAKE_VERSION([1.16.1])dnl
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
 _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
 
 # AM_AUX_DIR_EXPAND                                         -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -569,7 +224,7 @@ am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
-# Copyright (C) 1997-2014 Free Software Foundation, Inc.
+# Copyright (C) 1997-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -600,7 +255,7 @@ AC_CONFIG_COMMANDS_PRE(
 Usually this means the macro was only invoked conditionally.]])
 fi])])
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -791,12 +446,11 @@ _AM_SUBST_NOTMAKE([am__nodep])dnl
 
 # Generate code to set up dependency tracking.              -*- Autoconf -*-
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
-
 
 # _AM_OUTPUT_DEPENDENCY_COMMANDS
 # ------------------------------
@@ -805,49 +459,41 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
   # Older Autoconf quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
-  case $CONFIG_FILES in
-  *\'*) eval set x "$CONFIG_FILES" ;;
-  *)   set x $CONFIG_FILES ;;
-  esac
+  # TODO: see whether this extra hack can be removed once we start
+  # requiring Autoconf 2.70 or later.
+  AS_CASE([$CONFIG_FILES],
+          [*\'*], [eval set x "$CONFIG_FILES"],
+          [*], [set x $CONFIG_FILES])
   shift
-  for mf
+  # Used to flag and report bootstrapping failures.
+  am_rc=0
+  for am_mf
   do
     # Strip MF so we end up with the name of the file.
-    mf=`echo "$mf" | sed -e 's/:.*$//'`
-    # Check whether this is an Automake generated Makefile or not.
-    # We used to match only the files named 'Makefile.in', but
-    # some people rename them; so instead we look at the file content.
-    # Grep'ing the first line is not enough: some people post-process
-    # each Makefile.in and add a new line on top of each file to say so.
-    # Grep'ing the whole file is not good either: AIX grep has a line
+    am_mf=`AS_ECHO(["$am_mf"]) | sed -e 's/:.*$//'`
+    # Check whether this is an Automake generated Makefile which includes
+    # dependency-tracking related rules and includes.
+    # Grep'ing the whole file directly is not great: AIX grep has a line
     # limit of 2048, but all sed's we know have understand at least 4000.
-    if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
-      dirpart=`AS_DIRNAME("$mf")`
-    else
-      continue
-    fi
-    # Extract the definition of DEPDIR, am__include, and am__quote
-    # from the Makefile without running 'make'.
-    DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
-    test -z "$DEPDIR" && continue
-    am__include=`sed -n 's/^am__include = //p' < "$mf"`
-    test -z "$am__include" && continue
-    am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
-    # Find all dependency output files, they are included files with
-    # $(DEPDIR) in their names.  We invoke sed twice because it is the
-    # simplest approach to changing $(DEPDIR) to its actual value in the
-    # expansion.
-    for file in `sed -n "
-      s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
-	 sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g'`; do
-      # Make sure the directory exists.
-      test -f "$dirpart/$file" && continue
-      fdir=`AS_DIRNAME(["$file"])`
-      AS_MKDIR_P([$dirpart/$fdir])
-      # echo "creating $dirpart/$file"
-      echo '# dummy' > "$dirpart/$file"
-    done
+    sed -n 's,^am--depfiles:.*,X,p' "$am_mf" | grep X >/dev/null 2>&1 \
+      || continue
+    am_dirpart=`AS_DIRNAME(["$am_mf"])`
+    am_filepart=`AS_BASENAME(["$am_mf"])`
+    AM_RUN_LOG([cd "$am_dirpart" \
+      && sed -e '/# am--include-marker/d' "$am_filepart" \
+        | $MAKE -f - am--depfiles]) || am_rc=$?
   done
+  if test $am_rc -ne 0; then
+    AC_MSG_FAILURE([Something went wrong bootstrapping makefile fragments
+    for automatic dependency tracking.  Try re-running configure with the
+    '--disable-dependency-tracking' option to at least be able to build
+    the package (albeit without support for automatic dependency tracking).])
+  fi
+  AS_UNSET([am_dirpart])
+  AS_UNSET([am_filepart])
+  AS_UNSET([am_mf])
+  AS_UNSET([am_rc])
+  rm -f conftest-deps.mk
 }
 ])# _AM_OUTPUT_DEPENDENCY_COMMANDS
 
@@ -856,17 +502,16 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
 # -----------------------------
 # This macro should only be invoked once -- use via AC_REQUIRE.
 #
-# This code is only required when automatic dependency tracking
-# is enabled.  FIXME.  This creates each '.P' file that we will
-# need in order to bootstrap the dependency handling code.
+# This code is only required when automatic dependency tracking is enabled.
+# This creates each '.Po' and '.Plo' makefile fragment that we'll need in
+# order to bootstrap the dependency handling code.
 AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS],
 [AC_CONFIG_COMMANDS([depfiles],
      [test x"$AMDEP_TRUE" != x"" || _AM_OUTPUT_DEPENDENCY_COMMANDS],
-     [AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"])
-])
+     [AMDEP_TRUE="$AMDEP_TRUE" MAKE="${MAKE-make}"])])
 
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -890,7 +535,7 @@ fi], [AC_MSG_RESULT([no])])
 
 # Do all the work for Automake.                             -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -977,8 +622,8 @@ AC_REQUIRE([AM_PROG_INSTALL_STRIP])dnl
 AC_REQUIRE([AC_PROG_MKDIR_P])dnl
 # For better backward compatibility.  To be removed once Automake 1.9.x
 # dies out for good.  For more background, see:
-# <http://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
-# <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 AC_SUBST([mkdir_p], ['$(MKDIR_P)'])
 # We need awk for the "check" target (and possibly the TAP driver).  The
 # system "awk" is bad on some platforms.
@@ -1045,7 +690,7 @@ END
 Aborting the configuration process, to ensure you take notice of the issue.
 
 You can download and install GNU coreutils to get an 'rm' implementation
-that behaves properly: <http://www.gnu.org/software/coreutils/>.
+that behaves properly: <https://www.gnu.org/software/coreutils/>.
 
 If you want to complete the configuration process using your problematic
 'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
@@ -1087,7 +732,7 @@ for _am_header in $config_headers :; do
 done
 echo "timestamp for $_am_arg" >`AS_DIRNAME(["$_am_arg"])`/stamp-h[]$_am_stamp_count])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1108,7 +753,7 @@ if test x"${install_sh+set}" != xset; then
 fi
 AC_SUBST([install_sh])])
 
-# Copyright (C) 2003-2014 Free Software Foundation, Inc.
+# Copyright (C) 2003-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1129,7 +774,7 @@ AC_SUBST([am__leading_dot])])
 
 # Check to see how 'make' treats includes.	            -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1137,49 +782,42 @@ AC_SUBST([am__leading_dot])])
 
 # AM_MAKE_INCLUDE()
 # -----------------
-# Check to see how make treats includes.
+# Check whether make has an 'include' directive that can support all
+# the idioms we need for our automatic dependency tracking code.
 AC_DEFUN([AM_MAKE_INCLUDE],
-[am_make=${MAKE-make}
-cat > confinc << 'END'
+[AC_MSG_CHECKING([whether ${MAKE-make} supports the include directive])
+cat > confinc.mk << 'END'
 am__doit:
-	@echo this is the am__doit target
+	@echo this is the am__doit target >confinc.out
 .PHONY: am__doit
 END
-# If we don't find an include directive, just comment out the code.
-AC_MSG_CHECKING([for style of include used by $am_make])
 am__include="#"
 am__quote=
-_am_result=none
-# First try GNU make style include.
-echo "include confinc" > confmf
-# Ignore all kinds of additional output from 'make'.
-case `$am_make -s -f confmf 2> /dev/null` in #(
-*the\ am__doit\ target*)
-  am__include=include
-  am__quote=
-  _am_result=GNU
-  ;;
-esac
-# Now try BSD make style include.
-if test "$am__include" = "#"; then
-   echo '.include "confinc"' > confmf
-   case `$am_make -s -f confmf 2> /dev/null` in #(
-   *the\ am__doit\ target*)
-     am__include=.include
-     am__quote="\""
-     _am_result=BSD
-     ;;
-   esac
-fi
-AC_SUBST([am__include])
-AC_SUBST([am__quote])
-AC_MSG_RESULT([$_am_result])
-rm -f confinc confmf
-])
+# BSD make does it like this.
+echo '.include "confinc.mk" # ignored' > confmf.BSD
+# Other make implementations (GNU, Solaris 10, AIX) do it like this.
+echo 'include confinc.mk # ignored' > confmf.GNU
+_am_result=no
+for s in GNU BSD; do
+  AM_RUN_LOG([${MAKE-make} -f confmf.$s && cat confinc.out])
+  AS_CASE([$?:`cat confinc.out 2>/dev/null`],
+      ['0:this is the am__doit target'],
+      [AS_CASE([$s],
+          [BSD], [am__include='.include' am__quote='"'],
+          [am__include='include' am__quote=''])])
+  if test "$am__include" != "#"; then
+    _am_result="yes ($s style)"
+    break
+  fi
+done
+rm -f confinc.* confmf.*
+AC_MSG_RESULT([${_am_result}])
+AC_SUBST([am__include])])
+AC_SUBST([am__quote])])
 
 # Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
 
-# Copyright (C) 1997-2014 Free Software Foundation, Inc.
+# Copyright (C) 1997-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1218,7 +856,7 @@ fi
 
 # Helper functions for option handling.                     -*- Autoconf -*-
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1247,7 +885,7 @@ AC_DEFUN([_AM_SET_OPTIONS],
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1294,7 +932,7 @@ AC_LANG_POP([C])])
 # For backward compatibility.
 AC_DEFUN_ONCE([AM_PROG_CC_C_O], [AC_REQUIRE([AC_PROG_CC])])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1313,7 +951,7 @@ AC_DEFUN([AM_RUN_LOG],
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1394,7 +1032,7 @@ AC_CONFIG_COMMANDS_PRE(
 rm -f conftest.file
 ])
 
-# Copyright (C) 2009-2014 Free Software Foundation, Inc.
+# Copyright (C) 2009-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1454,7 +1092,7 @@ AC_SUBST([AM_BACKSLASH])dnl
 _AM_SUBST_NOTMAKE([AM_BACKSLASH])dnl
 ])
 
-# Copyright (C) 2001-2014 Free Software Foundation, Inc.
+# Copyright (C) 2001-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1482,7 +1120,7 @@ fi
 INSTALL_STRIP_PROGRAM="\$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
-# Copyright (C) 2006-2014 Free Software Foundation, Inc.
+# Copyright (C) 2006-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1501,7 +1139,7 @@ AC_DEFUN([AM_SUBST_NOTMAKE], [_AM_SUBST_NOTMAKE($@)])
 
 # Check how to create a tarball.                            -*- Autoconf -*-
 
-# Copyright (C) 2004-2014 Free Software Foundation, Inc.
+# Copyright (C) 2004-2018 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1633,9 +1271,13 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([config/ag_macros.m4])
+m4_include([config/asm-underscore.m4])
 m4_include([config/extensions.m4])
 m4_include([config/guile.m4])
+m4_include([config/host-cpu-c-abi.m4])
+m4_include([config/lib-ld.m4])
 m4_include([config/lib-link.m4])
+m4_include([config/lib-prefix.m4])
 m4_include([config/libopts.m4])
 m4_include([config/libtool.m4])
 m4_include([config/ltoptions.m4])

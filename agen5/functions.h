@@ -10,7 +10,7 @@
  *
  *  Tables of Text Functions for AutoGen
  *
- *  Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -308,7 +308,7 @@ static unload_proc_p_t const unload_procs[FUNC_CT] = {
     NULL,           NULL,           NULL,           NULL,
     mUnload_Select, NULL,           NULL,           NULL };
 
-#define FUNCTION_CKSUM 0x9B56
+#define FUNCTION_CKSUM 0x061D
 
 #endif /* AUTOGEN_FUNCTIONS_H_GUARD */
 /** @} */

@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,21 +26,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static char const * ld_lib_path = NULL;
-
-/* = = = START-STATIC-FORWARD = = = */
-static void
-init_scm(void);
-
-static char const *
-make_quote_str(char const * str);
-
-static void
-dep_usage(char const * fmt, ...);
-
-static void
-add_sys_env(char * env_name);
-/* = = = END-STATIC-FORWARD = = = */
+ static char const * ld_lib_path = NULL;
 
 #include "expr.ini"
 
@@ -50,7 +36,7 @@ add_sys_env(char * env_name);
  * @param arg_ct  the count of program arguments, plus 1.
  * @param arg_vec the program name plus its arguments
  */
-LOCAL void
+static void
 initialize(int arg_ct, char ** arg_vec)
 {
     putenv(C(char *, ld_lib_path));
@@ -184,7 +170,7 @@ dep_usage(char const * fmt, ...)
  * @param opts the autogen options data structure
  * @param pOptDesc the option descriptor for this option.
  */
-LOCAL void
+static void
 config_dep(tOptions * opts, tOptDesc * od)
 {
     char const * opt_arg = od->optArg.argString;
@@ -286,7 +272,7 @@ add_sys_env(char * env_name)
  * to match what we currently have.  Additionally, force our environment
  * to be "C" and export all the variables that describe our system.
  */
-LOCAL void
+static void
 prep_env(void)
 {
     /*

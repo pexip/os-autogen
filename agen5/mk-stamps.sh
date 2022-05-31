@@ -3,7 +3,7 @@
 # agen5/mk-stamps.sh
 #
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -28,10 +28,49 @@
 #  because some of the rules are complex and we don't want to
 #  deal with the dual update problem.
 
+STAMP_TEMP_DIR=$(mktemp --suffix=.tdir -d /tmp/mk-stamps-XXXXXXXX)
+exec 9>&2 2>> ${STAMP_TEMP_DIR}/mk-stamps.log
+stop_tracing=:
+if (shopt -qo xtrace)
+then
+    shopt -qo xtrace || stop_tracing="set +x"
+else
+    shopt() {
+        local on=$(set -o|sed -n "s/^$2 *//p")
+        test $on = on
+    }
+
+    shopt -qo xtrace || stop_tracing="set +x"
+fi
+set -x
+
 if test -z "$mainpid"
 then
-    . ${top_srcdir:-..}/config/bootstrap.shlib
-    . ${top_builddir:-..}/config/shdefs
+    test -z "${top_srcdir}" && top_srcdir=`
+        \\cd \`dirname $0\`
+        \\cd ..
+        pwd`
+
+    test -z "${top_builddir}" && top_builddir=`
+        \\cd ..
+        pwd`
+    export top_srcdir top_builddir
+    . ${top_srcdir}/config/bootstrap.shlib
+
+    test -f ${top_builddir}/config/shdefs || {
+
+        test -f ${top_builddir:-..}/config/mk-shdefs || {
+            echo "mk-shdefs has not beein configured in ${top_builddir:-$PWD/..}"
+            exit 1
+        } 1>&2
+
+        ( set -e
+          cd ${top_builddir:-..}
+          make shdefs
+        ) || exit 1
+
+        . ${top_builddir:-..}/config/shdefs
+    }
 fi
 
 set_defaults()
@@ -259,11 +298,17 @@ dispatch()
     pid_list="$pid_list $!"
 }
 
+conf_time_make_dep_file() {
+    local d=`dirname "$1"`
+    test -d "$d" || mkdir -p "$d" || exit 1
+    touch -t 197001020000 "$1"
+}
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 #  M A I N
 #
-PS4='>stmp-${FUNCNAME}> '
+export PS4='+stmp=${FUNCNAME:-=}-$LINENO> '
 set_defaults ${1+"$@"}
 rmlist=`mktemp ${TMPDIR:-/tmp}/rmlist-XXXXXX`
 test -f "$rmlist" || {
@@ -311,6 +356,10 @@ do
     functions.h )
         dispatch func ;;
 
+    *dep-*.mk )
+        conf_time_make_dep_file "$t"
+        ;;
+
     *)  if test `type -t make_$t` = function 2>/dev/null 1>&2
         then dispatch $t
         else die "Don't know how to make $t"
@@ -321,7 +370,8 @@ done
 wait $pid_list
 rmlist=`cat $rmlist`
 rm -f $rmlist ag-*.log
-
+$stop_tracing
+exec 2>&9 9>&-
 trap '' 0
 
 # Local Variables:

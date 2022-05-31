@@ -9,7 +9,7 @@
 # error AutoGen does not work with this version of Guile
   choke me.
 
-#elif GUILE_VERSION < 201000
+#elif GUILE_VERSION < 203000
 # define AG_SCM_IS_PROC(_p)           scm_is_true( scm_procedure_p(_p))
 # define AG_SCM_LIST_P(_l)            scm_is_true( scm_list_p(_l))
 # define AG_SCM_PAIR_P(_p)            scm_is_true( scm_pair_p(_p))

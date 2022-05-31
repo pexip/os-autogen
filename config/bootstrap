@@ -4,7 +4,7 @@
 # bootstrap --- maintainer's bootstrap script
 #
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -44,15 +44,15 @@
 # no longer has to maintain generated files under source control, they
 # can be generated after checkout using this bootstrap procedure.
 
-PS4='>${FUNCNAME:-bstp}> '
+PS4='+BS=${FUNCNAME:-=}-$LINENO> '
 
 top_srcdir=$(
-    cd $(dirname $0)/.. >/dev/null
+    cd $(dirname $0)/.. >/dev/null || kill -9 $$
     pwd )
 top_builddir=${top_srcdir}
 
-. config/bootstrap.shlib
-PS4='>bs-${FUNCNAME}> '
+PS4='+shlib=${FUNCNAME:-=}-$LINENO> ' \
+  source config/bootstrap.shlib
 
 config_tools()
 {
@@ -90,15 +90,23 @@ config_tools()
     export char_mapper
 
     echo bootstrapping in ${PWD}
-    temp_dir=`mktemp -d ${TMPDIR:-/tmp}/bs-XXXXXX`
-    test -d "$temp_dir" || {
-        temp_dir=${TMPDIR:-/tmp}/bs-$$
-        rm -rf ${temp_dir}
-        mkdir ${temp_dir}
-        chmod 700 ${temp_dir}
+    if test -d "${TEMP_DIR}"
+    then
+        i_made_temp_dir=false
+
+    else
+        TEMP_DIR=`mktemp -d ${TMPDIR:-/tmp}/bs-XXXXXX`
+        i_made_temp_dir=true
+        export TEMP_DIR
+    fi
+    test -d "$TEMP_DIR" || {
+        temp_dir=${TMP:-/tmp}/bs-$$
+        rm -rf ${TEMP_DIR}
+        mkdir ${TEMP_DIR}
+        chmod 700 ${TEMP_DIR}
     }
 
-    trap "rm -rf ${temp_dir}" 0
+    trap "rm -rf ${TEMP_DIR}" 0
     set +e
 }
 
@@ -108,12 +116,14 @@ config_tools()
 # to be called before the main script, or afterwards.
 #
 source_bs() {
-    file=${2}
+    local file=${2}
     cd ${file%/*}
-    (
-        PS4=">${1#./}-\${FUNCNAME}> "
+    file=${file##*/}
+    test -f $file && (
+        PS4="+${1#./}=\${FUNCNAME:-=}-\$LINENO> "
         shift 2
-        . ${file##*/} ${1+"$@"} || die ${file} failed
+        : IN $PWD sourcing $file
+        source ${PWD}/${file} ${1+"$@"} || die ${file} failed
     )
     file=${PWD##*/}
     cd - >/dev/null
@@ -140,13 +150,13 @@ post_local()
 }
 
 filter_chaff() {
-    cat > ${temp_dir}/config-log.txt
+    cat > ${TEMP_DIR}/config-log.txt
     if test -f configure
     then
         sedcmd='/configure.ac:.*no .* detected/,/configure.ac:.*top level/d'
-        sed "$sedcmd" ${temp_dir}/config-log.txt
+        sed "$sedcmd" ${TEMP_DIR}/config-log.txt
     else
-        cat ${temp_dir}/config-log.txt
+        cat ${TEMP_DIR}/config-log.txt
     fi
 }
 
@@ -159,13 +169,19 @@ run_autotools()
     test -n "$auxdir" || auxdir=${top_srcdir}
     test -d $auxdir   || auxdir=.
 
-    {
-        doit $LIBTOOLIZE    --force
-        doit $ACLOCAL       -I config
-        doit $AUTOHEADER
-        doit $AUTOMAKE      --gnu --add-missing
-        doit $AUTOCONF
-    } 2>&1 | filter_chaff
+    doit $LIBTOOLIZE    --force
+    doit $ACLOCAL       -I config
+    doit $AUTOHEADER
+    doit $AUTOMAKE      --gnu --add-missing
+    test -f libtool || cp -fp $(command -v libtool) .
+    doit $AUTOCONF
+    sedcmd='s/^PS4=/## PS4=/'
+    shopt -qo xtrace && {
+        sedcmd+=$';/SHELL.*CONFIG_STATUS/{\n'
+        sedcmd+='s/^/   PS4="+csts=\\${FUNCNAME:-=}-\\$LINENO> " /'
+        sedcmd+=$'\ns/SHELL /SHELL -x /\n}'
+    }
+    sed -i "$sedcmd" configure
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -175,13 +191,13 @@ run_autotools()
 {
     config_tools
     pre_local
-    run_autotools 2>&1
+    ( run_autotools 2>&1 ) | filter_chaff
     post_local
 
     trap '' 0
     echo 'bootstrap complete'
-    rm -rf ${temp_dir}
-    ( exit 0 ) ; exit
+    ${i_made_temp_dir} && rm -rf ${TEMP_DIR}
+    : ; exit
 }
 # Local Variables:
 # mode:shell-script

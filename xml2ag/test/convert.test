@@ -6,7 +6,7 @@
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -68,7 +68,7 @@ cat > ${testname}.samp <<'_EndOfSample_'
 /* Parsed from stdin */
 AutoGen Definitions sample.tpl;
 XML-version = '1.0';
-XML-standalone = true;
+XML-standalone = 'true';
 template = 'sample.tpl';
 mumble = {
   content = '';
@@ -94,7 +94,7 @@ stumble = {
 _EndOfSample_
 
 cmp -s ${testname}.samp ${testname}.out || \
-	failure "`diff ${testname}.samp ${testname}.out`"
+	failure "`diff -u ${testname}.samp ${testname}.out`"
 
 ${VERBOSE} || { cd ${srcdir} ; rm -rf ${testsubdir} ; }
 

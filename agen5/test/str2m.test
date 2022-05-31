@@ -5,7 +5,7 @@
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -233,12 +233,6 @@ cat > $testname-c2.base <<- _EOF_
 	    return res;
 	}
 
-	#include <sys/types.h>
-	#include <string.h>
-	#ifndef NUL
-	#define NUL '\0'
-	#endif
-
 	/**
 	 * Convert a string to a str2m_2_mask_t mask.
 	 * Bit names prefixed with a hyphen have the bit removed from the mask.
@@ -256,7 +250,7 @@ cat > $testname-c2.base <<- _EOF_
 	str2m_2_mask_t
 	str2m_2_str2mask(char const * str, str2m_2_mask_t old)
 	{
-	    static char const white[] = " \t\f";
+	    static char const white[] = ", \t\f";
 	    static char const name_chars[] =
 	        "ehilnorstv"
 	        "EHILNORSTV";

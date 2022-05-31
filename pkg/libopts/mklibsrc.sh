@@ -1,9 +1,12 @@
-#! /bin/sh
+#! /bin/echo thils-file-should-not-be-directly-executed
 ##  -*- Mode: shell-script -*-
+##
 ## mklibsrc.sh --   make the libopts tear-off library source tarball
 ##
+## This file is called via $(POSIX_SHELL) in autoopts/Makefile
+##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -18,6 +21,11 @@
 ##  You should have received a copy of the GNU General Public License along
 ##  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+test ${#CDPATH} -gt 0 && CDPATH=''
+test -d "${top_builddir}" && test -d "${top_srcdir}" || {
+  echo top_builddir and top_srcdir must specify a directory >&2
+  exit 1
+}
 top_builddir=`cd $top_builddir ; pwd`
 top_srcdir=`cd $top_srcdir ; pwd`
 
@@ -38,11 +46,11 @@ tagd=`pwd`/${tag}
 #
 cd ${top_builddir}/autoopts
 files='libopts.c gettext.h parse-duration.c parse-duration.h
-	stdnoreturn.in.h '$(
+	stdnoreturn.in.h _Noreturn.h '$(
     fgrep '#include' libopts.c | \
        sed -e 's,"$,,;s,#.*",,' )
 
-for f in ${files} intprops.h
+for f in ${files} intprops.h verify.h
 do
   test -f ${f} &&
     cp -f ${f} ${tagd}/${f} && continue
@@ -52,6 +60,8 @@ do
 
   test -f ${top_srcdir}/${f} &&
     cp -f ${top_srcdir}/${f} ${tagd}/${f} && continue
+
+  die "could not locate ${f} to copy into tarball"
 done
 
 cp -f ${top_srcdir}/pkg/libopts/COPYING.* ${tagd}/.
@@ -77,7 +87,7 @@ touch MakeDefs.inc
 
 vers=${AO_CURRENT}:${AO_REVISION}:${AO_AGE}
 {
-  sed $'s/^\t//' << EOMakefile
+  cat <<- EOMakefile
 	## LIBOPTS Makefile
 	MAINTAINERCLEANFILES    = Makefile.in
 	if INSTALL_LIBOPTS
@@ -95,11 +105,14 @@ vers=${AO_CURRENT}:${AO_REVISION}:${AO_AGE}
 	libopts.c:		\$(BUILT_SOURCES)
 		@: do-nothing rule to avoid default SCCS get
 
-EOMakefile
+	EOMakefile
 
   printf '\n# Makefile fragment from gnulib-s stdnoreturn module:\n#\n'
   sed '/^#/d;/^$/d;s/top_srcdir/srcdir/' \
     ${top_srcdir}/pkg/libopts/stdnoreturn.mk
+  sed '1,/^Makefile.am:/d;/^[A-Z][a-z0-9-]*:/,$d' \
+    ${top_srcdir}/pkg/libopts/_Noreturn
+
   printf '\nEXTRA_DIST += \\\n'
   find $(ls -A) -type f \
     | env LC_COLLATE=C sort \
@@ -107,13 +120,23 @@ EOMakefile
     | ${CLexe} -I4 --spread=1 --line-sep="  \\"
 } > Makefile.am
 
-gz='gzip --best'
+gz='gzip --best -n'
 sfx=tar.gz
 
 cd ..
 echo ! cd `pwd`
 echo ! tar cvf ${tag}.${sfx} ${tag}
-tar cvf - ${tag} | $gz > ${top_builddir}/autoopts/${tag}.${sfx}
+
+# If we have a SOURCE_DATE_EPOCH *and* tar supports a sort option,
+# then add some fancy options to make tar output repeatable.
+#
+rbopts=""
+[ -z "$SOURCE_DATE_EPOCH" ] \
+    || ! tar --help|grep -q sort= \
+    || rbopts="--sort=name --format=gnu --clamp-mtime --mtime @$SOURCE_DATE_EPOCH"
+
+tar cvf - $rbopts ${tag} | \
+    $gz > ${top_builddir}/autoopts/${tag}.${sfx}
 rm -rf ${tag}
 
 ## Local Variables:

@@ -25,7 +25,7 @@ typedef struct {
 /**
  * @file fmemopen.c
  *
- * Copyright (C) 2004-2014, 2016 by Bruce Korb.  All rights reserved.
+ * Copyright (C) 2004-2018 by Bruce Korb.  All rights reserved.
  *
  * This code was inspired from software written by
  *   Hanno Mueller, kontakt@hanno.de
@@ -53,9 +53,6 @@ typedef struct {
  * SUCH DAMAGE.
  */
 #if defined(HAVE_FOPENCOOKIE)
-#  if defined(HAVE_LIBIO_H)
-#    include <libio.h>
-#  endif
 
    typedef off64_t * seek_off_t;
    typedef int       seek_ret_t;
@@ -108,44 +105,29 @@ typedef struct {
     fmem_cookie_t * cookie;
 } cookie_fp_map_t;
 
-static cookie_fp_map_t const * map    = NULL;
-static unsigned int            map_ct = 0;
-static unsigned int            map_alloc_ct = 0;
-
-/* = = = START-STATIC-FORWARD = = = */
-static int
-fmem_getmode(char const * mode, mode_bits_t * pRes);
-
-static int
-fmem_extend(fmem_cookie_t *pFMC, size_t new_size);
-
-static ssize_t
-fmem_read(void *cookie, void *pBuf, size_t sz);
-
-static ssize_t
-fmem_write(void *cookie, const void *pBuf, size_t sz);
-
-static seek_ret_t
-fmem_seek(void * cookie, seek_off_t offset, int dir);
-
-static int
-fmem_close(void * cookie);
-
-static bool
-fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len);
-
-static bool
-fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len);
-/* = = = END-STATIC-FORWARD = = = */
+MOD_LOCAL cookie_fp_map_t const * map    = NULL;
+MOD_LOCAL unsigned int            map_ct = 0;
+MOD_LOCAL unsigned int            map_alloc_ct = 0;
 
 #ifdef TEST_FMEMOPEN
-  static fmem_cookie_t * saved_cookie = NULL;
+MOD_LOCAL fmem_cookie_t * saved_cookie = NULL;
 #endif
+
+MOD_LOCAL int
+fmem_getmode(char const * mode, mode_bits_t * pRes);
+MOD_LOCAL bool
+fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len);
+MOD_LOCAL int
+fmem_extend(fmem_cookie_t *pFMC, size_t new_size);
+MOD_LOCAL seek_ret_t
+fmem_seek(void * cookie, seek_off_t offset, int dir);
+MOD_LOCAL bool
+fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len);
 
 /**
  * Convert a mode string into mode bits.
  */
-static int
+MOD_LOCAL int
 fmem_getmode(char const * mode, mode_bits_t * pRes)
 {
     if (mode == NULL)
@@ -184,7 +166,7 @@ fmem_getmode(char const * mode, mode_bits_t * pRes)
 /**
  * Extend the space associated with an fmem file.
  */
-static int
+MOD_LOCAL int
 fmem_extend(fmem_cookie_t *pFMC, size_t new_size)
 {
     size_t ns = (new_size + (pFMC->pg_size - 1)) & (~(pFMC->pg_size - 1));
@@ -321,7 +303,7 @@ fmem_write(void *cookie, const void *pBuf, size_t sz)
 /**
  * Handle file system callback to set a new current position
  */
-static seek_ret_t
+MOD_LOCAL seek_ret_t
 fmem_seek(void * cookie, seek_off_t offset, int dir)
 {
     size_t new_pos;
@@ -407,7 +389,7 @@ fmem_close(void * cookie)
 /**
  * Configure the user supplied buffer.
  */
-static bool
+MOD_LOCAL bool
 fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
 {
     /*
@@ -464,7 +446,7 @@ fmem_config_user_buf(fmem_cookie_t * pFMC, void * buf, ssize_t len)
 /**
  * Allocate an initial buffer for fmem.
  */
-static bool
+MOD_LOCAL bool
 fmem_alloc_buf(fmem_cookie_t * pFMC, ssize_t len)
 {
     /*

@@ -39,7 +39,7 @@ autogen definitions options_h;
 
 /* GLOBALDEFS */
 
-#line 285 "autoopts.c"
+#line 279 "autoopts.c"
     library = 'opts';
     header = 'your-opts.h';
     lib_description =
@@ -50,7 +50,7 @@ called from any other user code.  The @file{options.h} header is
 fairly clear about this, too.';
 
 
-#line 220 "cook.c"
+#line 212 "cook.c"
 export_func = {
     name    = 'ao_string_cook';
     private;
@@ -76,11 +76,11 @@ single quote strings, then the backslashes are honored only when they
 precede another backslash or a single quote character.';
     err = '@code{NULL} is returned if the string(s) is/are mal-formed.';
     srcfile = 'cook.c';
-    linenum = '220';
+    linenum = '212';
 };
 
 
-#line 40 "cook.c"
+#line 32 "cook.c"
 export_func = {
     name    = 'ao_string_cook_escape_char';
     private;
@@ -115,11 +115,11 @@ character that is different from \\n, if need be.  For example, use
 0x7F and never emit a 0x7F.';
     err = '@code{NULL} is returned if the string is mal-formed.';
     srcfile = 'cook.c';
-    linenum = '40';
+    linenum = '32';
 };
 
 
-#line 169 "tokenize.c"
+#line 152 "tokenize.c"
 export_func = {
     name    = 'ao_string_tokenize';
     what = 'tokenize an input string';
@@ -183,11 +183,11 @@ Note that everything is freed with the one call to @code{free(3C)}.';
 @code{ENOMEM} - There is not enough memory.
 @end itemize';
     srcfile = 'tokenize.c';
-    linenum = '169';
+    linenum = '152';
 };
 
 
-#line 87 "configfile.c"
+#line 43 "configfile.c"
 export_func = {
     name    = 'configFileLoad';
     what = 'parse a configuration file';
@@ -221,11 +221,11 @@ type "@code{OPARG_TYPE_HIERARCHY}".  It may be used in calls to
 @code{ENOMEM} - not enough memory to allocate the needed structures.
 @end itemize';
     srcfile = 'configfile.c';
-    linenum = '87';
+    linenum = '43';
 };
 
 
-#line 849 "makeshell.c"
+#line 811 "makeshell.c"
 export_func = {
     name    = 'genshelloptUsage';
     private;
@@ -247,7 +247,7 @@ each emitting the usage text in either the short (error exit)
 style or the long style.  The generated program will capture this
 and create shell script variables containing the two types of text.';
     srcfile = 'makeshell.c';
-    linenum = '849';
+    linenum = '811';
 };
 
 
@@ -304,7 +304,7 @@ it is an empty string or it is a number that evaluates to zero.';
 };
 
 
-#line 265 "enum.c"
+#line 240 "enum.c"
 export_func = {
     name    = 'optionEnumerationVal';
     what = 'Convert from a string to an enumeration value';
@@ -337,7 +337,7 @@ This will match the generated enumeration value.
 Full matches are always accepted.  Partial matches are accepted
 if there is only one partial match.';
     srcfile = 'enum.c';
-    linenum = '265';
+    linenum = '240';
 };
 
 
@@ -377,7 +377,7 @@ The mode specifies if the file must exist, must not exist or may
 };
 
 
-#line 1104 "configfile.c"
+#line 1051 "configfile.c"
 export_func = {
     name    = 'optionFileLoad';
     what = 'Load the locatable config files, in order';
@@ -414,11 +414,11 @@ Configuration files not found or not decipherable are simply ignored.';
 is out of date or indecipherable.  Otherwise, the value "0" will
 always be returned.';
     srcfile = 'configfile.c';
-    linenum = '1104';
+    linenum = '1051';
 };
 
 
-#line 219 "configfile.c"
+#line 175 "configfile.c"
 export_func = {
     name    = 'optionFindNextValue';
     FIXME = 'the handling of \'pzName\' and \'pzVal\' is just wrong.';
@@ -459,11 +459,11 @@ hierarchical option value.
 @code{ENOENT} - no entry matched the given name.
 @end itemize';
     srcfile = 'configfile.c';
-    linenum = '219';
+    linenum = '175';
 };
 
 
-#line 146 "configfile.c"
+#line 102 "configfile.c"
 export_func = {
     name    = 'optionFindValue';
     what = 'find a hierarcicaly valued option instance';
@@ -497,7 +497,7 @@ hierarchical option value.
 @code{ENOENT} - no entry matched the given name.
 @end itemize';
     srcfile = 'configfile.c';
-    linenum = '146';
+    linenum = '102';
 };
 
 
@@ -519,7 +519,7 @@ this routine is always successful.';
 };
 
 
-#line 288 "configfile.c"
+#line 244 "configfile.c"
 export_func = {
     name    = 'optionGetValue';
     what = 'get a specific value from a hierarcical list';
@@ -552,11 +552,11 @@ hierarchical option value.
 @code{ENOENT} - no entry matched the given name.
 @end itemize';
     srcfile = 'configfile.c';
-    linenum = '288';
+    linenum = '244';
 };
 
 
-#line 242 "enum.c"
+#line 217 "enum.c"
 export_func = {
     name    = 'optionKeywordName';
     what = 'Convert between enumeration values and strings';
@@ -575,11 +575,11 @@ export_func = {
     ret_desc = 'the enumeration name from const memory';
     doc = 'This converts an enumeration value into the matching string.';
     srcfile = 'enum.c';
-    linenum = '242';
+    linenum = '217';
 };
 
 
-#line 553 "load.c"
+#line 533 "load.c"
 export_func = {
     name    = 'optionLoadLine';
     what = 'process a string for an option name and value';
@@ -610,11 +610,11 @@ except that you may not use backquotes.';
     err = 'Invalid options are silently ignored.  Invalid option arguments
 will cause a warning to print, but the function should return.';
     srcfile = 'load.c';
-    linenum = '553';
+    linenum = '533';
 };
 
 
-#line 1157 "configfile.c"
+#line 1104 "configfile.c"
 export_func = {
     name    = 'optionLoadOpt';
     private;
@@ -633,11 +633,11 @@ export_func = {
 'Processes the options found in the file named with
 odesc->optArg.argString.';
     srcfile = 'configfile.c';
-    linenum = '1157';
+    linenum = '1104';
 };
 
 
-#line 93 "load.c"
+#line 73 "load.c"
 export_func = {
     name    = 'optionMakePath';
     private;
@@ -701,11 +701,11 @@ was specified.
 @bullet{} @code{canonicalize_file_name} or @code{realpath} return
 errors (cannot resolve the resulting path).';
     srcfile = 'load.c';
-    linenum = '93';
+    linenum = '73';
 };
 
 
-#line 508 "enum.c"
+#line 483 "enum.c"
 export_func = {
     name    = 'optionMemberList';
     what = 'Get the list of members of a bit mask set';
@@ -719,11 +719,11 @@ export_func = {
     doc = 'This converts the OPT_VALUE_name mask value to a allocated string.
 It is the caller\'s responsibility to free the string.';
     srcfile = 'enum.c';
-    linenum = '508';
+    linenum = '483';
 };
 
 
-#line 824 "nested.c"
+#line 782 "nested.c"
 export_func = {
     name    = 'optionNestedVal';
     private;
@@ -741,11 +741,11 @@ export_func = {
     doc =
 'Nested value was found on the command line';
     srcfile = 'nested.c';
-    linenum = '824';
+    linenum = '782';
 };
 
 
-#line 347 "configfile.c"
+#line 303 "configfile.c"
 export_func = {
     name    = 'optionNextValue';
     what = 'get the next value from a hierarchical list';
@@ -778,7 +778,7 @@ member of that option value.
 @code{ENOENT} - the supplied @code{pOldValue} pointed to the last entry.
 @end itemize';
     srcfile = 'configfile.c';
-    linenum = '347';
+    linenum = '303';
 };
 
 
@@ -804,7 +804,7 @@ export_func = {
 };
 
 
-#line 243 "usage.c"
+#line 189 "usage.c"
 export_func = {
     name    = 'optionOnlyUsage';
     what = 'Print usage text for just the options';
@@ -823,7 +823,7 @@ export_func = {
 This function may be used when the emitted usage must incorporate
 information not available to AutoOpts.';
     srcfile = 'usage.c';
-    linenum = '243';
+    linenum = '189';
 };
 
 
@@ -851,7 +851,7 @@ This is disabled on platforms without a working fork() function.';
 };
 
 
-#line 105 "makeshell.c"
+#line 67 "makeshell.c"
 export_func = {
     name    = 'optionParseShell';
     private;
@@ -864,11 +864,11 @@ export_func = {
     doc =
 'Emit a shell script that will parse the command line options.';
     srcfile = 'makeshell.c';
-    linenum = '105';
+    linenum = '67';
 };
 
 
-#line 445 "usage.c"
+#line 391 "usage.c"
 export_func = {
     name    = 'optionPrintParagraphs';
     private;
@@ -904,11 +904,11 @@ lines.
 If \'plain\' is true, we are emitting text for a user to see.  So, if it is
 true and NLS is not enabled, then just write the whole thing at once.';
     srcfile = 'usage.c';
-    linenum = '445';
+    linenum = '391';
 };
 
 
-#line 181 "version.c"
+#line 184 "version.c"
 export_func = {
     name    = 'optionPrintVersion';
     what = 'Print the program version';
@@ -925,11 +925,11 @@ export_func = {
     doc =
 'This routine will print the version to stdout.';
     srcfile = 'version.c';
-    linenum = '181';
+    linenum = '184';
 };
 
 
-#line 196 "version.c"
+#line 199 "version.c"
 export_func = {
     name    = 'optionPrintVersionAndReturn';
     what = 'Print the program version';
@@ -949,11 +949,11 @@ instead of exiting.  Please see the source for the
 @code{print_ver} funtion for details on selecting how
 verbose to be after this function returns.';
     srcfile = 'version.c';
-    linenum = '196';
+    linenum = '199';
 };
 
 
-#line 298 "autoopts.c"
+#line 292 "autoopts.c"
 export_func = {
     name    = 'optionProcess';
     what = 'this is the main option processing routine';
@@ -995,11 +995,11 @@ or may not be called.  It depends upon whether or not the options
 were generated with the "allow-errors" attribute, or if the
 ERRSKIP_OPTERR or ERRSTOP_OPTERR macros were invoked.';
     srcfile = 'autoopts.c';
-    linenum = '298';
+    linenum = '292';
 };
 
 
-#line 370 "putshell.c"
+#line 347 "putshell.c"
 export_func = {
     name    = 'optionPutShell';
     what = 'write a portable shell script to parse options';
@@ -1012,11 +1012,11 @@ export_func = {
     doc = 'This routine will emit portable shell script text for parsing
 the options described in the option definitions.';
     srcfile = 'putshell.c';
-    linenum = '370';
+    linenum = '347';
 };
 
 
-#line 111 "putshell.c"
+#line 88 "putshell.c"
 export_func = {
     name    = 'optionQuoteString';
     private;
@@ -1040,7 +1040,7 @@ to produce an exact copy of the original string.
 The caller must deallocate the result.  Standard C strings and
 K&R strings are distinguished by the "nl" string.';
     srcfile = 'putshell.c';
-    linenum = '111';
+    linenum = '88';
 };
 
 
@@ -1089,7 +1089,7 @@ printed to @code{stderr} and exit is called.';
 };
 
 
-#line 689 "save.c"
+#line 768 "save.c"
 export_func = {
     name    = 'optionSaveFile';
     what = 'saves the option state to a file';
@@ -1118,7 +1118,7 @@ optionSaveFile(&progOptions);
 and do nothing.  If the output file cannot be created or updated, a message
 will be printed to @code{stderr} and the routine will return.';
     srcfile = 'save.c';
-    linenum = '689';
+    linenum = '768';
 };
 
 
@@ -1151,7 +1151,7 @@ Otherwise, it will always succeed.';
 };
 
 
-#line 530 "enum.c"
+#line 505 "enum.c"
 export_func = {
     name    = 'optionSetMembers';
     what = 'Convert between bit flag values and strings';
@@ -1182,7 +1182,7 @@ This will match the generated enumeration value.
 Full matches are always accepted.  Partial matches are accepted
 if there is only one partial match.';
     srcfile = 'enum.c';
-    linenum = '530';
+    linenum = '505';
 };
 
 
@@ -1284,7 +1284,7 @@ export_func = {
 };
 
 
-#line 657 "nested.c"
+#line 615 "nested.c"
 export_func = {
     name    = 'optionUnloadNested';
     what = 'Deallocate the memory for a nested value';
@@ -1298,7 +1298,7 @@ export_func = {
 have been gotten from a call to @code{configFileLoad()} (See
 @pxref{libopts-configFileLoad}).';
     srcfile = 'nested.c';
-    linenum = '657';
+    linenum = '615';
 };
 
 
@@ -1324,7 +1324,7 @@ export_func = {
 };
 
 
-#line 555 "usage.c"
+#line 501 "usage.c"
 export_func = {
     name    = 'optionUsage';
     private;
@@ -1348,11 +1348,11 @@ over-ride this, providing the value of it is set to either "gnu" or
 If "exitCode" is "AO_EXIT_REQ_USAGE" (normally 64), then output will to
 to stdout and the actual exit code will be "EXIT_SUCCESS".';
     srcfile = 'usage.c';
-    linenum = '555';
+    linenum = '501';
 };
 
 
-#line 303 "find.c"
+#line 273 "find.c"
 export_func = {
     name    = 'optionVendorOption';
     private;
@@ -1373,7 +1373,7 @@ export_func = {
 never specify this directly.  It gets referenced when the option
 definitions contain a "vendor-opt" attribute.';
     srcfile = 'find.c';
-    linenum = '303';
+    linenum = '273';
 };
 
 
@@ -1391,7 +1391,7 @@ The returned string cannot be modified.';
 };
 
 
-#line 214 "version.c"
+#line 217 "version.c"
 export_func = {
     name    = 'optionVersionStderr';
     private;
@@ -1409,7 +1409,7 @@ export_func = {
     doc =
 'This routine will print the version to stderr.';
     srcfile = 'version.c';
-    linenum = '214';
+    linenum = '217';
 };
 
 
@@ -1650,11 +1650,11 @@ the associated file descriptors opened by that function.';
     srcfile = 'text_mmap.c';
     linenum = '329';
 };
-vers-curr       = "167937";
+vers-curr       = "172033";
 vers-min        = "102400";
 vers-min-str    = "25:0:0";
-vers-sovers     = "41:1:16";
-display-ver     = "41.1";
+vers-sovers     = "42:1:17";
+display-ver     = "42.1";
 library         = opts;
 
 /*

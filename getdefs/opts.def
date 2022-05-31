@@ -6,7 +6,7 @@ addtogroup = getdefs;
 /* opts.def:  option definitons for getdefs
  *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -23,7 +23,7 @@ addtogroup = getdefs;
  */
 
 copyright = {
-    date   = "1999-2014";
+    date   = "1999-2018";
     type   = gpl;
     owner  = "Bruce Korb";
     eaddr  = 'autogen-users@lists.sourceforge.net';
@@ -32,9 +32,10 @@ copyright = {
 prog-name     = "getdefs";
 prog-title    = "AutoGen Definition Extraction Tool";
 package       = 'GNU AutoGen';
-version       = "1.5";
+version       = "1.5"; version-type = copyright;
 homerc        = /dev/null;
 no-xlate      = anything;
+die-code;
 
 explain       = <<- EndExplanation
 	If no @code{input} argument is provided or is set to simply "-", and if
@@ -372,6 +373,12 @@ flag = {
  *
  *  Program Documentation
  */
+
+exit-name[2]  = invalid-input;
+exit-desc[2]  = 'An input file was specified that is not a file';
+
+exit-name[3]  = no-mem;
+exit-desc[3]  = 'Insufficient memory for operation';
 
 /* * * * * MAN PAGE DESCRIPTION * * * * * * * * * * * * * * * * * * * */
 

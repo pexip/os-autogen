@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,7 +24,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-static char * cur_dir = NULL;
+ static char * cur_dir = NULL;
 
 /*=gfunc chdir
  *
@@ -146,48 +146,13 @@ HIDE_FN(char * shell_cmd(char const * pzCmd)) {
 /*
  *  Dual pipe opening of a child process
  */
-static fp_pair_t    serv_pair     = { NULL, NULL };
-static pid_t        serv_id       = NULLPROCESS;
-static bool         was_close_err = false;
-static int          log_ct        = 0;
-static char const * last_cmd      = NULL;
-
-/* = = = START-STATIC-FORWARD = = = */
-static void
-handle_signal(int signo);
+ static fp_pair_t    serv_pair     = { NULL, NULL };
+ static pid_t        serv_id       = NULLPROCESS;
+ static bool         was_close_err = false;
+ static int          log_ct        = 0;
+ static char const * last_cmd      = NULL;
 
 static void
-set_orig_dir(void);
-
-static bool
-send_cmd_ok(char const * cmd);
-
-static void
-start_server_cmd_trace(void);
-
-static void
-send_server_init_cmds(void);
-
-static void
-server_setup(void);
-
-static int
-chain_open(int in_fd, char const ** arg_v, pid_t * child_pid);
-
-static pid_t
-server_open(fd_pair_t * fd_pair, char const ** ppArgs);
-
-static pid_t
-server_fp_open(fp_pair_t * fp_pair, char const ** ppArgs);
-
-static inline void
-realloc_text(char ** p_txt, size_t * p_sz, size_t need_len);
-
-static char *
-load_data(void);
-/* = = = END-STATIC-FORWARD = = = */
-
-LOCAL void
 close_server_shell(void)
 {
     if (serv_id == NULLPROCESS)
@@ -641,7 +606,7 @@ load_data(void)
  *  @param cmd the input command string
  *  @returns an allocated string, even if it is empty.
  */
-LOCAL char *
+static char *
 shell_cmd(char const * cmd)
 {
     /*

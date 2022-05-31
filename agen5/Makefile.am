@@ -3,7 +3,7 @@
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -18,9 +18,10 @@
 ## You should have received a copy of the GNU General Public License along
 ## with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-libdatadir       = $(libdir)/@PACKAGE@
+libdatadir      = $(libdir)/@PACKAGE@
 SUBDIRS         = test
 AM_CPPFLAGS     = @INCLIST@
+AM_CFLAGS       = @WARN_CFLAGS@
 FSMTPL          = fsm.tpl  fsm-macro.tlib fsm-trans.tlib
 templates       = snarf.tpl $(FSMTPL) guile-iface.tpl
 definitions     = cgi.def opts.def pseudo.def guile-iface.def defParse.def \
@@ -62,8 +63,9 @@ SNV_LIB         = $(top_builddir)/snprintfv/libsnprintfv.la
 nodist_autogen_SOURCES = ag.c
 autogen_SOURCES = $(gen_csrc)
 autogen_LDADD   = $(LO_LIB) $(SNV_LIB) $(GUILE_LIBS)
-autogen_LDFLAGS = $(DYNAMIC_AG) $(AG_STATIC_AUTOGEN)
+autogen_LDFLAGS = $(DYNAMIC_AG) $(AG_STATIC_AUTOGEN) -no-install
 autogen_CFLAGS  = $(GUILE_CFLAGS)
+stamp_script    = $(srcdir)/mk-stamps.sh
 
 AM_YFLAGS = -d
 
@@ -76,14 +78,15 @@ ag.c : Makefile
 	mk=`set -- $(MAKE) ; command -v $$1` ; \
 	echo 'static char const make_prog[] = "'$$mk'";' ; \
 	printf '\n#define  DEFINING 1\n' ; \
-	printf '#include "%s"\n' autoopts/project.h autogen.h $(csrc)
+	printf '#include "%s"\n' autoopts/project.h autogen.h ; \
+	printf '#include "%s"\n' $(csrc)
 
-STAMPENV = top_srcdir=$(top_srcdir) top_builddir=$(top_builddir) \
-	srcdir=$(srcdir) AGexe=$(AGexe) GDexe=$(GDexe) CLexe=$(CLexe) \
+STAMPENV = top_srcdir="$(top_srcdir)" top_builddir="$(top_builddir)" \
+	srcdir="$(srcdir)" AGexe="$(AGexe)" GDexe="$(GDexe)" CLexe="$(CLexe)" \
 	DEPDIR="$(DEPDIR)" AG_TIMEOUT=$(AG_TIMEOUT)
 
 stamp-env :
-	$(STAMPENV) $(POSIX_SHELL) $(srcdir)/mk-stamps.sh
+	$(STAMPENV) $(POSIX_SHELL) $(stamp_script)
 
 ../snprintfv/snprintfv.h :
 	@if [ ! -f ../snprintfv/snprintfv.h ] ; then cd ../snprintfv ; \
@@ -92,30 +95,84 @@ stamp-env :
 ../snprintfv/libsnprintfv.la :
 	cd ../snprintfv ; $(MAKE) libsnprintfv.la
 
+.PHONY : stamp-env
 .NOTPARALLEL:
 
 # start-generated-text
 
+if AMDEP
+DEPFL_STAMP_OPTS= $(DEPDIR)/dep-stamp-opts.mk
+$(DEPFL_STAMP_OPTS) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_OPTS)
+DEPFL_STAMP_PROTO= $(DEPDIR)/dep-stamp-proto.mk
+$(DEPFL_STAMP_PROTO) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_PROTO)
+DEPFL_STAMP_PARSE= $(DEPDIR)/dep-stamp-parse.mk
+$(DEPFL_STAMP_PARSE) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_PARSE)
+DEPFL_STAMP_CGI= $(DEPDIR)/dep-stamp-cgi.mk
+$(DEPFL_STAMP_CGI) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_CGI)
+DEPFL_STAMP_PSEUDO= $(DEPDIR)/dep-stamp-pseudo.mk
+$(DEPFL_STAMP_PSEUDO) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_PSEUDO)
+DEPFL_STAMP_EXPRINI= $(DEPDIR)/dep-stamp-exprini.mk
+$(DEPFL_STAMP_EXPRINI) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_EXPRINI)
+DEPFL_STAMP_DIRECTIVE= $(DEPDIR)/dep-stamp-directive.mk
+$(DEPFL_STAMP_DIRECTIVE) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_DIRECTIVE)
+DEPFL_STAMP_TEXI= $(DEPDIR)/dep-stamp-texi.mk
+$(DEPFL_STAMP_TEXI) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_TEXI)
+DEPFL_STAMP_AG_TEXT= $(DEPDIR)/dep-stamp-ag_text.mk
+$(DEPFL_STAMP_AG_TEXT) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_AG_TEXT)
+DEPFL_STAMP_FMEM= $(DEPDIR)/dep-stamp-fmem.mk
+$(DEPFL_STAMP_FMEM) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_FMEM)
+DEPFL_STAMP_MAN= $(DEPDIR)/dep-stamp-man.mk
+$(DEPFL_STAMP_MAN) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_MAN)
+DEPFL_STAMP_FUNC= $(DEPDIR)/dep-stamp-func.mk
+$(DEPFL_STAMP_FUNC) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_FUNC)
+DEPFL_STAMP_GVER= $(DEPDIR)/dep-stamp-gver.mk
+$(DEPFL_STAMP_GVER) :
+	$(SHELL) $(stamp_script) "$@"
+include $(DEPFL_STAMP_GVER)
+else
+DEPFL_STAMP_OPTS= "$@"
+DEPFL_STAMP_PROTO= "$@"
+DEPFL_STAMP_PARSE= "$@"
+DEPFL_STAMP_CGI= "$@"
+DEPFL_STAMP_PSEUDO= "$@"
+DEPFL_STAMP_EXPRINI= "$@"
+DEPFL_STAMP_DIRECTIVE= "$@"
+DEPFL_STAMP_TEXI= "$@"
+DEPFL_STAMP_AG_TEXT= "$@"
+DEPFL_STAMP_FMEM= "$@"
+DEPFL_STAMP_MAN= "$@"
+DEPFL_STAMP_FUNC= "$@"
+DEPFL_STAMP_GVER= "$@"
+endif
 list_stamps = \
     stamp-opts      stamp-proto     stamp-parse     stamp-cgi \
     stamp-pseudo    stamp-exprini   stamp-directive stamp-texi \
     stamp-ag_text   stamp-fmem      stamp-man       stamp-func \
     stamp-gver
-if AMDEP
-@am__include@ @am__quote@./$(DEPDIR)/stamp-opts.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-proto.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-parse.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-cgi.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-pseudo.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-exprini.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-directive.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-texi.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-ag_text.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-fmem.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-man.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-func.d@am__quote@
-@am__include@ @am__quote@./$(DEPDIR)/stamp-gver.d@am__quote@
-endif
 
 stamp-opts:
 	@target="$(AUTOGEN_stamp_opts_TList)" \

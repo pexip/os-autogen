@@ -6,7 +6,7 @@
  *  From the definitions    opts.def
  *  and the template file   options
  *
- * Generated from AutoOpts 41:1:16 templates.
+ * Generated from AutoOpts 42:1:17 templates.
  *
  *  AutoOpts is a copyrighted work.  This source file is not encumbered
  *  by AutoOpts licensing, but is provided under the licensing terms chosen
@@ -19,7 +19,7 @@
  * The columns program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1999-2014 Bruce Korb, all rights reserved.
+ *  Copyright (C) 1999-2017 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -46,11 +46,15 @@
 #define OPTION_CODE_COMPILE 1
 #include "opts.h"
 #include <sys/types.h>
+#include <sys/stat.h>
 
+#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -76,7 +80,7 @@ extern FILE * option_usage_fp;
  */
 static char const columns_opt_strs[2139] =
 /*     0 */ "columns (GNU AutoGen) 1.2\n"
-            "Copyright (C) 1999-2014 Bruce Korb, all rights reserved.\n"
+            "Copyright (C) 1999-2017 Bruce Korb, all rights reserved.\n"
             "This is free software. It is licensed for use, modification and\n"
             "redistribution under the terms of the GNU General Public License,\n"
             "version 3 or later <http://gnu.org/licenses/gpl.html>\n\0"
@@ -764,7 +768,7 @@ static char const * const apzHomeList[3] = {
 #define zDetail         (NULL)
 /** The full version string for columns. */
 #define zFullVersion    (columns_opt_strs+2113)
-/* extracted from optcode.tlib near line 364 */
+/* extracted from optcode.tlib near line 342 */
 
 #define OPTPROC_BASE OPTPROC_NONE
 #define translate_option_strings NULL
@@ -966,7 +970,7 @@ doOptInput(tOptions* pOptions, tOptDesc* pOptDesc)
      * ((poptdesc->fOptState & OPTST_RESET) != 0) telling the option to
      * reset its state.
      */
-    /* extracted from opts.def, line 304 */
+    /* extracted from opts.def, line 305 */
     FILE * fp = freopen(
         pOptDesc->optArg.argString, "r" FOPEN_BINARY_FLAG, stdin);
 
@@ -978,6 +982,55 @@ doOptInput(tOptions* pOptions, tOptDesc* pOptDesc)
     (void)pOptions;
 }
 /* extracted from optmain.tlib near line 1250 */
+
+/**
+ * Print a fatal error message and die, \a va_list style.
+ *
+ * @param[in] exit_code  the value to call exit(3) with
+ * @param[in] fmt        the death rattle message
+ * @param[in] ap         the argument list for the message
+ * @noreturn
+ */
+noreturn extern void
+vdie(int exit_code, char const * fmt, va_list ap)
+{
+    char const * die_leader = _("columns fatal error:\n");
+    fputs(die_leader, stderr);
+    vfprintf(stderr, fmt, ap);
+    fflush(stderr);
+    exit(exit_code);
+}
+
+/**
+ * Print a fatal error message and die, var-arg style.
+ *
+ * @param[in] exit_code  the value to call exit(3) with
+ * @param[in] fmt        the death rattle message
+ * @param[in] ...        the list of arguments for the message
+ * @noreturn
+ */
+noreturn extern void
+die(int exit_code, char const * fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vdie(exit_code, fmt, ap);
+}
+
+/**
+ * Print a file system error fatal error message and die.
+ *
+ * @param[in] exit_code  the value to call exit(3) with.
+ * @param[in] op         the operation that failed.
+ * @param[in] fname      the file name the operation was on.
+ * @noreturn
+ */
+noreturn extern void
+fserr(int exit_code, char const * op, char const * fname)
+{
+    char const * fserr_fmt = _("fserr %d (%s) performing '%s' on %s\n");
+    die(exit_code, fserr_fmt, errno, strerror(errno), op, fname);
+}
 
 /**
  * The directory containing the data associated with columns.

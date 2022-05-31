@@ -6,12 +6,12 @@
  */
 /*  -*- Mode: C -*-
  *
- *    getdefs Copyright (C) 1999-2015 by Bruce Korb - all rights reserved
+ *    getdefs Copyright (C) 1999-2018 by Bruce Korb - all rights reserved
  *
  *  Author:            Bruce Korb <bkorb@gnu.org>
  *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -113,7 +113,6 @@ size_t  blkUseCt   = 0;
 size_t  blkAllocCt = 0;
 pid_t   agPid      = -1;
 
-#define LOCAL static
 #endif /* GETDEFS_HEADER */
 
 /** @}

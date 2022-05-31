@@ -2,7 +2,7 @@
 ## Makefile.am --- process this file with automake to produce Makefile.in
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -19,9 +19,9 @@
 
 DISTCLEANFILES  = autogen.lsm
 LIBOPTS_FILES   = \
-    libopts/COPYING.gplv3  libopts/COPYING.lgplv3 libopts/COPYING.mbsd \
-    libopts/README         libopts/libopts-add.m4 libopts/mklibsrc.sh \
-    libopts/stdnoreturn.mk
+    libopts/libopts-add.m4 libopts/mklibsrc.sh    libopts/README \
+    libopts/COPYING.mbsd   libopts/COPYING.lgplv3 libopts/stdnoreturn.mk \
+    libopts/COPYING.gplv3
 
 TPL_FILES       = lsm.tpl spec.tpl gnudir.tpl gnudoc.tpl
 PKG_FILES       = mkpkg.linux mkpkg.sh mkpkg.sun pkg-env.in

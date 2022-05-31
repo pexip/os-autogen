@@ -11,7 +11,7 @@ This file serves two purposes:
 
 
   This file is part of AutoGen.
-  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 
   AutoGen is free software: you can redistribute it and/or modify it
   under the terms of the GNU General Public License as published by the
@@ -2015,8 +2015,8 @@ This attribute will cause two procedures to be added to the code file:
 (see @code{prefix}, below).  They are declared in the
 generated header, thus:
 @example
-extern void vusage_message(char const * fmt, va_list ap);
-extern void usage_message(char const * fmt, ...);
+noreturn extern void vusage_message(char const * fmt, va_list ap);
+noreturn extern void usage_message(char const * fmt, ...);
 @end example
 @noindent
 These functions print the message to @file{stderr} and invoke the usage
@@ -2033,22 +2033,12 @@ message.
 
 The profiles for these functions are:
 @example
-extern void vdie( int exit_code, char const * fmt, va_list);
-extern void die(  int exit_code, char const * fmt, ...);
-extern void fserr(int exit_code, char const * op, char const * fname);
-static inline void
+noreturn extern void vdie( int exit_code, char const * fmt, va_list);
+noreturn extern void die(  int exit_code, char const * fmt, ...);
+noreturn extern void fserr(int exit_code, char const * op, char const * fname);
+noreturn static inline void
 nomem_err(size_t sz, char const * what) @{...@}
 @end example
-
-@item no-return
-@vindex no-return
-If @code{usage-message} or @code{die-code} are specified, you may also
-specify that the generated functions are marked as ``noreturn'' with
-this attribute.  If this attribute is not empty, then the specified string
-is used instead of ``noreturn''.  If ``noreturn'' has not been defined
-before these functions are declared, then it will be ``#define''-d to the
-empty string.  No such protection is made for any non-default value.
-These functions will be declared ``extern noreturn void''.
 
 @item export
 @vindex export
@@ -2056,7 +2046,7 @@ This string is inserted into the .h interface file.  Generally used for
 global variables or @code{#include} directives required by
 @code{flag-code} text and shared with other program text.
 Do not specify your configuration header (@file{config.h}) in this
-attribute or the @code{include} attribute, however.  Instead, use
+attribute or the @code{include} attribute.  Instead, use
 @code{config-header}, above.
 
 @item guard-option-names
@@ -4097,12 +4087,22 @@ definition file.  It will produce abbreviated help text to @file{stdout} and
 exit with zero status (@code{EXIT_SUCCESS}).
 
 @item version -v
-This will print the program name, title and version.  If it is followed by
-the letter @code{c} and a value for @code{copyright} and @code{owner} have
-been provided, then the copyright will be printed, too.  If it is followed
-by the letter @code{n}, then the full copyright notice (if available) will
-be printed.  The @code{version} attribute must be specified in the option
-definition file.
+
+This will print the program name, title and version.  If it is not
+followed by anything or is followed by the letter @code{v}, just the
+program name and version will be printed. If followed by the letter
+@code{c} and a value for @code{copyright} and @code{owner} have been
+provided, then the copyright will be printed, too.  If it is followed by
+the letter @code{n}, then the full copyright notice (if available) will
+be printed.  The @code{version} attribute must be specified in the
+option definition file.
+
+Because some target platforms discourage optional arguments to options,
+the autoopts library can be compiled with @code{NO_OPTIONAL_OPT_ARGS}
+defined. Alternatively, the @code{version-type} attribute can be added
+to the option definitions and it can specify which flavor is preferred.
+In either case, an argument to the @code{--version} option will then be
+disallowed.
 
 @item load-opts -<
 @cindex configuration file
@@ -4141,6 +4141,29 @@ and @code{optionProcess} will not return.  You may wish to invoke
 to reinvoke @code{optionProcess}.
 
 This option is activated by specifying one or more @code{homerc} attributes.
+
+The method of saving the state may be altered by specifying flags before
+the output file name. ``Flags'' are specified by placing a list of them
+before the file name and separating them from the name with one or two
+greater-than characters (``>''). There are three flags currently supported:
+
+@table @samp
+@item default
+If an option has a default value (has not been set), then the default value
+is inserted as a comment.
+
+@item usage
+Every option that can be processed from the configuration file will have a
+comment that contains the usage string that gets printed with the @code{--help} text
+
+@item update
+Instead of removing the old file and writing a new one, the output file is kept,
+but any pre-existing segment labeled with @code{<?program prog-name>} is removed.
+The new program segment is placed at the end of the file. This flag is implied if
+the flags are separated from the file name with doubled greater-than characters.
+In other words, @code{update,usage > @i{file-name}} and @code{usage >> @i{file-name}}
+are identical.
+@end table
 
 @item reset-option -R
 This option takes the name of an option for the current program and resets its
@@ -5418,7 +5441,10 @@ directive and the program section with a matching program name.
 
 @item [PROG_NAME]
 This is basically an alias for @code{<?program prog-name>}, except that
-the program name must be upper cased and segmented only with underscores.
+the program name must be upper cased and segmented only with underscores
+and it is @strong{not} recognized as a program segment when updating
+configuration files with the @code{--save-opts} option. In other words,
+use this only for Windows compatibility.
 @end table
 
 @noindent

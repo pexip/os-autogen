@@ -2,7 +2,7 @@
 [=
 
 ;;;  This file is part of AutoGen.
-;;;  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+;;;  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
 ;;;
 ;;; AutoGen is free software: you can redistribute it and/or modify it
 ;;; under the terms of the GNU General Public License as published by the
@@ -48,7 +48,7 @@ v_list="$*"
 r_list=$(ix=$# ; while (( ix > 0 )) ; do eval echo \${$ix}
          (( ix = ix - 1 )) ; done)
 i_list="[= (join " " (stack "iface.i-name")) =]"
-PS4='>${FUNC_NAME:-ag}> '
+PS4='+ag=${FUNC_NAME:-=}-$LINENO> '
 
 fill_in() {
   for v in $r_list

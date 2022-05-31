@@ -7,7 +7,7 @@
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -174,7 +174,7 @@ mv ../${testname}.rc/${testname}.file ../${testname}.rc/${testname}.save
 	second    fourth
 	<!--  This is a comment
 	      and it should have no effect -->
-	<?program test-${testname}>
+	<?program ${testname}>
 	<second cooked>
 	   fifth
 	</second>
@@ -192,6 +192,29 @@ cmp  ${testname}.cmds ${testname}.test || {
   cd ..
   failure "${df}"
 }
+
+# # # # # # # # # # SECOND TEST, pt 2 UPDATE FILE  # # # # #
+
+cp ../${testname}.rc/${testname}.file ../${testname}.rc/${testname}.more-save
+../${testname} -t yyy '->>>'
+
+pair="../${testname}.rc/${testname}.file ../${testname}.rc/${testname}.more-save"
+cmp $pair && {
+  df="USING <?program>:  `diff -c $pair`"
+  cd ..
+  failure "UNCHANGED: $pair`echo;cat ../${testname}.rc/${testname}.file`"
+}
+{
+    ${SED} "/^<?program ${testname}>/,/^#\$/d" \
+           ../${testname}.rc/${testname}.more-save
+    cat <<- _EOF
+	<?program ${testname}>
+	second =            fifth
+	third =             yyy
+	_EOF
+} > ../${testname}.rc/${testname}.expect
+pair="../${testname}.rc/${testname}.file ../${testname}.rc/${testname}.expect"
+cmp $pair || failure "BAD UPDATE: $pair`echo;cat ../${testname}.rc/${testname}.file`"
 
 # # # # # # # # # # THIRD TEST OUTPUT FILE # # # # # # # # #
 

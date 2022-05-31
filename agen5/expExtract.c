@@ -8,7 +8,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,18 +24,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* = = = START-STATIC-FORWARD = = = */
-static char const *
-load_extract_file(char const * new_fil);
-
-static SCM
-mk_empty_text(char const * start, char const * end, SCM def);
-
-static SCM
-get_text(char const * text, char const * start, char const * end, SCM def);
-/* = = = END-STATIC-FORWARD = = = */
-
-LOCAL char *
+static char *
 load_file(char const * fname)
 {
     char * res = NULL;
@@ -56,9 +45,9 @@ load_file(char const * fname)
 
         fsz = stbf.st_size;
         res = (char *)AGALOC(fsz + 1, "load_file");
-        if (outfile_time < stbf.st_mtime)
+        if (time_is_before(outfile_time, stbf.st_mtime))
             outfile_time = stbf.st_mtime;
-        if (maxfile_time < stbf.st_mtime)
+        if (time_is_before(maxfile_time, stbf.st_mtime))
             maxfile_time = stbf.st_mtime;
     }
 

@@ -39,7 +39,7 @@
  * @{
  */
 
-/* ANSI-C code produced by gperf version 3.0.4 */
+/* ANSI-C code produced by gperf version 3.1 */
 /* Command-line: gperf directive.gp  */
 /* Computed positions: -k'2,4' */
 
@@ -72,7 +72,7 @@ typedef struct {
 /* maximum key range = 34, duplicates = 0 */
 
 static unsigned int
-directive_hash (register const char *str, register unsigned int len)
+directive_hash (register const char *str, register size_t len)
 {
   static const unsigned char asso_values[] =
     {
@@ -103,7 +103,7 @@ directive_hash (register const char *str, register unsigned int len)
       37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
       37, 37, 37, 37, 37, 37
     };
-  register int hval = len;
+  register unsigned int hval = len;
 
   switch (hval)
     {
@@ -151,13 +151,13 @@ static const directive_map_t directive_table[] =
   };
 
 static inline const directive_map_t *
-find_directive_name (register const char *str, register unsigned int len)
+find_directive_name (register const char *str, register size_t len)
 {
   if (len <= 8 && len >= 2)
     {
-      register int key = (int)directive_hash (str, len);
+      register unsigned int key = (int)directive_hash (str, len);
 
-      if (key <= 36 && key >= 0)
+      if (key <= 36)
         {
           register const char *s = directive_table[key].dir_name;
 

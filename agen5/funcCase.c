@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -34,7 +34,7 @@
 #endif
 
 typedef tSuccess (tSelectProc)(char const * sample, char const * pattern);
-static tSelectProc
+MOD_LOCAL tSelectProc
     Select_Compare,
     Select_Compare_End,
     Select_Compare_Start,
@@ -61,70 +61,11 @@ struct case_stack {
     macro_t *  pSelect;
 };
 
-static tCaseStack current_case;
-static load_proc_t  mLoad_Select;
+MOD_LOCAL tCaseStack    current_case;
+MOD_LOCAL load_proc_t   mLoad_Select;
 
-static load_proc_p_t apCaseLoad[ FUNC_CT ]   = { NULL };
-static load_proc_p_t apSelectOnly[ FUNC_CT ] = { NULL };
-
-/* = = = START-STATIC-FORWARD = = = */
-static void
-compile_re(regex_t * re, char const * pat, int flags);
-
-static inline void
-up_case(char * pz);
-
-static tSuccess
-Select_Compare(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Compare_End(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Compare_Start(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Compare_Full(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Equivalent(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Equivalent_End(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Equivalent_Start(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Equivalent_Full(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_End(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_Start(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_Full(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_Always(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_Existence(char const * sample, char const * pattern);
-
-static tSuccess
-Select_Match_NonExistence(char const * sample, char const * pattern);
-
-static bool
-selection_type_complete(templ_t * tpl, macro_t * mac, char const ** psrc);
-
-static macro_t *
-mLoad_Select(templ_t * tpl, macro_t * mac, char const ** pscan);
-/* = = = END-STATIC-FORWARD = = = */
+MOD_LOCAL load_proc_p_t apCaseLoad[ FUNC_CT ]   = { NULL };
+MOD_LOCAL load_proc_p_t apSelectOnly[ FUNC_CT ] = { NULL };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 

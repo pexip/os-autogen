@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -33,36 +33,28 @@ struct def_list {
     char *     pzExpr;
 };
 
-/* = = = START-STATIC-FORWARD = = = */
-static int
+/*
+ * Procedure local forwards
+ */
+MOD_LOCAL int
 order_def_list(const void * p1, const void * p2);
-
-static def_list_t *
+MOD_LOCAL def_list_t *
 link_twins(def_list_t * pDL, def_list_t * pNext, int * pCt);
-
-static uint_t
+MOD_LOCAL uint_t
 count_named_values(templ_t * pT, macro_t * mac);
-
-static char *
+MOD_LOCAL char *
 gather_assigned_value(char * pzScan, def_list_t * pDL);
-
-static void
+MOD_LOCAL void
 fill_in_values(def_list_t * pDL, char * pzScan, templ_t * pT, macro_t * mac);
-
-static void
+MOD_LOCAL void
+build_defs(int def_ct, def_list_t * def_list);
+MOD_LOCAL void
 prep_invoke_args(macro_t * mac);
 
-static void
-build_defs(int def_ct, def_list_t * def_list);
-
-static templ_t *
-new_template(templ_t * base_tpl, macro_t * mac, char const * scan);
-
-static void
-load_define_tpl(templ_t * tpl, char const ** ppzScan);
-/* = = = END-STATIC-FORWARD = = = */
-
-static int
+/**
+ * comparison function for reordering a definitions list.
+ */
+MOD_LOCAL int
 order_def_list(const void * p1, const void * p2)
 {
     def_ent_t * pDL1 = (def_ent_t *)p1;
@@ -78,7 +70,7 @@ order_def_list(const void * p1, const void * p2)
     return cmp;
 }
 
-static def_list_t *
+MOD_LOCAL def_list_t *
 link_twins(def_list_t * pDL, def_list_t * pNext, int * pCt)
 {
     def_list_t * pN;
@@ -112,8 +104,7 @@ link_twins(def_list_t * pDL, def_list_t * pNext, int * pCt)
     return pN; /* If ct is zero, then this is invalid */
 }
 
-
-static uint_t
+MOD_LOCAL uint_t
 count_named_values(templ_t * pT, macro_t * mac)
 {
     char * pzScan = pT->td_text + mac->md_txt_off;
@@ -139,7 +130,7 @@ count_named_values(templ_t * pT, macro_t * mac)
 }
 
 
-static char *
+MOD_LOCAL char *
 gather_assigned_value(char * pzScan, def_list_t * pDL)
 {
     pzScan = SPN_WHITESPACE_CHARS(pzScan);
@@ -195,8 +186,7 @@ gather_assigned_value(char * pzScan, def_list_t * pDL)
     return pzScan;
 }
 
-
-static void
+MOD_LOCAL void
 fill_in_values(def_list_t * pDL, char * pzScan, templ_t * pT, macro_t * mac)
 {
     for (;; pDL++ ) {
@@ -254,7 +244,7 @@ fill_in_values(def_list_t * pDL, char * pzScan, templ_t * pT, macro_t * mac)
     }
 }
 
-/*
+/**
  *  parse_mac_args
  *
  *  This routine is called just before the first call to mFunc_Define
@@ -262,7 +252,7 @@ fill_in_values(def_list_t * pDL, char * pzScan, templ_t * pT, macro_t * mac)
  *  for name-value assignments that are only to live for the duration
  *  of the processing of the user defined macro.
  */
-LOCAL void
+static void
 parse_mac_args(templ_t * pT, macro_t * mac)
 {
     char *       pzScan = pT->td_text + mac->md_txt_off;
@@ -350,7 +340,7 @@ parse_mac_args(templ_t * pT, macro_t * mac)
  *
  * @param mac  the macro structure describing the invocation
  */
-static void
+MOD_LOCAL void
 prep_invoke_args(macro_t * mac)
 {
     char * pzText;
@@ -461,7 +451,7 @@ mFunc_Debug(templ_t * pT, macro_t * mac)
  * @param def_ct    number of definitions
  * @param def_list  list of definitions
  */
-static void
+MOD_LOCAL void
 build_defs(int def_ct, def_list_t * def_list)
 {
     curr_def_ctx.dcx_defent = &(def_list->de);

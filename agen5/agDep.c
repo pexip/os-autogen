@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -31,15 +31,20 @@ struct flist {
     char        fname[1];
 };
 
-static flist_t * src_flist  = NULL;
-static flist_t * targ_flist = NULL;
+MOD_LOCAL flist_t * src_flist  = NULL;
+MOD_LOCAL flist_t * targ_flist = NULL;
+
+MOD_LOCAL void
+print_flist(flist_t * flist, char const * TMPDIR, size_t tmpdir_len);
+MOD_LOCAL void
+tidy_dep_file(void);
 
 /**
  *  Add a source file to the dependency list
  *
  * @param pz pointer to file name
  */
-LOCAL void
+static void
 add_source_file(char const * pz)
 {
     flist_t ** lp;
@@ -81,7 +86,7 @@ add_source_file(char const * pz)
  *
  * @param pz pointer to file name
  */
-LOCAL void
+static void
 rm_source_file(char const * pz)
 {
     flist_t ** pp = &src_flist; //!< point to where to stash removed "next"
@@ -109,7 +114,7 @@ rm_source_file(char const * pz)
  *
  * @param pz pointer to file name
  */
-LOCAL void
+static void
 add_target_file(char const * pz)
 {
     flist_t ** lp;
@@ -154,7 +159,7 @@ add_target_file(char const * pz)
  *
  * @param pz pointer to file name
  */
-LOCAL void
+static void
 rm_target_file(char const * pz)
 {
     flist_t ** lp = &targ_flist; //!< list scanning pointer
@@ -178,7 +183,7 @@ rm_target_file(char const * pz)
 /**
  * Create a dependency output file
  */
-LOCAL void
+static void
 start_dep_file(void)
 {
     /*
@@ -281,7 +286,7 @@ start_dep_file(void)
 /**
  *  Set modification time and rename into result file name.
  */
-static void
+MOD_LOCAL void
 tidy_dep_file(void)
 {
     static mode_t const fil_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -344,8 +349,8 @@ tidy_dep_file(void)
 /**
  *  Print out and free a list of files.
  */
-static void
-print_list(flist_t * flist, char const * TMPDIR, size_t tmpdir_len)
+MOD_LOCAL void
+print_flist(flist_t * flist, char const * TMPDIR, size_t tmpdir_len)
 {
     /*
      *  Omit temporary sources.  They are identified several ways:
@@ -382,7 +387,7 @@ print_list(flist_t * flist, char const * TMPDIR, size_t tmpdir_len)
  *  a rule to fulfill make's needs and, optionally, clean up rules.
  *  then close the file and tidy up.
  */
-LOCAL void
+static void
 wrap_up_depends(void)
 {
     char const * TMPDIR = getenv("TMPDIR");
@@ -395,10 +400,10 @@ wrap_up_depends(void)
     }
 
     fprintf(dep_fp, DEP_TList, pz_targ_base);
-    print_list(targ_flist, TMPDIR, tmpdir_len);
+    print_flist(targ_flist, TMPDIR, tmpdir_len);
 
     fprintf(dep_fp, DEP_SList, pz_targ_base);
-    print_list(src_flist, TMPDIR, tmpdir_len);
+    print_flist(src_flist, TMPDIR, tmpdir_len);
 
     targ_flist = src_flist = NULL;
     fprintf(dep_fp, DEP_FILE_WRAP_FMT, pz_targ_base, dep_target);

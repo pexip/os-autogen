@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -41,36 +41,28 @@ struct hash_name_s {
     char          hn_str[0];
 };
 
-static hash_name_t ** hash_table = NULL;
-static int  hash_table_ct = 0;
-static char zDefinitionName[ AG_PATH_MAX ];
+MOD_LOCAL hash_name_t ** hash_table = NULL;
+MOD_LOCAL int  hash_table_ct = 0;
+MOD_LOCAL char zDefinitionName[ AG_PATH_MAX ];
+
+MOD_LOCAL def_ent_t *
+find_by_index(def_ent_t * ent, char * scan);
+MOD_LOCAL void
+add_to_def_list(def_ent_t * ent, def_ent_list_t * del);
+MOD_LOCAL size_t
+bad_def_name(char * pzD, char const * pzS, size_t srcLen);
+MOD_LOCAL def_ent_t *
+find_def(char * name, def_ctx_t * def_ctx, bool * indexed);
+MOD_LOCAL int
+hash_def_name(unsigned char const * pz);
+MOD_LOCAL void
+add_def_name(char const * pz);
+MOD_LOCAL def_ent_t **
+get_def_list(char * name, def_ctx_t * def_ctx);
 
 #define ILLFORMEDNAME() \
     AG_ABEND(aprf(BAD_NAME_FMT, zDefinitionName, \
               current_tpl->td_file, cur_macro->md_line));
-
-/* = = = START-STATIC-FORWARD = = = */
-static def_ent_t *
-find_by_index(def_ent_t * ent, char * scan);
-
-static void
-add_to_def_list(def_ent_t * ent, def_ent_list_t * del);
-
-static size_t
-bad_def_name(char * pzD, char const * pzS, size_t srcLen);
-
-static def_ent_t *
-find_def(char * name, def_ctx_t * def_ctx, bool * indexed);
-
-static int
-hash_string(unsigned char const * pz);
-
-static void
-add_string(char const * pz);
-
-static def_ent_t **
-get_def_list(char * name, def_ctx_t * def_ctx);
-/* = = = END-STATIC-FORWARD = = = */
 
 /**
  * Find a def entry by an index.  Valid indexes are:
@@ -89,7 +81,7 @@ get_def_list(char * name, def_ctx_t * def_ctx);
  * @returns a pointer to the matching definition entry, if any.
  * Otherwise, NULL.
  */
-static def_ent_t *
+MOD_LOCAL def_ent_t *
 find_by_index(def_ent_t * ent, char * scan)
 {
     int  idx;
@@ -196,7 +188,7 @@ find_by_index(def_ent_t * ent, char * scan)
  *  add_to_def_list:  place a new definition entry on the end of the
  *              list of found definitions (reallocating list size as needed).
  */
-static void
+MOD_LOCAL void
 add_to_def_list(def_ent_t * ent, def_ent_list_t * del)
 {
     if (++(del->del_used_ct) > del->del_alloc_ct) {
@@ -209,7 +201,7 @@ add_to_def_list(def_ent_t * ent, def_ent_list_t * del)
     del->del_def_ent_ary[del->del_used_ct-1] = ent;
 }
 
-static size_t
+MOD_LOCAL size_t
 bad_def_name(char * pzD, char const * pzS, size_t srcLen)
 {
     memcpy(VOIDP(pzD), VOIDP(pzS), srcLen);
@@ -236,7 +228,7 @@ bad_def_name(char * pzD, char const * pzS, size_t srcLen)
  *
  * @returns the length of un-consumed source text
  */
-LOCAL int
+static int
 canonical_name(char * pzD, char const * pzS, int srcLen)
 {
     typedef enum {
@@ -427,7 +419,7 @@ canonical_name(char * pzD, char const * pzS, int srcLen)
  * @param[in]  def_ctx   definition context
  * @param[out] indexed   whether the name was indexed or not
  */
-static def_ent_t *
+MOD_LOCAL def_ent_t *
 find_def(char * name, def_ctx_t * def_ctx, bool * indexed)
 {
     static int   nestingDepth = 0;
@@ -612,8 +604,8 @@ find_def(char * name, def_ctx_t * def_ctx, bool * indexed)
  *  Doesn't matter tho.  A high collision rate just makes it a teensy
  *  bit slower.
  */
-static int
-hash_string(unsigned char const * pz)
+MOD_LOCAL int
+hash_def_name(unsigned char const * pz)
 {
     unsigned int res = 0;
     while (*pz)
@@ -622,8 +614,8 @@ hash_string(unsigned char const * pz)
     return (int)(res & ((unsigned)hash_table_ct - 1));
 }
 
-static void
-add_string(char const * pz)
+MOD_LOCAL void
+add_def_name(char const * pz)
 {
     unsigned char z[SCRIBBLE_SIZE];
     size_t z_len;
@@ -682,7 +674,7 @@ add_string(char const * pz)
      *  If a new name, insert it in order.
      */
     {
-        int ix = hash_string(z);
+        int ix = hash_def_name(z);
 
         hash_name_t ** hptr = &(hash_table[ix]), *new;
         while (*hptr != NULL) {
@@ -709,15 +701,15 @@ add_string(char const * pz)
  * @param[in]  name     the name to find.  May be segmented and/or indexed.
  * @param[out] indexed  whether or not the found name is indexed.
  */
-LOCAL def_ent_t *
+static def_ent_t *
 find_def_ent(char * name, bool * indexed)
 {
     if (HAVE_OPT(USED_DEFINES))
-        add_string(name);
+        add_def_name(name);
     return find_def(name, &curr_def_ctx, indexed);
 }
 
-LOCAL void
+static void
 print_used_defines(void)
 {
     if (hash_table_ct == 0)
@@ -748,7 +740,7 @@ print_used_defines(void)
  *  indicator saying if the element has been indexed (so the caller will
  *  not try to traverse the list of twins).
  */
-static def_ent_t **
+MOD_LOCAL def_ent_t **
 get_def_list(char * name, def_ctx_t * def_ctx)
 {
     static def_ent_list_t defList = { 0, 0, NULL, 0 };
@@ -933,7 +925,7 @@ get_def_list(char * name, def_ctx_t * def_ctx)
 }
 
 
-LOCAL def_ent_t **
+static def_ent_t **
 find_def_ent_list(char * name)
 {
     return get_def_list(name, &curr_def_ctx);

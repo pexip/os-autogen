@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,23 +25,6 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* = = = START-STATIC-FORWARD = = = */
-static void
-define_base_name(void);
-
-static void
-put_defines_into_env(void);
-
-static void
-open_trace_file(char ** av, tOptDesc * odsc);
-
-static void
-check_make_dep_env(void);
-
-static char const *
-skip_quote(char const * qstr);
-/* = = = END-STATIC-FORWARD = = = */
-
 /**
  * Print a file system error fatal error message and die.
  *
@@ -49,7 +32,7 @@ skip_quote(char const * qstr);
  * @param[in] fname      the file name the operation was on.
  * @noreturn
  */
-LOCAL void
+static void
 fswarn(char const * op, char const * fname)
 {
     fprintf(stderr, FS_ERR_WARNING, errno, strerror(errno), op, fname);
@@ -60,7 +43,7 @@ fswarn(char const * op, char const * fname)
  * @param[in] pzFmt the input format
  * @returns the allocated, formatted result string.
  */
-LOCAL char *
+static char *
 aprf(char const * pzFmt, ...)
 {
     char * pz;
@@ -299,7 +282,7 @@ check_make_dep_env(void)
     }
 }
 
-LOCAL void
+static void
 process_ag_opts(int arg_ct, char ** arg_vec)
 {
     /*
@@ -376,7 +359,7 @@ process_ag_opts(int arg_ct, char ** arg_vec)
  *
  *  @returns a pointer to the string, if found, or NULL.
  */
-LOCAL char const *
+static char const *
 get_define_str(char const * de_name, bool check_env)
 {
     char const **   ppz;
@@ -414,7 +397,7 @@ get_define_str(char const * de_name, bool check_env)
  *  @param[in,out] in_q   input quoted string/output unquoted
  *  @returns the address of the byte after the original closing quote.
  */
-LOCAL char *
+static char *
 span_quote(char * in_q)
 {
     char   qc = *in_q;          /*  Save the quote character type */
@@ -499,7 +482,7 @@ skip_quote(char const * qstr)
  * @returns    character after closing parenthesis or "end",
  * which ever comes first.
  */
-LOCAL char const *
+static char const *
 skip_scheme(char const * scan,  char const * end)
 {
     int  level = 0;
@@ -536,7 +519,7 @@ skip_scheme(char const * scan,  char const * end)
  *
  * @returns a pointer to the character next after the expression end.
  */
-LOCAL char const *
+static char const *
 skip_expr(char const * src, size_t len)
 {
     char const * end = src + len;

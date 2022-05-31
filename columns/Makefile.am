@@ -2,7 +2,7 @@
 ##
 ## Makefile.am -- process this file with automake to produce Makefile.in
 ##
-## Copyright (C) 1992-2015 by Bruce Korb
+## Copyright (C) 1992-2018 by Bruce Korb
 ##
 ## This file is part of AutoGen.
 ##
@@ -20,6 +20,7 @@
 ## with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 bin_PROGRAMS    = columns
+columns_LDFLAGS = -no-install
 csrc            = opts.h columns.c opts.c
 nodist_columns_SOURCES = cols.c
 
@@ -56,6 +57,9 @@ cols.c : Makefile
 	echo ; echo '#define  DEFINING 1' ; \
 	echo '#include "autoopts/project.h"' ; \
 	for f in $(csrc) ; do echo "#include \"$$f\"" ; done
+
+$(LO_LIB) :
+	( cd $(top_builddir)/autoopts ; $(MAKE) libopts.la )
 
 stamp-agtexi : opts.def columns$(EXEEXT)
 	top_builddir=$(top_builddir) \

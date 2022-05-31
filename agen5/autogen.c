@@ -8,7 +8,7 @@
  */
 
 /*  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -44,40 +44,24 @@ typedef enum {
 } wait_for_pclose_enum_t;
 
 #define _State_(n)  #n,
-static char const * const state_names[] = { STATE_TABLE };
+ static char const * const state_names[] = { STATE_TABLE };
 #undef _State_
 
 typedef void (sighandler_proc_t)(int sig);
-static sighandler_proc_t ignore_signal, catch_sig_and_bail;
-
-/* = = = START-STATIC-FORWARD = = = */
-static void
-inner_main(void * closure, int argc, char ** argv);
-
-static void
-exit_cleanup(wait_for_pclose_enum_t cl_wait);
-
-static _Noreturn void
-cleanup_and_abort(int sig);
-
-static void
-catch_sig_and_bail(int sig);
-
-static void
-ignore_signal(int sig);
-
-static void
-done_check(void);
-
-static void
-setup_signals(sighandler_proc_t * hdl_chld,
-              sighandler_proc_t * hdl_abrt,
-              sighandler_proc_t * hdl_dflt);
-/* = = = END-STATIC-FORWARD = = = */
+ static sighandler_proc_t ignore_signal, catch_sig_and_bail;
 
 #ifndef HAVE_CHMOD
 #  include "compat/chmod.c"
 #endif
+
+MOD_LOCAL void
+setup_signals(sighandler_proc_t * hdl_chld,
+              sighandler_proc_t * hdl_abrt,
+              sighandler_proc_t * hdl_dflt);
+MOD_LOCAL void
+inner_main(void * closure, int argc, char ** argv);
+MOD_LOCAL void
+exit_cleanup(wait_for_pclose_enum_t cl_wait);
 
 /**
  * main routine under Guile guidance
@@ -86,9 +70,10 @@ setup_signals(sighandler_proc_t * hdl_chld,
  * @param  argc    argument count
  * @param  argv    argument vector
  */
-static void
+MOD_LOCAL void
 inner_main(void * closure, int argc, char ** argv)
 {
+    (void)closure;
     atexit(done_check);
     initialize(argc, argv);
 
@@ -115,8 +100,6 @@ inner_main(void * closure, int argc, char ** argv)
     setup_signals(SIG_DFL, SIG_IGN, SIG_DFL);
     ag_exit_code = AUTOGEN_EXIT_SUCCESS;
     done_check();
-    /* NOTREACHED */
-    (void)closure;
 }
 
 /**
@@ -156,7 +139,7 @@ main(int argc, char ** argv)
  *
  * @param [in] cl_wait Whether or not a child process should be waited for.
  */
-static void
+MOD_LOCAL void
 exit_cleanup(wait_for_pclose_enum_t cl_wait)
 {
     /*
@@ -214,7 +197,7 @@ exit_cleanup(wait_for_pclose_enum_t cl_wait)
  *
  *  @param[in] sig the signal number
  */
-static _Noreturn void
+static noreturn void
 cleanup_and_abort(int sig)
 {
     if (processing_state == PROC_STATE_INIT) {
@@ -233,6 +216,9 @@ cleanup_and_abort(int sig)
 
     if (processing_state == PROC_STATE_ABORTING) {
         exit_cleanup(EXIT_PCLOSE_NOWAIT);
+
+        if (HAVE_OPT(NO_ABORT))
+            exit(AUTOGEN_EXIT_USAGE_ERROR);
         abort();
     }
 
@@ -282,6 +268,9 @@ cleanup_and_abort(int sig)
 #endif
 
     exit_cleanup(EXIT_PCLOSE_NOWAIT);
+
+    if (HAVE_OPT(NO_ABORT))
+        exit(AUTOGEN_EXIT_USAGE_ERROR);
     abort();
 }
 
@@ -459,7 +448,7 @@ done_check(void)
 }
 
 
-LOCAL _Noreturn void
+static noreturn void
 ag_abend_at(char const * msg
 #ifdef DEBUG_ENABLED
             , char const * fname, int line
@@ -484,6 +473,9 @@ ag_abend_at(char const * msg
     if (msg[-1] != NL)
         fputc(NL, stderr);
 
+    if (HAVE_OPT(NO_ABORT))
+        exit(AUTOGEN_EXIT_USAGE_ERROR);
+
 #ifdef DEBUG_ENABLED
     abort();
 #else
@@ -505,7 +497,7 @@ ag_abend_at(char const * msg
 #endif
 }
 
-static void
+MOD_LOCAL void
 setup_signals(sighandler_proc_t * hdl_chld,
               sighandler_proc_t * hdl_abrt,
               sighandler_proc_t * hdl_dflt)
@@ -595,7 +587,7 @@ setup_signals(sighandler_proc_t * hdl_chld,
 #  include <compat/strsignal.c>
 #endif
 
-LOCAL void *
+static void *
 ao_malloc (size_t sz)
 {
     void * res = malloc(sz);
@@ -605,7 +597,7 @@ ao_malloc (size_t sz)
 }
 
 
-LOCAL void *
+static void *
 ao_realloc (void *p, size_t sz)
 {
     void * res = (p == NULL) ? malloc(sz) : realloc(p, sz);
@@ -614,8 +606,8 @@ ao_realloc (void *p, size_t sz)
     return res;
 }
 
-LOCAL char *
-ao_strdup (char const * str)
+static char *
+ao_strdup(char const * str)
 {
     char * res = strdup(str);
     if (res == NULL)

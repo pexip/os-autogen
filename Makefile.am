@@ -2,7 +2,7 @@
 ## Makefile.am --- process this file with automake to produce Makefile.in
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -37,21 +37,20 @@ SUBDIRS       += xml2ag
 endif
 endif
 
-pkgdata_DATA   = config/conftest.tpl config/confmacs.tlib config/liboptschk.m4
+pkgdata_DATA   = config/liboptschk.m4
 misc_extra     = \
     VERSION                   autoopts/gettext.h \
     autoopts/parse-duration.c autoopts/parse-duration.h \
     config/ag_macros.m4       config/bootstrap \
     config/bootstrap.local    config/bootstrap.shlib \
-    config/config.rpath       config/confmacs.tlib \
-    config/conftest.tpl       config/gnulib-cache.m4 \
+    config/config.rpath       config/gnulib-cache.m4 \
     config/gnulib-cache.m4    config/gnulib-comp.m4 \
     config/guile.m4           config/install-defs.sh \
-    config/lib-link.m4        config/libopts.def \
-    config/libopts.m4         config/liboptschk.m4 \
-    config/misc.def           config/mk-shdefs.in \
+    config/lib-link.m4        config/libopts.m4 \
+    config/liboptschk.m4      config/mk-shdefs.in \
     config/pkg.m4             config/snprintfv.m4 \
-    config/unlocked-io.m4
+    config/unlocked-io.m4     build-aux/run-ag.sh
+
 EXTRA_DIST     = $(misc_extra) $(pkgdata_DATA)
 DISTCLEANFILES = stamp-h
 
@@ -77,8 +76,9 @@ usage-txt.po: gettext
 gettext     :
 	cd autoopts && $(MAKE) usage-txt.po
 
-all         : config/shdefs
-config/shdefs: config/mk-shdefs
+all         : shdefs
+shdefs      : $(top_builddir)/config/shdefs
+$(top_builddir)/config/shdefs: $(top_builddir)/config/mk-shdefs
 	$(SHELL) $< $@
 
 if HAVE_XML_LIB
@@ -90,6 +90,6 @@ release     :
 endif
 
 .NOTPARALLEL:
-.PHONY: pkg package docs gnudoc gnudocs
+.PHONY: all pkg package docs gnudoc gnudocs shdefs doxydocs gettext usage-txt.po
 
 ## Makefile.am ends here

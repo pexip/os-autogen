@@ -5,7 +5,7 @@
 ##                environment variables.
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -30,13 +30,19 @@ init() {
     prog=`basename $1 .sh`
     progpid=$$
 
+    if (exec 2> /dev/null ; unset CDPATH)
+    then unset CDPATH
+    elif test ${#CDPATH} -gt 0
+    then CDPATH=
+    fi
+
     SED='@SED@'
     AWK='@AWK@'
     GREP='@GREP@'
     EGREP='@EGREP@'
     target=`basename $2`
     builddir=`dirname $2`
-    builddir=`cd $builddir && pwd`
+    builddir=`cd $builddir >/dev/null && pwd`
     srcdir=`dirname $1`
     srcdir=`cd $srcdir >/dev/null && pwd`
 
@@ -122,6 +128,11 @@ configure() {
     rm -f shdef-temp*
 }
 
+set -x
+exec 9>&2
+tmp=$(mktemp --suffix=.tdir -d /tmp/shdefs-XXXXXXXXX)
+exec 2>> $tmp/mk-shdef.log
 init $0 $1
 mk_config
 configure
+exec 2>&9 9>&-

@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -27,29 +27,6 @@
 
 #define ENTRY_END  INT_MAX
 #define UNASSIGNED 0x7BAD0BAD
-
-/* = = = START-STATIC-FORWARD = = = */
-static for_state_t *
-find_for_state(SCM which_scm);
-
-static bool
-next_def(bool invert, def_ent_t ** de_lst);
-
-static inline t_word
-set_loop_limit(def_ent_t * found);
-
-static int
-for_by_step(templ_t * pT, macro_t * pMac, def_ent_t * found);
-
-static int
-for_each(templ_t * tpl, macro_t * mac, def_ent_t * def_ent);
-
-static void
-load_for_in(char const * pzSrc, size_t srcLen, templ_t * pT, macro_t * pMac);
-
-static for_state_t *
-new_for_context(void);
-/* = = = END-STATIC-FORWARD = = = */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -840,7 +817,7 @@ new_for_context(void)
  * Free up for loop contexts.
  * @param [in] pop_ct  the maximum number to free up
  */
-LOCAL void
+static void
 free_for_context(int pop_ct)
 {
     if (curr_ivk_info->ii_for_depth == 0)

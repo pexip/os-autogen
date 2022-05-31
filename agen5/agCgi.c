@@ -7,7 +7,7 @@
  *  AutoGen process.
  *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -51,7 +51,7 @@ typedef struct {
     _ET_(SERVER_PROTOCOL) \
     _ET_(SERVER_SOFTWARE)
 
-static name_map_t name_val_map[] = {
+ static name_map_t name_val_map[] = {
 #define _ET_(n) { #n, NULL },
     ENV_TABLE
 #undef _ET_
@@ -81,7 +81,7 @@ parse_input(char * src, int len)
     return AGREALOC(res, strlen(res)+1, "CGI input");
 }
 
-LOCAL void
+static void
 load_cgi(void)
 {
     /*

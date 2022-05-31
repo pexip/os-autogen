@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -32,13 +32,13 @@ AG_ABEND(aprf(DIRECT_NOMATCH_FMT, cctx->scx_fname, cctx->scx_line, _typ))
  * the value.  Thus, transitioning from skip mode to process mode increments
  * it, and the reverse decrements it.
  */
-static int  ifdef_lvl = 0;
+ static int  ifdef_lvl = 0;
 
 /**
  * Set "true" when inside of a "#if" block making "#elif" directives
  * ignorable.  When "false", "#elif" triggers an error.
  */
-static bool skip_if_block = false;
+ static bool skip_if_block = false;
 
 static char *
 end_of_directive(char * scan)
@@ -52,7 +52,7 @@ end_of_directive(char * scan)
 
         if (s == NULL)
             return scan + strlen(scan);
-        
+
         cctx->scx_line++;
 
         if (s[-1] != '\\') {
@@ -79,7 +79,7 @@ end_of_directive(char * scan)
  *  Decide what to do and return a pointer to the character
  *  where scanning is to resume.
  */
-LOCAL char *
+static char *
 processDirective(char * scan)
 {
     char * eodir = end_of_directive(scan);
@@ -302,10 +302,11 @@ file_size(char const * fname)
         return 0;
     }
 
-    if ((outfile_time < stbf.st_mtime) && ENABLED_OPT(SOURCE_TIME))
+    if (   time_is_before(outfile_time, stbf.st_mtime)
+        && ENABLED_OPT(SOURCE_TIME))
         outfile_time = stbf.st_mtime;
 
-    if (maxfile_time < stbf.st_mtime)
+    if (time_is_before(maxfile_time, stbf.st_mtime))
         maxfile_time = stbf.st_mtime;
 
     return stbf.st_size;
@@ -832,12 +833,7 @@ doDir_shell(directive_enum_t id, char const * arg, char * scan_next)
 
     (void)arg;
     (void)id;
-
-    /*
-     *  The output time will always be the current time.
-     *  The dynamic content is always current :)
-     */
-    maxfile_time = outfile_time = time(NULL);
+    mod_time_is_now();
 
     /*
      *  IF there are no data after the '#shell' directive,

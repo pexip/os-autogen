@@ -8,9 +8,9 @@
  *  @{
  */
 /*
- *  xml2ag Copyright (C) 2002-2015 by Bruce Korb - all rights reserved
+ *  xml2ag Copyright (C) 2002-2018 by Bruce Korb - all rights reserved
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -31,7 +31,6 @@ static char const zConflict[] =
 
 static char const zTextFmt[] =
     "text = '%s';\n";
-
 
 static char const * typeName[] = {
     "0 - inval",
@@ -58,37 +57,17 @@ static char const * typeName[] = {
     "DOCB_DOCUMENT_NODE" };
 
 int   level = 0;
-FILE * outFp;
+FILE * ag_pipe_fp;
 
 #define CHUNK_SZ  4096
 
-/* = = = START-STATIC-FORWARD = = = */
-/* static forward declarations maintained by :mkfwd */
-static char *
-loadFile(FILE * fp, size_t * pzSize);
-
-static void
-emitIndentation(void);
-
-static char *
-trim(char const * pzSrc, size_t * pSz);
-
-static xmlNodePtr
-printHeader(xmlDocPtr pDoc);
-
-static void
-printAttrs(xmlAttrPtr pAttr);
-
-static void
-printNode(xmlNodePtr pNode);
-
-static void
-printChildren(xmlNodePtr pNode);
-/* = = = END-STATIC-FORWARD = = = */
 #define TRIM(s,psz) trim( (char const *)(s), (size_t *)(psz) )
 
-extern void forkAutogen( char const * pzInput );
-
+extern void       fork_ag(char const * pzInput);
+static char *     loadFile(FILE * fp, size_t * pzSize);
+static xmlNodePtr printHeader(xmlDocPtr pDoc);
+static void       printAttrs(xmlAttrPtr pAttr);
+static void       printChildren(xmlNodePtr pNode);
 
 int
 main(int argc, char ** argv)
@@ -105,12 +84,13 @@ main(int argc, char ** argv)
         case 1:
             if (strcmp( *argv, "-" ) != 0) {
                 if (HAVE_OPT( DEFINITIONS )) {
-                    fprintf( stderr, zConflict );
+                    fprintf(stderr, zConflict);
                     USAGE( EXIT_FAILURE );
                 }
                 pzFile = *argv;
                 break;
             }
+            /* FALLTHROUGH */
         case 0:
             if (   HAVE_OPT( DEFINITIONS )
                && (strcmp( OPT_ARG( DEFINITIONS ), "-" ) != 0) )
@@ -119,25 +99,25 @@ main(int argc, char ** argv)
             break;
 
         default:
-            fprintf( stderr, "only one argument allowed\n" );
+            fprintf(stderr, "only one argument allowed\n");
             return EXIT_FAILURE;
         }
     }
 
     if (! HAVE_OPT( OUTPUT ))
-        forkAutogen( pzFile );
+        fork_ag(pzFile);
     else
-        outFp = stdout;
+        ag_pipe_fp = stdout;
 
     if (pzFile != NULL) {
-        fprintf( outFp, "/* Parsing file %s */\n", pzFile );
+        fprintf(ag_pipe_fp, "/* Parsing file %s */\n", pzFile);
         pDoc = xmlParseFile( pzFile );
     }
     else {
         size_t sz;
         char * pz = loadFile( stdin, &sz );
         pDoc = xmlParseMemory( pz, (int)sz );
-        fprintf( outFp, "/* Parsed from stdin */\n" );
+        fprintf(ag_pipe_fp, "/* Parsed from stdin */\n");
     }
 
     {
@@ -152,7 +132,7 @@ main(int argc, char ** argv)
             printChildren( pRoot->children );
             break;
         default:
-            fprintf( outFp, z_not_doc, pDoc->type );
+            fprintf(ag_pipe_fp, z_not_doc, pDoc->type);
         }
     }
 
@@ -197,7 +177,7 @@ static void
 emitIndentation( void )
 {
     int indent = level * 2;
-    while (--indent >= 0) fputc( ' ', outFp );
+    while (--indent >= 0) fputc( ' ', ag_pipe_fp );
 }
 
 
@@ -250,7 +230,7 @@ trim(char const * pzSrc, size_t * pSz)
              pzData = malloc( sz );
         else pzData = realloc( pzData, sz );
         if (pzData == NULL) {
-            fprintf( stderr, "ENOMEM allocating 0x%X bytes", (unsigned)sz );
+            fprintf(stderr, "ENOMEM allocating 0x%X bytes", (unsigned)sz);
             exit( EXIT_FAILURE );
         }
         dataLen = sz;
@@ -283,55 +263,57 @@ trim(char const * pzSrc, size_t * pSz)
 static xmlNodePtr
 printHeader(xmlDocPtr pDoc)
 {
-    static char const zDef[] = "AutoGen Definitions %s%s;\n";
-    char const * pzSfx = ".tpl";
+    static char const def_hdr[] = "AutoGen Definitions %s%s;\n";
+    static char const xml_fmt[] = "XML-%s = '%s';\n";
 
-    xmlNodePtr pRootNode = xmlDocGetRootElement( pDoc );
-    xmlChar *  pTpl = NULL;
-    xmlChar *  pzTpl;
+    char const * suffx = ".tpl";
 
-    if (pRootNode == NULL) {
-        fprintf( stderr, "Root node not found\n" );
+    xmlNodePtr root_node = xmlDocGetRootElement( pDoc );
+    xmlChar *  tmp_tpl = NULL;
+    xmlChar *  tpl_nm;
+
+    if (root_node == NULL) {
+        fprintf(stderr, "Root node not found\n");
         exit( EXIT_FAILURE );
     }
 
     if (HAVE_OPT( OVERRIDE_TPL )) {
         if (strchr( OPT_ARG( OVERRIDE_TPL ), '.' ) != NULL)
-            pzSfx = "";
-        pzTpl = (xmlChar *)VOIDP(OPT_ARG( OVERRIDE_TPL ));
+            suffx = "";
+        tpl_nm = (xmlChar *)VOIDP(OPT_ARG( OVERRIDE_TPL ));
     }
     else {
-        pTpl = xmlGetProp(pRootNode, (xmlChar *)VOIDP("template"));
-        if (pTpl == NULL) {
-            fprintf( stderr, "No template was specified.\n" );
+        tmp_tpl = xmlGetProp(root_node, (xmlChar *)VOIDP("template"));
+        if (tmp_tpl == NULL) {
+            fprintf(stderr, "No template was specified.\n");
             exit( EXIT_FAILURE );
         }
 
-        pzTpl = pTpl;
-        if (strchr( (char *)pzTpl, '.' ) != NULL)
-            pzSfx = "";
+        tpl_nm = tmp_tpl;
+        if (strchr( (char *)tpl_nm, '.' ) != NULL)
+            suffx = "";
     }
 
-    fprintf( outFp, zDef, pzTpl, pzSfx );
-    if (pTpl != NULL)
-        free( pTpl );
+    fprintf(ag_pipe_fp, def_hdr, tpl_nm, suffx);
+    if (tmp_tpl != NULL)
+        free(tmp_tpl);
 
     if (pDoc->name != NULL)
-        fprintf( outFp, "XML-name = '%s';\n", TRIM( pDoc->name, NULL ));
+        fprintf(ag_pipe_fp, xml_fmt, "name",     TRIM(pDoc->name, NULL));
 
     if (pDoc->version != NULL)
-        fprintf( outFp, "XML-version = '%s';\n", TRIM( pDoc->version, NULL ));
+        fprintf(ag_pipe_fp, xml_fmt, "version",  TRIM(pDoc->version, NULL));
 
     if (pDoc->encoding != NULL)
-        fprintf( outFp, "XML-encoding = '%s';\n", TRIM( pDoc->encoding, NULL ));
+        fprintf(ag_pipe_fp, xml_fmt, "encoding", TRIM(pDoc->encoding, NULL));
 
     if (pDoc->URL != NULL)
-        fprintf( outFp, "XML-URL = '%s';\n", TRIM( pDoc->URL, NULL ));
+        fprintf(ag_pipe_fp, xml_fmt, "URL",      TRIM(pDoc->URL, NULL));
 
     if (pDoc->standalone)
-        fputs( "XML-standalone = true;\n", outFp );
+        fprintf(ag_pipe_fp, xml_fmt, "standalone", "true");
 
-    return pRootNode;
+    return root_node;
 }
 
 static void
@@ -341,21 +323,21 @@ printAttrs(xmlAttrPtr pAttr)
         char * pzCont = (char *)pAttr->children->content;
 
         emitIndentation();
-        fputs( (char *)VOIDP(pAttr->name), outFp );
-        fputs( " = ", outFp );
+        fputs( (char *)VOIDP(pAttr->name), ag_pipe_fp );
+        fputs( " = ", ag_pipe_fp );
         if (pAttr->children->children == NULL)
-            fprintf( outFp, "'%s';\n", TRIM( pzCont, NULL ));
+            fprintf(ag_pipe_fp, "'%s';\n", TRIM(pzCont, NULL));
         else {
-            fputs( "{\n", outFp );
+            fputs( "{\n", ag_pipe_fp );
             level++;
             if (pzCont != NULL) {
                 emitIndentation();
-                fprintf( outFp, zTextFmt, TRIM( pzCont, NULL ));
+                fprintf(ag_pipe_fp, zTextFmt, TRIM(pzCont, NULL));
             }
             printChildren( pAttr->children->children );
             level--;
             emitIndentation();
-            fputs( "};\n", outFp );
+            fputs( "};\n", ag_pipe_fp );
         }
 
         pAttr = pAttr->next;
@@ -372,63 +354,63 @@ printNode(xmlNodePtr pNode)
         size_t sz;
         char * pzTxt;
         emitIndentation();
-        fputs( (char *)VOIDP(pNode->name), outFp );
-        pzTxt = TRIM( pNode->content, &sz );
+        fputs( (char *)VOIDP(pNode->name), ag_pipe_fp );
+        pzTxt = TRIM(pNode->content, &sz);
 
         if (  (pNode->properties == NULL)
            && (pNode->children == NULL)) {
 
             if (sz == 0)
-                 fputs( ";\n", outFp );
-            else fprintf( outFp, " = '%s';\n", pzTxt );
+                 fputs( ";\n", ag_pipe_fp );
+            else fprintf(ag_pipe_fp, " = '%s';\n", pzTxt);
             break;
         }
 
-        fputs( " = {\n", outFp );
+        fputs( " = {\n", ag_pipe_fp );
         level++;
         emitIndentation();
-        fprintf( outFp, "content = '%s';\n", pzTxt );
+        fprintf(ag_pipe_fp, "content = '%s';\n", pzTxt);
         printAttrs( pNode->properties );
         printChildren( pNode->children );
         level--;
         emitIndentation();
-        fputs( "};\n", outFp );
+        fputs( "};\n", ag_pipe_fp );
         break;
     }
 
     case XML_ATTRIBUTE_NODE:
-        fputs( "Misplaced attribute\n", outFp );
+        fputs( "Misplaced attribute\n", ag_pipe_fp );
         exit( EXIT_FAILURE );
 
     case XML_TEXT_NODE:
     {
         size_t sz;
-        char * pzTxt = TRIM( pNode->content, &sz );
+        char * pzTxt = TRIM(pNode->content, &sz);
         if (sz == 0)
             break;
         emitIndentation();
-        fprintf( outFp, zTextFmt, pzTxt );
+        fprintf(ag_pipe_fp, zTextFmt, pzTxt);
         break;
     }
 
     case XML_COMMENT_NODE:
     {
         size_t sz;
-        char * pzTxt = TRIM( pNode->content, &sz );
+        char * pzTxt = TRIM(pNode->content, &sz);
         if (sz == 0)
             break;
 
         emitIndentation();
-        fputs( "/* ", outFp );
+        fputs( "/* ", ag_pipe_fp );
         for (;;) {
             char * pz = strstr( pzTxt, "*/" );
             if (pz == NULL)
                 break;
-            fwrite(pzTxt, (size_t)((pz - pzTxt) + 1), (size_t)1, outFp);
+            fwrite(pzTxt, (size_t)((pz - pzTxt) + 1), (size_t)1, ag_pipe_fp);
             pzTxt = pz+1;
-            fputc( ' ', outFp );
+            fputc( ' ', ag_pipe_fp );
         }
-        fprintf( outFp, "%s */\n", pzTxt );
+        fprintf(ag_pipe_fp, "%s */\n", pzTxt);
         break;
     }
 
@@ -450,20 +432,20 @@ printNode(xmlNodePtr pNode)
     case XML_XINCLUDE_START:
     case XML_XINCLUDE_END:
         emitIndentation();
-        fprintf( outFp, "/* Unsupported XML node type:  %s */\n",
+        fprintf(ag_pipe_fp, "/* Unsupported XML node type:  %s */\n",
                 typeName[ pNode->type ]);
         break;
 
     default:
         emitIndentation();
-        fprintf( outFp, "/* Unknown XML node type %d */\n", pNode->type );
+        fprintf(ag_pipe_fp, "/* Unknown XML node type %d */\n", pNode->type);
         break;
     }
 }
 
 
 static void
-printChildren( xmlNodePtr pNode )
+printChildren(xmlNodePtr pNode)
 {
     while (pNode != NULL) {
         printNode( pNode );

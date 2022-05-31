@@ -1,11 +1,11 @@
 
 # Because this Makefile snippet defines a variable used by other
-# gnulib Makefile snippets, it must be present in all Makefile.am that
+# gnulib Makefile snippets, it must be present in all makefiles that
 # need it. This is ensured by the applicability 'all' defined above.
 
-_NORETURN_H=$(top_srcdir)/compat/_Noreturn.h
+_NORETURN_H=$(srcdir)/_Noreturn.h
 
-EXTRA_DIST += $(top_srcdir)/compat/_Noreturn.h
+EXTRA_DIST += _Noreturn.h
 
 
 BUILT_SOURCES += $(STDNORETURN_H)

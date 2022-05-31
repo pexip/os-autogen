@@ -12,7 +12,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -28,26 +28,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define DEFINE_FSM
-#include "pseudo-fsm.h"
-
-/* = = = START-STATIC-FORWARD = = = */
-static char const *
-do_scheme_expr(char const * text, char const * fname);
-
-static char const *
-handle_hash_line(char const * pz);
-
-static te_pm_event
-next_pm_token(char const ** ptext, te_pm_state fsm_state, char const * fnm);
-
-static char const *
-copy_mark(char const * text, char * marker, size_t * ret_ct);
-/* = = = END-STATIC-FORWARD = = = */
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
+/**
  *  do_scheme_expr
  *
  *  Process a scheme specification
@@ -84,7 +65,7 @@ do_scheme_expr(char const * text, char const * fname)
  *
  *  Process a suffix specification
  */
-LOCAL char const *
+static char const *
 do_suffix(char const * const text, char const * fname, int lineNo)
 {
     /*
@@ -394,7 +375,7 @@ copy_mark(char const * text, char * marker, size_t * ret_ct)
  *  @param[in]      fname   name of template file
  *  @returns the address of the byte following the pseudo macro
  */
-LOCAL char const *
+static char const *
 load_pseudo_mac(char const * text, char const * fname)
 {
     char const * pzBadness;

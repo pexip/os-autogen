@@ -5,7 +5,7 @@
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -60,7 +60,19 @@ set_defaults()
 assemble_Makefile() {
     {
         sed '/# *start-generated-text/q' ${srcdir}/Makefile.am.pre
-        echo
+        printf '\nif AMDEP\n'
+
+        depfl_list=
+        for f in $stamp_list
+        do
+            depfl=DEPFL_${f^^}
+            depfl=${depfl//-/_}
+            printf '%-12s= $(DEPDIR)/dep-%s.mk\n' $depfl $f
+            printf '$(%s) :\n\t$(SHELL) $(stamp_script) "$@"\n' $depfl
+            printf 'include $(%s)\n' $depfl
+            depfl_list+=$(printf '%-12s= "$@"' $depfl)$'\n'
+        done
+        echo else$'\n'"${depfl_list}endif"
 
         echo list_stamps = '\'
         sflist=''
@@ -70,15 +82,8 @@ assemble_Makefile() {
         printf %s "$sflist" | \
             ${CLexe} --spread=1 -I4 --line=' \'
 
-        echo "if AMDEP"
-        for f in $stamp_list
-        do
-            echo "@am__include@ @am__quote@./\$(DEPDIR)/${f}.d@am__quote@"
-        done
-        echo endif
-
         fmt='\n%s:\n\t@target="$(AUTOGEN_%s_TList)" \\\n'
-        fmt=${fmt}'\t$(MAKE_STAMP)\n'
+        fmt+='\t$(MAKE_STAMP)\n'
         for f in $stamp_list
         do
             g=$(echo $f | sed 's/[^a-zA-Z0-9]/_/g')

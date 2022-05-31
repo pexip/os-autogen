@@ -120,6 +120,7 @@ with a status code of 0.
 
 @exampleindent 0
 @example
+getdefs error:  invalid option descriptor for version
 getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
 Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
 
@@ -178,24 +179,6 @@ Definition output disposition options::
 Version, usage and configuration options:
 
    Arg Option-Name    Description
-   opt version        output version information and exit
-   no  help           display extended usage information and exit
-   no  more-help      extended usage information passed thru pager
-   opt save-opts      save the option state to a config file
-   Str load-opts      load options from a config file
-                                - disabled as '--no-load-opts'
-                                - may appear multiple times
-
-All arguments are named options.
-If no 'input' argument is provided or is set to simply "-", and if 'stdin'
-is not a 'tty', then the list of input files will be read from 'stdin'.
-
-The following option preset mechanisms are supported:
- - reading file /dev/null
-This program extracts AutoGen definitions from a list of source files.
-Definitions are delimited by '/*=<entry-type> <entry-name>\n' and '=*/\n'.
-Packaged by Bruce (2016-08-29)
-Report getdefs bugs to bkorb@@gnu.org
 @end example
 @exampleindent 4
 
@@ -584,6 +567,10 @@ One of the following exit values will be returned:
 Successful program execution.
 @item 1 (EXIT_FAILURE)
 The operation failed or the command syntax was not valid.
+@item 2 (EXIT_INVALID_INPUT)
+An input file was specified that is not a file
+@item 3 (EXIT_NO_MEM)
+Insufficient memory for operation
 @item 66 (EX_NOINPUT)
 A specified configuration file could not be loaded.
 @item 70 (EX_SOFTWARE)

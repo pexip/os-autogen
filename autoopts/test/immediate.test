@@ -7,7 +7,7 @@
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -44,7 +44,7 @@ config-header = 'config.h';
 version    = '1.0';
 omit-nls-code;
 copyright = {
-    date  = "1992-2015";
+    date  = "1992-2017";
     owner = "Bruce Korb";
     eaddr = "autogen-users@lists.sourceforge.net";
     type  = gpl;

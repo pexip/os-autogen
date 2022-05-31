@@ -10,7 +10,7 @@ AutoGen Definitions strings;
  *  everything else.
  *
  *  AutoOpts is free software.
- *  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  *  AutoOpts is available under any one of two licenses.  The license
  *  in use must be one of these two and the choice is under the control
@@ -39,9 +39,10 @@ _EOStr_;
 
 string = { nm = zSepChars;        str = "-_^"; };
 string = { nm = zambig_file;      str = "  %s%s\n"; };
-string = { nm = zCfgAO_Flags;     str = "auto-options"; };
-string = { nm = zCfgProg;         str = "program"; };
+string = { nm = zCfgAO_Flags;     str = "<?auto-options"; };
+string = { nm = zCfgProg;         str = "<?program"; };
 string = { nm = zFmtFmt;          str = "%%-%ds %%s\n"; };
+string = { nm = zFmtProg;         str = "<?program %s>\n"; };
 string = { nm = zGnuBreak;        str = "\n%s\n\n"; };
 string = { nm = zGnuFileArg;      str = "=file"; };
 string = { nm = zGnuKeyLArg;      str = "=Mbr"; };
@@ -136,6 +137,8 @@ string = { nm = TYPE_ATR_FMT;     str  = "<%s type=%s>"; };
 string = { nm = VER_STR;          str  = "VERSION"; };
 string = { nm = XML_HEX_BYTE_FMT; str  = "#x%02X;"; };
 string = { nm = YES_NEED_OPT_ARG; str  = "OPT_ARG_NEEDED=YES"; };
+string = { nm = ao_name_use_fmt;  str  = "\n# %s -- %s\n"; };
+string = { nm = ao_default_use;   str  = "# DEFAULT: "; };
 string = { nm = apostrophe;       str  = "'\\''"; };
 string = { nm = arg_fmt;          str  = " '%s'"; };
 string = { nm = misguess_len;     str  = "libopts misguessed length of string\n"; };

@@ -2,7 +2,6 @@
 
 include /usr/share/dpkg/architecture.mk
 export DEB_BUILD_MAINT_OPTIONS := hardening=+all
-export DEB_LDFLAGS_MAINT_APPEND := -Wl,--as-needed
 export DEB_CFLAGS_MAINT_APPEND := -Wall -Wno-format-contains-nul
 export LC_COLLATE=C
 undefine LC_ALL
@@ -21,7 +20,8 @@ override_dh_auto_configure:
 		--disable-silent-rules \
 		--enable-timeout=78 \
 		--with-libxml2-libs="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --libs libxml-2.0)" \
-		--with-libxml2-cflags="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --cflags libxml-2.0)"
+		--with-libxml2-cflags="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --cflags libxml-2.0)" \
+		GREP=/bin/grep POSIX_SHELL=/bin/sh SHELL=/bin/sh
 
 override_dh_auto_build:
 	dh_auto_build --verbose
@@ -46,12 +46,14 @@ override_dh_auto_install:
 	rm -vf $(CURDIR)/debian/tmp/usr/share/info/dir \
 		$(CURDIR)/debian/tmp/usr/lib/*/libopts.la \
 		$(CURDIR)/debian/tmp/usr/share/autogen/tpl-config.tlib
+	for i in $(CURDIR)/debian/tmp/usr/bin/* ; do \
+		if chrpath --list "$$i" ; then \
+		echo "removing rpath from $$i" ; \
+		chrpath --delete "$$i" ; else true ; \
+		fi ; done
 
 override_dh_missing:
 	dh_missing --fail-missing
-
-override_dh_makeshlibs:
-	dh_makeshlibs -V
 
 %:
 	dh $@

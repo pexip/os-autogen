@@ -6,9 +6,9 @@
  *  From the definitions    strsignal.def
  *  and the template file   strsignal
  *
- *  Generated for a 4.1.27-27-default Linux platform
+ *  Generated for a 4.15.0-20-generic Linux platform
  *
- *  strsignal Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  strsignal Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -24,24 +24,21 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef MAX_SIGNAL_NUMBER
-#define MAX_SIGNAL_NUMBER   32
+#define MAX_SIGNAL_NUMBER   22
 #define SIGNAL_IN_RANGE(s)  (((unsigned)s) <= MAX_SIGNAL_NUMBER)
 #define SIGNAL_NAME(s)      (zSigNames + sigNameOffset[s])
 #define SIGNAL_INFO(s)      (zSigInfo  + sigInfoOffset[s])
 
 static char const zSigNames[] =
-    "INVALID\0"   "SIGHUP\0"    "SIGINT\0"    "SIGQUIT\0"   "SIGILL\0"
-    "SIGTRAP\0"   "SIGABRT\0"   "SIGBUS\0"    "SIGFPE\0"    "SIGKILL\0"
-    "SIGUSR1\0"   "SIGSEGV\0"   "SIGUSR2\0"   "SIGPIPE\0"   "SIGALRM\0"
-    "SIGTERM\0"   "SIGSTKFLT\0" "SIGCHLD\0"   "SIGCONT\0"   "SIGSTOP\0"
-    "SIGTSTP\0"   "SIGTTIN\0"   "SIGTTOU\0"   "SIGURG\0"    "SIGXCPU\0"
-    "SIGXFSZ\0"   "SIGVTALRM\0" "SIGPROF\0"   "SIGWINCH\0"  "SIGIO\0"
-    "SIGPWR\0"    "SIGSYS\0"    "SIGRTMIN\0";
+    "INVALID\0"    "SIGSIGHUP\0"  "SIGSIGINT\0"  "SIGSIGQUIT\0" "SIGSIGILL\0"
+    "SIGSIGTRAP\0" "SIGSIGABRT\0" "SIGSIGFPE\0"  "SIGSIGKILL\0" "SIGSIGUSR1\0"
+    "SIGSIGSEGV\0" "SIGSIGUSR2\0" "SIGSIGPIPE\0" "SIGSIGALRM\0" "SIGSIGTERM\0"
+    "SIGSIGCHLD\0" "SIGSIGCONT\0" "SIGSIGSTOP\0" "SIGSIGTSTP\0" "SIGSIGTTIN\0"
+    "SIGSIGTTOU\0";
 
 static const unsigned int sigNameOffset[] = {
-    0,   8,   15,  22,  30,  37,  45,  53,  60,  67,  75,  83,  91,  99,  107,
-    115, 123, 133, 141, 149, 157, 165, 173, 181, 188, 196, 204, 214, 222, 231,
-    237, 244, 251 };
+    0,   8,   18,  28,  39,  49,  60,  0,   71,  81,  92,  103, 114, 125, 136,
+    147, 0,   158, 169, 180, 191, 202, 213 };
 
 #ifndef HAVE_SYS_SIGLIST
 static char const zSigInfo[] =
@@ -52,7 +49,7 @@ static char const zSigInfo[] =
     /*   4 */ "Illegal instruction (ANSI).\0"
     /*   5 */ "Trace trap (POSIX).\0"
     /*   6 */ "Abort (ANSI).\0"
-    /*   7 */ "BUS error (4.2 BSD).\0"
+    /*   7 */ "Signal 7 invalid\0"
     /*   8 */ "Floating-point exception (ANSI).\0"
     /*   9 */ "Kill, unblockable (POSIX).\0"
     /*  10 */ "User-defined signal 1 (POSIX).\0"
@@ -61,28 +58,17 @@ static char const zSigInfo[] =
     /*  13 */ "Broken pipe (POSIX).\0"
     /*  14 */ "Alarm clock (POSIX).\0"
     /*  15 */ "Termination (ANSI).\0"
-    /*  16 */ "Stack fault.\0"
+    /*  16 */ "Signal 16 invalid\0"
     /*  17 */ "Child status has changed (POSIX).\0"
     /*  18 */ "Continue (POSIX).\0"
     /*  19 */ "Stop, unblockable (POSIX).\0"
     /*  20 */ "Keyboard stop (POSIX).\0"
     /*  21 */ "Background read from tty (POSIX).\0"
-    /*  22 */ "Background write to tty (POSIX).\0"
-    /*  23 */ "Urgent condition on socket (4.2 BSD).\0"
-    /*  24 */ "CPU limit exceeded (4.2 BSD).\0"
-    /*  25 */ "File size limit exceeded (4.2 BSD).\0"
-    /*  26 */ "Virtual alarm clock (4.2 BSD).\0"
-    /*  27 */ "Profiling alarm clock (4.2 BSD).\0"
-    /*  28 */ "Window size change (4.3 BSD, Sun).\0"
-    /*  29 */ "I/O now possible (4.2 BSD).\0"
-    /*  30 */ "Power failure restart (System V).\0"
-    /*  31 */ "Bad system call.\0"
-    /*  32 */ "Undescribed:  SIGRTMIN (32)\0";
+    /*  22 */ "Background write to tty (POSIX).\0";
 
 static const unsigned int sigInfoOffset[] = {
-    0,   17,  33,  51,  65,  93,  113, 127, 148, 181, 208, 239, 270, 301, 322,
-    343, 363, 376, 410, 428, 455, 478, 512, 545, 583, 613, 649, 680, 713, 748,
-    776, 810, 827 };
+    0,   17,  33,  51,  65,  93,  113, 127, 144, 177, 204, 235, 266, 297, 318,
+    339, 359, 377, 411, 429, 456, 479, 513 };
 
 #endif /* MAX_SIGNAL_NUMBER */
 

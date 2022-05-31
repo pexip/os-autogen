@@ -10,31 +10,64 @@
  *  from its standard-in.
  */
 
-static char const zFsError[] = "%s fs ERROR %d (%s) on %s\n";
+static char const fs_err_fmt[] = "%s fs ERROR %d (%s) on %s\n";
+
+/**
+ * increase size of argument vector.  Allocation will always be a
+ * multiple of 8 times sizeof(void *).
+ */
+static void
+get_argv_space(void)
+{
+    static void * av = NULL;                    //!< static arg vector
+    int    act = (int)xml2agOptions.origArgCt;  //!< current count
+
+    /*
+     * First time through, use "malloc" not "realloc".
+     */
+    if (av == NULL) {
+        size_t csz = act * sizeof(void *); //! current size
+        /*
+         * "act" will always be one less than a multiple of 8 and
+         * at least one larger than before.  After first time through,
+         * each call will increment by 8.
+         */
+        act = (act + 10) & ~0x0007;
+        av  = malloc(act-- * sizeof(void *));
+        if (av == NULL)
+            goto no_memory;
+        memcpy(av, xml2agOptions.origArgVect, csz);
+
+    } else {
+        act += 8;
+        av   = realloc(av, (act + 1) * sizeof(void *));
+        if (av == NULL)
+            goto no_memory;
+    }
+
+    xml2agOptions.origArgCt   = act;
+    xml2agOptions.origArgVect = av;
+    return;
+
+ no_memory:
+    fprintf(stderr, "No memory for %d args\n", act+1);
+    exit(EXIT_FAILURE);
+}
 
 static void
 add_arg(char const * arg, int ix)
 {
-    char ** arg_vec = xml2agOptions.origArgVect;
-    int      arg_ct = (int)xml2agOptions.origArgCt;
+    if (ix >= (int)xml2agOptions.origArgCt)
+        get_argv_space();
 
-    if (ix >= (int)arg_ct) {
-        arg_ct += 5;
-        arg_vec = realloc(arg_vec, sizeof(void *) * (size_t)(arg_ct+1));
-        if (arg_vec == NULL) {
-            fprintf(stderr, "No memory for %d args\n", arg_ct);
-            exit(EXIT_FAILURE);
-        }
-        xml2agOptions.origArgVect = arg_vec;
-    }
-    arg_vec[ ix ] = VOIDP(arg);
+    xml2agOptions.origArgVect[ix] = VOIDP(arg);
 }
 
 static int
-become_child(int * fd, char const * pzInput)
+become_child(int * fd, char const * in_file)
 {
     if (pipe(fd) != 0) {
-        fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+        fprintf(stderr, fs_err_fmt, xml2agOptions.pzProgName,
                 errno, strerror( errno ), "pipe(2)");
         exit(EXIT_FAILURE);
     }
@@ -44,14 +77,14 @@ become_child(int * fd, char const * pzInput)
 
     switch (fork()) {
     case -1:
-        fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+        fprintf(stderr, fs_err_fmt, xml2agOptions.pzProgName,
                 errno, strerror( errno ), "fork(2)");
         exit(EXIT_FAILURE);
 
     case 0:
         fclose(stdin);
         if (dup2(fd[0], STDIN_FILENO) != STDIN_FILENO) {
-            fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+            fprintf(stderr, fs_err_fmt, xml2agOptions.pzProgName,
                     errno, strerror( errno ), "dup2(2) w/ STDIN_FILENO");
             exit(EXIT_FAILURE);
         }
@@ -60,9 +93,9 @@ become_child(int * fd, char const * pzInput)
 
     default:
         errno = 0;
-        outFp = fdopen(fd[1], "w");
-        if (outFp == NULL) {
-            fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+        ag_pipe_fp = fdopen(fd[1], "w");
+        if (ag_pipe_fp == NULL) {
+            fprintf(stderr, fs_err_fmt, xml2agOptions.pzProgName,
                     errno, strerror( errno ), "fdopen(2) w/ pipe[1]");
             exit(EXIT_FAILURE);
         }
@@ -71,29 +104,31 @@ become_child(int * fd, char const * pzInput)
     }
 
     if (! HAVE_OPT( BASE_NAME )) {
-        if (pzInput == NULL)
-            pzInput = "stdin";
+        if (in_file == NULL)
+            in_file = "stdin";
         else {
-            char * pz = strrchr(pzInput, '.');
+            char * pz = strrchr(in_file, '.');
             if (pz != NULL) {
-                pzInput = pz = strdup(pzInput);
+                in_file = pz = strdup(in_file);
                 pz = strrchr(pz, '.');
                 *pz = '\0';
             }
         }
-        SET_OPT_BASE_NAME(pzInput);
+        SET_OPT_BASE_NAME(in_file);
     }
 
     return 1;
 }
 
 void
-forkAutogen(char const * pzInput)
+fork_ag(char const * in_file)
 {
     int fd[2];
 
-    if (! become_child(fd, pzInput))
-        return;
+    if (! become_child(fd, in_file))
+        return; // parent process returns
+
+    get_argv_space();
 
     {
         static char const zAg[] = "autogen";
@@ -122,17 +157,6 @@ forkAutogen(char const * pzInput)
                 char const * pA = *(ppOA++);
                 pzArg = malloc(14 + strlen(pA));
                 sprintf(pzArg, "--templ-dirs=%s", pA);
-                add_arg(pzArg, ix++);
-            } while (--optCt > 0);
-        }
-
-        if (HAVE_OPT(LIB_TEMPLATE)) {
-            int  optCt = STACKCT_OPT(LIB_TEMPLATE);
-            char const ** ppOA  = STACKLST_OPT(LIB_TEMPLATE);
-            do  {
-                char const * pA = *(ppOA++);
-                pzArg = malloc(16 + strlen(pA));
-                sprintf(pzArg, "--lib-template=%s", pA);
                 add_arg(pzArg, ix++);
             } while (--optCt > 0);
         }
@@ -277,7 +301,7 @@ forkAutogen(char const * pzInput)
          *  the OS search "PATH" for the program.
          */
         execvp(zAg, xml2agOptions.origArgVect);
-        fprintf(stderr, zFsError, xml2agOptions.pzProgName,
+        fprintf(stderr, fs_err_fmt, xml2agOptions.pzProgName,
                 errno, strerror(errno), "execvp(2)");
         exit(EXIT_FAILURE);
     }

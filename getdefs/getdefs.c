@@ -5,12 +5,12 @@
  *  @{
  */
 /*
- *  getdefs Copyright (C) 1999-2015 by Bruce Korb - all rights reserved
+ *  getdefs Copyright (C) 1999-2018 by Bruce Korb - all rights reserved
  *
  *  Author:            Bruce Korb <bkorb@gnu.org>
  *
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -26,61 +26,14 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static char const zBogusDef[] = "Bogus definition:\n%s\n";
+MOD_LOCAL char const zBogusDef[] = "Bogus definition:\n%s\n";
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *  Forward procedure pointers
  */
 typedef int (compar_func)(const void *, const void *);
-static compar_func compar_text, compar_defname;
-
-/* START-STATIC-FORWARD */
-static char *
-assignIndex(char * pzOut, char * pzDef);
-
-static int
-awaitAutogen(void);
-
-static void
-buildDefinition(char * pzDef, char const * pzFile, int line, char * pzOut);
-
-static tSuccess
-buildPreamble(char ** ppzDef, char ** ppzOut, char const * fname, int line);
-
-static int
-compar_defname(const void * p1, const void * p2);
-
-static int
-compar_text(const void * p1, const void * p2);
-
-static void
-doPreamble(FILE * outFp);
-
-static void
-printEntries(FILE * fp);
-
-static void
-processFile(char const * fname);
-
-static void
-set_first_idx(void);
-
-static FILE *
-open_ag_file(char ** pzBase);
-
-static FILE *
-open_ag_proc_pipe(char ** pzBase);
-
-static void
-exec_autogen(char ** pzBase);
-
-static FILE *
-startAutogen(void);
-
-static void
-update_db(void);
-/* END-STATIC-FORWARD */
+MOD_LOCAL compar_func compar_text, compar_defname;
 
 #ifndef HAVE_STRSIGNAL
 #  include "compat/strsignal.c"
@@ -100,7 +53,7 @@ main(int argc, char ** argv)
     FILE * outFp;
 
     optionProcess(&getdefsOptions, argc, argv);
-    validateOptions();
+    validate_opts();
 
     outFp = startAutogen();
 
@@ -531,14 +484,14 @@ compar_defname(const void * p1, const void * p2)
         if (strncmp(*(char const * const *)p1, zGlobal, sizeof(zGlobal)-1) == 0)
             return -1;
 
-        die(zBogusDef, *(char const * const *)p1);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p1);
     }
 
     if (pz2 == NULL) {
         if (strncmp(*(char const * const *)p2, zGlobal, sizeof(zGlobal)-1) == 0)
             return 1;
 
-        die(zBogusDef, *(char const * const *)p2);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p2);
     }
 
     /*
@@ -573,27 +526,27 @@ compar_text(const void * p1, const void * p2)
         if (strncmp(*(char const * const *)p1, zGlobal, sizeof(zGlobal)-1) == 0)
             return -1;
 
-        die(zBogusDef, *(char const * const *)p1);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p1);
     }
 
     if (pz2 == NULL) {
         if (strncmp(*(char const * const *)p2, zGlobal, sizeof(zGlobal)-1) == 0)
             return 1;
 
-        die(zBogusDef, *(char const * const *)p2);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p2);
     }
 
     pz1 += sizeof(zNameTag)-1;
     pe1 = strchr(pz1, '\'');
 
     if (pe1 == NULL)
-        die(zBogusDef, *(char const * const *)p1);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p1);
 
     pz2 += sizeof(zNameTag)-1;
     pe2 = strchr(pz2, '\'');
 
     if (pe2 == NULL)
-        die(zBogusDef, *(char const * const *)p2);
+        die(GETDEFS_EXIT_USAGE_ERROR, zBogusDef, *(char const * const *)p2);
 
     *pe1 = *pe2 = NUL;
 
@@ -681,7 +634,7 @@ doPreamble(FILE * outFp)
 /*
  *  loadFile
  */
-LOCAL char *
+static char *
 loadFile(char const * pzFname)
 {
     FILE * fp = fopen(pzFname, "r" FOPEN_BINARY_FLAG);
@@ -700,16 +653,17 @@ loadFile(char const * pzFname)
         struct stat stb;
         res = fstat(fileno(fp), &stb);
         if (res != 0)
-            fserr_die("stat-ing %s\n", pzFname);
+            fserr(GETDEFS_EXIT_INVALID_INPUT, "fstat", pzFname);
 
         if (! S_ISREG(stb.st_mode)) {
-            fprintf(stderr, "error file %s is not a regular file\n",
-                    pzFname);
-            exit(EXIT_FAILURE);
+            errno = EINVAL;
+            fserr(GETDEFS_EXIT_INVALID_INPUT, "fstat", pzFname);
         }
+
         rdsz = (size_t)stb.st_size;
         if (rdsz < 16)
-            die("Error file %s only contains %d bytes.\n"
+            die(GETDEFS_EXIT_USAGE_ERROR,
+                "Error file %s only contains %d bytes.\n"
                 "\tit cannot contain autogen definitions\n",
                 pzFname, (int)rdsz);
     }
@@ -719,7 +673,8 @@ loadFile(char const * pzFname)
      */
     pzRead = pzText = (char *)malloc(rdsz + 1);
     if (pzText == NULL)
-        die("Error: could not allocate %d bytes\n", (int)rdsz + 1);
+        die(GETDEFS_EXIT_USAGE_ERROR, "Error: could not allocate %d bytes\n",
+            (int)rdsz + 1);
 
     /*
      *  Read as much as we can get until we have read the file.
@@ -728,7 +683,7 @@ loadFile(char const * pzFname)
         size_t rdct = fread(VOIDP(pzRead), (size_t)1, rdsz, fp);
 
         if (rdct == 0)
-            fserr_die("reading file %s\n", pzFname);
+            fserr(GETDEFS_EXIT_INVALID_INPUT, "fread", pzFname);
 
         pzRead += rdct;
         rdsz   -= rdct;
@@ -779,8 +734,10 @@ processFile(char const * fname)
     char * pzOut;
     regmatch_t  matches[MAX_SUBMATCH+1];
 
-    if (pzText == NULL)
-        fserr_die("read opening %s\n", fname);
+    if (pzText == NULL) {
+        errno = ENOMEM;
+        fserr(GETDEFS_EXIT_INVALID_INPUT, "open+read", fname);
+    }
 
     processEmbeddedOptions(pzText);
     pzNext = pzText;
@@ -818,7 +775,7 @@ processFile(char const * fname)
         pzDef = pzScan + matches[0].rm_so + sizeof("/*=") - 1;
         pzNext = strstr(pzDef, "=*/");
         if (pzNext == NULL)
-            die(zNoEnd, fname, lineNo);
+            die(GETDEFS_EXIT_USAGE_ERROR, zNoEnd, fname, lineNo);
 
         *pzNext = NUL;
         pzNext += 3;
@@ -861,7 +818,8 @@ processFile(char const * fname)
             papzBlocks = (char **)realloc(VOIDP(papzBlocks),
                                          blkAllocCt * sizeof(char *));
             if (papzBlocks == (char **)NULL)
-                die("Realloc error for %d pointers\n", (int)blkAllocCt);
+                die(GETDEFS_EXIT_USAGE_ERROR, "Realloc error for %d pointers\n",
+                    (int)blkAllocCt);
         }
         papzBlocks[ blkUseCt-1 ] = pzDta;
     }
@@ -983,7 +941,7 @@ open_ag_proc_pipe(char ** pzBase)
     int  pfd[2];
 
     if (pipe(pfd) != 0)
-        fserr_die("creating pipe\n");
+        fserr(GETDEFS_EXIT_FAILURE, "pipe", "(2)");
 
     agPid = fork();
 
@@ -995,11 +953,12 @@ open_ag_proc_pipe(char ** pzBase)
          */
         close(pfd[1]);
         if (dup2(pfd[0], STDIN_FILENO) != 0)
-            fserr_die("dup pipe[0]\n");
+            fserr(GETDEFS_EXIT_FAILURE, "dup2", "STDIN_FILENO");
         break;
 
     case -1:
-        fserr_die("on fork()\n");
+        fserr(GETDEFS_EXIT_FAILURE, "fork", "(2)");
+        /* FALLTHROUGH */ /* NOTREACHED */
 
     default:
         /*
@@ -1009,7 +968,7 @@ open_ag_proc_pipe(char ** pzBase)
         close(pfd[0]);
         agFp = fdopen(pfd[1], "w" FOPEN_BINARY_FLAG);
         if (agFp == (FILE *)NULL)
-            fserr_die("fdopening pipe[1]\n");
+            fserr(GETDEFS_EXIT_FAILURE, "fdopen", "pipe");
         free(*pzBase);
         return agFp;
     }
@@ -1066,8 +1025,8 @@ exec_autogen(char ** pzBase)
 #endif
 
     execvp(pzAutogen, (char **)VOIDP(paparg));
-    fserr_die("exec of %s %s %s %s\n", paparg[0], paparg[1], paparg[2],
-              paparg[3]);
+    die(GETDEFS_EXIT_FAILURE, "exec of %s %s %s %s\n",
+        paparg[0], paparg[1], paparg[2], paparg[3]);
 }
 
 /*
@@ -1120,7 +1079,7 @@ startAutogen(void)
         if (pzBase == NULL) {
             char zSrch[ MAXPATHLEN ];
             if (getcwd(zSrch, sizeof(zSrch)) == NULL)
-                fserr_die("on getcwd\n");
+                fserr(GETDEFS_EXIT_FAILURE, "getcwd", ".");
 
             pz = strrchr(zSrch, '/');
             if (pz == NULL)
@@ -1181,7 +1140,7 @@ update_db(void)
     }
 
     if (fp == (FILE *)NULL)
-        fserr_die("opening %s for write/append\n", OPT_ARG(ORDERING));
+        fserr(GETDEFS_EXIT_FAILURE, "fopen-w+", OPT_ARG(ORDERING));
 
     fwrite(pzIndexEOF, (size_t)(pzEndIndex - pzIndexEOF), (size_t)1, fp);
 #ifdef HAVE_FCHMOD

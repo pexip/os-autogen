@@ -11,7 +11,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -33,26 +33,15 @@ typedef enum {
     INPUT_FILE
 } def_input_mode_t;
 
-static def_ent_t * free_de_list = NULL;
-static void *      de_blocks    = NULL;
+ static def_ent_t * free_de_list = NULL;
+ static void *      de_blocks    = NULL;
 
 #define ENTRY_SPACE        (4096 - sizeof(void *))
 #define ENTRY_ALLOC_CT     (ENTRY_SPACE / sizeof(def_ent_t))
 #define ENTRY_ALLOC_SIZE   \
     ((ENTRY_ALLOC_CT * sizeof(def_ent_t)) + sizeof(void *))
 
-/* = = = START-STATIC-FORWARD = = = */
-static void
-free_def_ent(def_ent_t * de);
-
 static def_ent_t *
-insert_ent(def_ent_t * de);
-
-static def_input_mode_t
-ready_def_input(char const ** ppzfile, size_t * psz);
-/* = = = END-STATIC-FORWARD = = = */
-
-LOCAL def_ent_t *
 new_def_ent(void)
 {
     def_ent_t * res = free_de_list;
@@ -106,7 +95,7 @@ free_def_ent(def_ent_t * de)
  * Append a new entry at the end of a sibling (or twin) list.
  * @param de  new definition
  */
-LOCAL void
+static void
 print_ent(def_ent_t * de)
 {
     int ix = 32 - (2 * ent_stack_depth);
@@ -133,7 +122,7 @@ print_ent(def_ent_t * de)
  *
  * @param[in]  de  dead definition
  */
-LOCAL void
+static void
 delete_ent(def_ent_t * de)
 {
     def_ent_t * de_list = ent_stack[ ent_stack_depth ];
@@ -202,7 +191,7 @@ delete_ent(def_ent_t * de)
  * @returns usually, the input, but sometimes it is necessary to move
  *  the data, so returns the address of the incoming data regardless.
  */
-static def_ent_t *
+MOD_LOCAL def_ent_t *
 insert_ent(def_ent_t * de)
 {
     def_ent_t * de_list = ent_stack[ ent_stack_depth ];
@@ -326,7 +315,7 @@ insert_ent(def_ent_t * de)
 /**
  * Figure out where to insert an entry in a list of twins.
  */
-LOCAL def_ent_t *
+static def_ent_t *
 number_and_insert_ent(char * name, char const * idx_str)
 {
     def_ent_t * ent = new_def_ent();
@@ -354,9 +343,25 @@ number_and_insert_ent(char * name, char const * idx_str)
 }
 
 /**
+ * set the output file times to now.
+ */
+static void
+mod_time_is_now(void)
+{
+#ifdef HAVE_UTIMENSAT
+    struct timespec tspec;
+    clock_gettime(CLOCK_REALTIME, &tspec);
+    outfile_time = tspec;
+#else
+    outfile_time = time(NULL);
+#endif
+    maxfile_time = outfile_time;
+}
+
+/**
  * figure out which file descriptor to use for reading definitions.
  */
-static def_input_mode_t
+MOD_LOCAL def_input_mode_t
 ready_def_input(char const ** ppzfile, size_t * psz)
 {
     struct stat stbf;
@@ -368,7 +373,8 @@ ready_def_input(char const ** ppzfile, size_t * psz)
         base_ctx->scx_fname = READY_INPUT_NODEF;
 
         if (! ENABLED_OPT(SOURCE_TIME))
-            outfile_time = time(NULL);
+            mod_time_is_now();
+
         return INPUT_DONE;
     }
 
@@ -393,7 +399,7 @@ ready_def_input(char const ** ppzfile, size_t * psz)
         }
 
     accept_fifo:
-        maxfile_time = outfile_time = time(NULL);
+        mod_time_is_now();
         *psz = 0x4000 - (4+sizeof(*base_ctx));
         return INPUT_STDIN;
     }
@@ -414,15 +420,17 @@ ready_def_input(char const ** ppzfile, size_t * psz)
     }
 
     /*
-     *  IF the source-time option has been enabled, then
-     *  our output file mod time will start as one second after
-     *  the mod time on this file.  If any of the template files
-     *  are more recent, then it will be adjusted.
+     *  IF the source-time option has been enabled, then our output
+     *  file mod time will start as the mod time on this file.  If any
+     *  other input files are more recent, then it will be adjusted.
      */
     *psz = (size_t)stbf.st_size;
 
+    if (ENABLED_OPT(SOURCE_TIME))
+        outfile_time = stbf.st_mtime;
+    else
+        mod_time_is_now();
     maxfile_time = stbf.st_mtime;
-    outfile_time = ENABLED_OPT(SOURCE_TIME) ? stbf.st_mtime : time(NULL);
 
     return INPUT_FILE;
 }
@@ -430,15 +438,15 @@ ready_def_input(char const ** ppzfile, size_t * psz)
 /**
  *  Suck in the entire definitions file and parse it.
  */
-LOCAL void
+static void
 read_defs(void)
 {
-    char const *  pzDefFile;
-    char *        pzData;
-    size_t        dataSize;
-    size_t        sizeLeft;
+    char const *  def_fname;
+    char *        data;
+    size_t        data_sz;
+    size_t        rem_sz;
     FILE *        fp;
-    def_input_mode_t in_mode = ready_def_input(&pzDefFile, &dataSize);
+    def_input_mode_t in_mode = ready_def_input(&def_fname, &data_sz);
 
     if (in_mode == INPUT_DONE)
         return;
@@ -446,11 +454,11 @@ read_defs(void)
     /*
      *  Allocate the space we need for our definitions.
      */
-    sizeLeft = dataSize+4+sizeof(*base_ctx);
-    base_ctx = (scan_ctx_t *)AGALOC(sizeLeft, "file buf");
-    memset(VOIDP(base_ctx), 0, sizeLeft);
+    rem_sz = data_sz+4+sizeof(*base_ctx);
+    base_ctx = (scan_ctx_t *)AGALOC(rem_sz, "file buf");
+    memset(VOIDP(base_ctx), 0, rem_sz);
     base_ctx->scx_line = 1;
-    sizeLeft = dataSize;
+    rem_sz = data_sz;
 
     /*
      *  Our base context will have its currency pointer set to this
@@ -458,7 +466,7 @@ read_defs(void)
      *  is never deallocated, we do not have to remember the initial
      *  value.  (It may get reallocated here in this routine, tho...)
      */
-    pzData =
+    data =
         base_ctx->scx_scan =
         base_ctx->scx_data = (char *)(base_ctx + 1);
     base_ctx->scx_next     = NULL;
@@ -470,19 +478,19 @@ read_defs(void)
         fp = stdin;
 
     else {
-        fp = fopen(pzDefFile, "r" FOPEN_TEXT_FLAG);
+        fp = fopen(def_fname, "r" FOPEN_TEXT_FLAG);
         if (fp == NULL)
-            AG_CANT(READ_DEF_OPEN, pzDefFile);
+            AG_CANT(READ_DEF_OPEN, def_fname);
 
         if (dep_fp != NULL)
-            add_source_file(pzDefFile);
+            add_source_file(def_fname);
     }
 
     /*
      *  Read until done...
      */
     for (;;) {
-        size_t rdct = fread(VOIDP(pzData), (size_t)1, sizeLeft, fp);
+        size_t rdct = fread(VOIDP(data), (size_t)1, rem_sz, fp);
 
         /*
          *  IF we are done,
@@ -495,19 +503,19 @@ read_defs(void)
             if (feof(fp) || (in_mode == INPUT_STDIN))
                 break;
 
-            AG_CANT(READ_DEF_READ, pzDefFile);
+            AG_CANT(READ_DEF_READ, def_fname);
         }
 
         /*
          *  Advance input pointer, decrease remaining count
          */
-        pzData   += rdct;
-        sizeLeft -= rdct;
+        data   += rdct;
+        rem_sz -= rdct;
 
         /*
          *  See if there is any space left
          */
-        if (sizeLeft == 0) {
+        if (rem_sz == 0) {
             scan_ctx_t * p;
             off_t dataOff;
 
@@ -521,9 +529,9 @@ read_defs(void)
              *  We have more data and we are out of space.
              *  Try to reallocate our input buffer.
              */
-            dataSize += (sizeLeft = 0x1000);
-            dataOff = pzData - base_ctx->scx_data;
-            p = AGREALOC(VOIDP(base_ctx), dataSize + 4 + sizeof(*base_ctx),
+            data_sz += (rem_sz = 0x1000);
+            dataOff = data - base_ctx->scx_data;
+            p = AGREALOC(VOIDP(base_ctx), data_sz + 4 + sizeof(*base_ctx),
                          "expand f buf");
 
             /*
@@ -534,17 +542,17 @@ read_defs(void)
             if (p != base_ctx) {
                 p->scx_scan = \
                     p->scx_data = (char *)(p + 1);
-                pzData = p->scx_data + dataOff;
+                data = p->scx_data + dataOff;
                 base_ctx = p;
             }
         }
     }
 
-    if (pzData == base_ctx->scx_data)
+    if (data == base_ctx->scx_data)
         AG_ABEND(READ_DEF_NO_DEFS);
 
-    *pzData = NUL;
-    AGDUPSTR(base_ctx->scx_fname, pzDefFile, "def file name");
+    *data = NUL;
+    AGDUPSTR(base_ctx->scx_fname, def_fname, "def file name");
 
     /*
      *  Close the input file, parse the data
@@ -557,8 +565,7 @@ read_defs(void)
     dp_run_fsm();
 }
 
-
-LOCAL void
+static void
 unload_defs(void)
 {
     return;

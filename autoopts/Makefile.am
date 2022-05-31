@@ -4,7 +4,7 @@
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -27,6 +27,7 @@ MOSTLYCLEANFILES    =
 libdatadir          = $(libdir)/@PACKAGE@
 SUBDIRS             = @OPTS_TESTDIR@
 AM_CPPFLAGS         = @INCLIST@
+AM_CFLAGS           = @WARN_CFLAGS@
 libsrc              = libopts-@AO_CURRENT@.@AO_REVISION@.@AO_AGE@.tar.gz
 LIBOPTS_VER         = @AO_CURRENT@:@AO_REVISION@:@AO_AGE@
 
@@ -62,14 +63,14 @@ nodist_pkgdata_DATA = $(libsrc) \
 nodist_libdata_DATA = tpl/tpl-config.tlib
 
 pkgdata_DATA    = \
-    autoopts.m4         tpl/Mdoc.pm         tpl/aginfo.tpl \
-    tpl/aginfo3.tpl     tpl/agman-cmd.tpl   tpl/agman-file.tpl \
-    tpl/agman.tlib      tpl/agman1.tpl      tpl/agman3.tpl \
-    tpl/agmdoc-cmd.tpl  tpl/agmdoc-file.tpl tpl/agpl.lic \
-    tpl/agtexi-cmd.tpl  tpl/agtexi-file.tpl tpl/bits.tpl \
-    tpl/cmd-doc.tlib    tpl/def2pot.tpl     tpl/getopt.tpl \
-    tpl/gpl.lic         tpl/gplv2.lic       tpl/lgpl.lic \
-    tpl/lgplv2.lic      tpl/mbsd.lic        tpl/optcode.tlib \
+    autoopts.m4         tpl/aginfo3.tpl     tpl/aginfo.tpl \
+    tpl/agman1.tpl      tpl/agman3.tpl      tpl/agman-cmd.tpl \
+    tpl/agman-file.tpl  tpl/agman.tlib      tpl/agmdoc-cmd.tpl \
+    tpl/agmdoc-file.tpl tpl/agpl.lic        tpl/agtexi-cmd.tpl \
+    tpl/agtexi-file.tpl tpl/bits.tpl        tpl/cmd-doc.tlib \
+    tpl/def2pot.tpl     tpl/getopt.tpl      tpl/gpl.lic \
+    tpl/gplv2.lic       tpl/lgpl.lic        tpl/lgplv2.lic \
+    tpl/mbsd.lic        tpl/Mdoc.pm         tpl/optcode.tlib \
     tpl/opthead.tlib    tpl/options.tpl     tpl/optlib.tlib \
     tpl/optmain.tlib    tpl/perlopt.tpl     tpl/rc-sample.tpl \
     tpl/stdoptions.def  tpl/str2enum.tpl    tpl/str2init.tlib \
@@ -88,14 +89,15 @@ GENSCRIPTS      = $(srcdir)/funcs.def \
 
 EXTRA_DIST += $(top_srcdir)/config/gendocs.sh
 EXTRA_DIST += gettext.h
+EXTRA_DIST += $(top_srcdir)/config/config.rpath
 EXTRA_DIST += intprops.h
 EXTRA_DIST += parse-duration.c
 EXTRA_DIST += parse-duration.h
 # Because this Makefile snippet defines a variable used by other
-# gnulib Makefile snippets, it must be present in all Makefile.am that
+# gnulib Makefile snippets, it must be present in all makefiles that
 # need it. This is ensured by the applicability 'all' defined above.
-_NORETURN_H=$(top_srcdir)/config/snippet/_Noreturn.h
-EXTRA_DIST += $(top_srcdir)/config/snippet/_Noreturn.h
+_NORETURN_H=$(srcdir)/_Noreturn.h
+EXTRA_DIST += _Noreturn.h
 BUILT_SOURCES += $(STDNORETURN_H)
 # We need the following in order to create <stdnoreturn.h> when the system
 # doesn't have one that works.
@@ -113,13 +115,13 @@ stdnoreturn.h: $(top_builddir)/config.status
 endif
 MOSTLYCLEANFILES += stdnoreturn.h stdnoreturn.h-t
 EXTRA_DIST += stdnoreturn.in.h
-EXTRA_DIST += verify.h
 
 GENHDRS         = autoopts/options.h autoopts/usage-txt.h genshell.h \
 		option-xat-attribute.h option-value-type.h ao-strs.h \
-		ag-char-map.h
+		ag-char-map.h save-flags.h
 HDRS            = $(GENHDRS) autoopts.h project.h proto.h
-GEN_SRC         = ao-strs.c option-value-type.c option-xat-attribute.c
+GEN_SRC         = ao-strs.c option-value-type.c option-xat-attribute.c \
+		save-flags.c
 
 ## The primary source (autoopts.c) must be by itself on the first line after
 ## "CSRC".  'sed' does some magic here to get the list of source files for the
@@ -151,7 +153,7 @@ m4datadir                 = $(datadir)/aclocal
 
 nodist_libopts_la_SOURCES = libopts.c
 libopts_la_SOURCES        = $(HDRS)
-libopts_la_CFLAGS         = -DPKGDATADIR='"$(pkgdatadir)"'
+libopts_la_CFLAGS         = -DPKGDATADIR='"$(pkgdatadir)"' $(AM_CFLAGS)
 libopts_la_LDFLAGS        = -version-info $(LIBOPTS_VER)
 libopts_la_LIBADD         = $(top_builddir)/snprintfv/libsnprintfv.la
 

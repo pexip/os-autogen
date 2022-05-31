@@ -7,7 +7,7 @@
 ##
 ##  This file is part of AutoOpts, a companion to AutoGen.
 ##  AutoOpts is free software.
-##  AutoOpts is Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoOpts is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoOpts is available under any one of two licenses.  The license
 ##  in use must be one of these two and the choice is under the control
@@ -113,7 +113,8 @@ This option is used to automate dependency tracking:
    -M [arg]   emit make dependency file
 		- may not be preset
 		- may appear multiple times
-help, version and option handling:
+help, version, option and error handling:
+Version, usage and configuration options:
    -R str     reset an option's state
    -v [arg]   output version information and exit
    -h         display extended usage information and exit
@@ -145,6 +146,7 @@ The next option supports vendor supported extra options:
       trace-out=str    tracing output file or filter
       used-defines     Show the definitions used
 			- may not be preset
+      no-abort         Do not abort on errors
 ${testname} creates text files from templates using external definitions.
 
 The following option preset mechanisms are supported:

@@ -4,7 +4,7 @@
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -71,7 +71,8 @@ install_m4() {
 one_year_limit() {
     (
         set +x
-        limit=$(date --date=@$(( $(date +%s) - (60 * 60 * 24 * 365) )) +%Y-%M-%d)
+        year_ago=$(( $(date +%s) - (60 * 60 * 24 * 365) ))
+        limit=$(date --date=@${year_ago} +%Y-%M-%d)
         while IFS= read -r line
         do
             if [[ "$line" =~ ^[12].* ]]
@@ -87,14 +88,18 @@ one_year_limit() {
 
 find_gnulib() {
     test -z "$GNULIBDIR" && {
-        for d in ~gnu/proj/gnulib /usr/share/gnulib $(dirname $(command -v gnulib-tool) )
+        local gld=$(command -v gnulib-tool)
+        test "X$gld" = "X" || gld=$(dirname "$gld")
+        for d in $HOME/tools/gnulib ~gnu/proj/gnulib /usr/share/gnulib \
+                                    ${gld:+"$gld"}
         do
             test -d "$d" && GNULIBDIR=$d && break
         done
         test -z "$GNULIBDIR" && die "cannot find GNULIBDIR"
     }
     unset LANG || LANG=''
-    for f in gnulib-tool m4/lib-link.m4 build-aux/config.rpath build-aux/git-version-gen
+    for f in gnulib-tool m4/lib-link.m4 build-aux/config.rpath \
+             build-aux/git-version-gen
     do test -s ${GNULIBDIR}/$f || die "not found: ${GNULIBDIR}/$f"
         g=${f##*/} ; g=${g%%.*} ; g=${g//-/_}
         eval export GL_${g^^}=${GNULIBDIR}/$f
@@ -102,15 +107,17 @@ find_gnulib() {
 }
 
 set_ag_ver() {
-    declare ver=$(${GL_GIT_VERSION_GEN} ZZJUNK) cmt=
+    local cmt= ver=$(
+        \cd ${SOURCE_DIR}
+        ${GL_GIT_VERSION_GEN} ZZJUNK)
 
     export AG_MAJOR_VERSION=${ver%%.*}
     ver=${ver#${AG_MAJOR_VERSION}.}
-    declare scmd="s/^AG_MAJOR_VERSION=.*/AG_MAJOR_VERSION=${AG_MAJOR_VERSION}/"
+    local scmd="s/^AG_MAJOR_VERSION=.*/AG_MAJOR_VERSION=${AG_MAJOR_VERSION}/"
 
     export AG_MINOR_VERSION=${ver%%.*}
     ver=${ver#${AG_MINOR_VERSION}}
-    declare scmd+=";s/^AG_MINOR_VERSION=.*/AG_MINOR_VERSION=${AG_MINOR_VERSION}/"
+    scmd+=";s/^AG_MINOR_VERSION=.*/AG_MINOR_VERSION=${AG_MINOR_VERSION}/"
 
     ver=${ver#.}
     export AG_PATCHLEVEL=
@@ -125,9 +132,15 @@ set_ag_ver() {
             AG_PATCHLEVEL+=.$(printf %03u ${ver%%-*})
         }
     fi
-    declare scmd+=";s/^AG_PATCHLEVEL=.*/AG_PATCHLEVEL=${AG_PATCHLEVEL}/"
+    scmd+=";s/^AG_PATCHLEVEL=.*/AG_PATCHLEVEL=${AG_PATCHLEVEL}/"
     sed "$scmd" VERSION.pre > VERSION
     eval "$(egrep '^[A-Z][A-Z0-9_]+=' VERSION | sed 's/^/export /')"
+    test ${#AGexe} -eq 0 && AGexe=autogen
+    f=$(command -v ${AGexe})
+    if test -x "$f"
+    then AGexe="$f"
+    else AGexe=$(command -v autogen)
+    fi
 }
 
 config_versions() {
@@ -145,19 +158,10 @@ config_versions() {
 
     sed "1s/__CURRENT_VERSION__.*/${AG_VERSION} - $(date '+%B %Y')/" NEWS.pre > NEWS
 
-    cd ${top_srcdir}/config
-    if ${omit_ag}
-    then
-        untar_touch m4.tgz
-
-    else
-        ${AGexe} -L. libopts.def || exit 1
-        ${AGexe} -L. misc.def    || exit 1
-    fi
-    cd ..
+    cd ${top_srcdir}
 
     cp snprintfv/snprintfv.m4 config/.
-    f=$(exec 2>/dev/null ; commandd -v guile)
+    f=$(exec 2>/dev/null ; command -v guile)
     test ${#f} -gt 0 && f=${f%/guile} && f=${f%/bin}
     install_m4 guile.m4 $f
     install_m4 pkg.m4
@@ -176,25 +180,48 @@ config_versions() {
     } > TODO
     cd ${top_srcdir}
 
-    glopts='--local-dir=tmp --source-base=autoopts --lib=do_not_make_me
+    glopts='
 	--import
-	--makefile-name=gnulib.mk
+        --lgpl=2
+	--lib=do_not_make_me
 	--libtool
-	--no-changelog
-	--symlink
+	--local-dir=tmp
 	--m4-base=config
-        --lgpl=2'
-    glmods='parse-duration gendocs gettext-h extensions stdnoreturn'
+	--makefile-name=gnulib.mk
+	--no-changelog
+	--source-base=autoopts
+	--symlink'
+    glmods='
+	extensions 
+	gendocs 
+	gettext-h 
+	havelib
+	parse-duration 
+	snippet/_Noreturn
+	stdnoreturn'
     cmd=$(echo ${GL_GNULIB_TOOL} $glopts $glmods)
     echo GNULIB-TOOL: $cmd
     ${cmd}
     sed -i 's/do_not_make_me_.*_SOURCES/EXTRA_DIST/;/do_not_make_me/d' \
         autoopts/gnulib.mk
+    sedcmd=$(cat <<- \_EndOfSed
+		s@/config/snippet/@/compat/@
+		\@begin .*snippet/_Noreturn@,\@end .*snippet/_Noreturn@ {
+		    /^##/d
+		    p
+		  }
+		\@begin .* module stdnoreturn@,\@end .* module stdnoreturn@ {
+		    /^##/d
+		    p
+		  }
+		_EndOfSed
+          )
     sedcmd='s@/config/snippet/@/compat/@'
-    sedcmd="${sedcmd}${nl}"'\@begin .*snippet/_Noreturn@,\@end .*snippet/_Noreturn@ p'
-    sedcmd="${sedcmd}${nl}"'\@begin .* module stdnoreturn@,\@end .* module stdnoreturn@ p'
+    sedcmd+=$'\n\@begin .*snippet/_Noreturn@,\@end .*snippet/_Noreturn@ p'
+    sedcmd+=$'\n\@begin .* module stdnoreturn@,\@end .* module stdnoreturn@ p'
     sed -n "$sedcmd" autoopts/gnulib.mk | \
-        grep -v '^##' > pkg/libopts/stdnoreturn.mk
+      grep -v '^##' > pkg/libopts/stdnoreturn.mk
+    cp autoopts/gnulib.mk /tmp
     cp ${GNULIBDIR}/build-aux/config.rpath ${GNULIBDIR}/m4/lib-link.m4 config/.
 
     ${GNULIBDIR}/build-aux/gitlog-to-changelog | \

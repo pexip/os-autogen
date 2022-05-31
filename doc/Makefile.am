@@ -5,7 +5,7 @@
 ## Author:          Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -53,6 +53,7 @@ agdoc.texi      : # self-depends upon all executables
 
 autogen.dvi     : agdoc.texi
 autogen.texi    : agdoc.texi mk-agen-texi.sh
+	@test -f $@ || { $(run_mktexi) $@ ; }
 
 # Special rule for generating all the GNU standard formats.
 #

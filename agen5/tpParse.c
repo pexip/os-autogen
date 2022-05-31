@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ * Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,28 +26,14 @@
  */
 
 #if defined(DEBUG_ENABLED)
-static char const zTUndef[] = "%-10s (%d) line %d - MARKER\n";
+ static char const zTUndef[] = "%-10s (%d) line %d - MARKER\n";
 
-static int tpl_nest_lvl = 0;
+ static int tpl_nest_lvl = 0;
 
-static char const tpl_def_fmt[] = "%-10s (%d) line %d end=%d, strlen=%d\n";
+ static char const tpl_def_fmt[] = "%-10s (%d) line %d end=%d, strlen=%d\n";
 #endif
 
-/* = = = START-STATIC-FORWARD = = = */
-static mac_func_t
-func_code(char const ** pscan);
-
-static char const *
-find_mac_end(char const ** ppzMark);
-
-static char const *
-find_mac_start(char const * pz, macro_t ** ppm, templ_t * tpl);
-
-static char const *
-find_macro(templ_t * tpl, macro_t ** ppm, char const ** pscan);
-/* = = = END-STATIC-FORWARD = = = */
-
-/*
+/**
  *  Return the enumerated function type corresponding
  *  to a name pointed to by the input argument.
  */
@@ -360,7 +346,7 @@ print_ag_defs(templ_t * tpl, macro_t * mac)
  * @param[out]    mac     array of macro descriptors to fill in
  * @param[in,out] p_scan  pointer to string scanning address
  */
-LOCAL macro_t *
+static macro_t *
 parse_tpl(macro_t * mac, char const ** p_scan)
 {
     char const * scan = *p_scan;

@@ -3,7 +3,7 @@
  * \file guile-iface.def
  *
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,31 +35,31 @@ invalid = '200000-200003',
 iface = {
   i-name    = is_proc;
   i-args    = '_p';
-  i-impl    = { i-end = '201'; i-code = 'scm_is_true( scm_procedure_p(_p))'; };
+  i-impl    = { i-end = '203'; i-code = 'scm_is_true( scm_procedure_p(_p))'; };
 };
 
 iface = {
   i-name    = list_p;
   i-args    = '_l';
-  i-impl    = { i-end = '201'; i-code = 'scm_is_true( scm_list_p(_l))'; };
+  i-impl    = { i-end = '203'; i-code = 'scm_is_true( scm_list_p(_l))'; };
 };
 
 iface = {
   i-name    = pair_p;
   i-args    = '_p';
-  i-impl    = { i-end = '201'; i-code = 'scm_is_true( scm_pair_p(_p))'; };
+  i-impl    = { i-end = '203'; i-code = 'scm_is_true( scm_pair_p(_p))'; };
 };
 
 iface = {
   i-name    = to_long;
   i-args    = '_v';
-  i-impl    = { i-end = '201'; i-code = 'scm_to_long(_v)'; };
+  i-impl    = { i-end = '203'; i-code = 'scm_to_long(_v)'; };
 };
 
 iface = {
   i-name    = to_ulong;
   i-args    = '_v';
-  i-impl    = { i-end = '201'; i-code = '((unsigned long)scm_to_ulong(_v))'; };
+  i-impl    = { i-end = '203'; i-code = '((unsigned long)scm_to_ulong(_v))'; };
 };
 
 /* end of guile-iface.def */

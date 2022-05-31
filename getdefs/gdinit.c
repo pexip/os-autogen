@@ -5,11 +5,11 @@
  *  @{
  */
 /*
- *  getdefs Copyright (C) 1999-2015 by Bruce Korb - all rights reserved
+ *  getdefs Copyright (C) 1999-2018 by Bruce Korb - all rights reserved
  *
  *  Author:            Bruce Korb <bkorb@gnu.org>
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -25,47 +25,7 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-static char const zNoList[] = "ERROR:  block attr must have name list:\n\t%s\n";
-
-/* = = = START-STATIC-FORWARD = = = */
-static char *
-compressOptionText(char * pzS, char * pzE);
-
-static char *
-fixupSubblockString(char const * pzSrc);
-
-static void
-loadStdin(void);
-
-static void
-set_define_re(void);
-
-static void
-set_modtime(void);
-/* = = = END-STATIC-FORWARD = = = */
-
-LOCAL void
-die(char const * fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "%s error:  ", getdefsOptions.pzProgName);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    exit(EXIT_FAILURE);
-}
-
-LOCAL void
-fserr_die(char const * fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "%s fserr %d (%s):  ", getdefsOptions.pzProgName,
-            errno, strerror(errno));
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    exit(EXIT_FAILURE);
-}
+MOD_LOCAL char const zNoList[] = "ERROR:  block attr must have name list:\n\t%s\n";
 
 /*
  *  compressOptionText
@@ -100,7 +60,7 @@ compressOptionText(char * pzS, char * pzE)
         size_t len = (size_t)(pzD - pzR);
         pzD = malloc(len + 1);
         if (pzD == NULL)
-            die("cannot dup %d byte string\n", (int)(pzD - pzR));
+            nomem_err(len + 1, "new option string");
 
         memcpy(pzD, pzR, len);
         pzD[ len ] = NUL;
@@ -132,7 +92,7 @@ fixupSubblockString(char const * pzSrc)
     {
         char * p = strchr(pzString, '=');
         if (p == NULL)
-            die(zNoList, pzString);
+            die(GETDEFS_EXIT_INVALID_INPUT, zNoList, pzString);
 
         /*
          *  Trim the name
@@ -146,7 +106,7 @@ fixupSubblockString(char const * pzSrc)
          */
         while (IS_WHITESPACE_CHAR(*p)) p++;
         if (*p == NUL)
-            die(zNoList, pzString);
+            die(GETDEFS_EXIT_INVALID_INPUT, zNoList, pzString);
 
         pzCopy = p;
     }
@@ -248,7 +208,7 @@ loadStdin(void)
  *  and "=\*\/" as a single option.  If that option is the SUBBLOCK
  *  option, it will need to be massaged for use.
  */
-LOCAL void
+MOD_LOCAL void
 processEmbeddedOptions(char * pzText)
 {
     static char const zStStr[] = "/*=--";
@@ -311,7 +271,7 @@ set_define_re(void)
         char *       bf  = malloc(len);
 
         if (bf == NULL)
-            die(zMallocErr, (int)len, "definition pattern");
+            nomem_err(len, "definition pattern");
 
         /*
          *  IF a pattern has been supplied, enclose it with
@@ -334,7 +294,7 @@ set_define_re(void)
         int rerr = regcomp(&define_re, def_pat, REG_EXTENDED | REG_ICASE);
         if (rerr != 0) {
             regerror(rerr, &define_re, zRER, sizeof(zRER));
-            die(regex_err, rerr, zRER, def_pat);
+            die(GETDEFS_EXIT_INVALID_INPUT, regex_err, rerr, zRER, def_pat);
         }
 
         if (free_pat)
@@ -343,7 +303,7 @@ set_define_re(void)
         rerr = regcomp(&attrib_re, zAttribRe, REG_EXTENDED | REG_ICASE);
         if (rerr != 0) {
             regerror(rerr, &attrib_re, zRER, sizeof(zRER));
-            die(regex_err, rerr, zRER, zAttribRe);
+            die(GETDEFS_EXIT_INVALID_INPUT, regex_err, rerr, zRER, zAttribRe);
         }
     }
 }
@@ -383,11 +343,11 @@ set_modtime(void)
     } while (--ct > 0);
 
     if (ct > 0)
-        fserr_die("stat-ing %s for text file\n", ppz[-1]);
+        fserr(GETDEFS_EXIT_INVALID_INPUT, "stat", ppz[-1]);
 }
 
 /**
- *  validateOptions
+ *  validate_opts
  *
  *  -  Sanity check the options
  *  -  massage the SUBBLOCK options into something
@@ -399,8 +359,8 @@ set_modtime(void)
  *     (if we are to use these things).
  *  -  Initialize the user name characters array.
  */
-LOCAL void
-validateOptions(void)
+static void
+validate_opts(void)
 {
     set_define_re();
 

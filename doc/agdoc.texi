@@ -3,9 +3,9 @@
 @syncodeindex pg cp
 @c %**end of header
 @copying
-This manual is for GNU AutoGen version 5.18, updated August 2016.
+This manual is for GNU AutoGen version 5.18, updated August 2018.
 
-Copyright @copyright{} 1992-2015 by Bruce Korb.
+Copyright @copyright{} 1992-2018 by Bruce Korb.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -19,42 +19,42 @@ Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 EDIT THIS FILE WITH CAUTION  (agdoc.texi)
 
 It has been AutoGen-ed
-From the definitions    /u/bkorb/ag/ag/doc/ag-texi-14514.d/agdoc.def
+From the definitions    /u/bkorb/tools/ag/autogen-bld/doc/ag-texi-32340.d/agdoc.def
 and the template file   auto_gen.tpl
 
 Plus bits and pieces gathered from all over the source/build
 directories:
-    /u/bkorb/ag/ag/doc/auto_gen.tpl
-    /u/bkorb/ag/ag/agen5/opts.def
-    /u/bkorb/ag/ag/doc/bitmaps.texi
-    /u/bkorb/ag/ag/columns/invoke-columns.texi
-    /u/bkorb/ag/ag/getdefs/invoke-getdefs.texi
-    /u/bkorb/ag/ag/xml2ag/invoke-xml2ag.texi
-    /u/bkorb/ag/ag/doc/snprintfv.texi
-    /u/bkorb/ag/ag/agen5/defParse-fsm.c
-    /u/bkorb/ag/ag/agen5/opts.h
-    /u/bkorb/ag/ag/autoopts/libopts.texi
-    /u/bkorb/ag/ag/doc/autogen-intro.texi
-    /u/bkorb/ag/ag/agen5/invoke-autogen.texi
-    /u/bkorb/ag/ag/agen5/agShell.c
-    /u/bkorb/ag/ag/agen5/expExtract.c
-    /u/bkorb/ag/ag/agen5/expFormat.c
-    /u/bkorb/ag/ag/agen5/expGperf.c
-    /u/bkorb/ag/ag/agen5/expGuile.c
-    /u/bkorb/ag/ag/agen5/expMake.c
-    /u/bkorb/ag/ag/agen5/expOutput.c
-    /u/bkorb/ag/ag/agen5/expPrint.c
-    /u/bkorb/ag/ag/agen5/expState.c
-    /u/bkorb/ag/ag/agen5/expString.c
-    /u/bkorb/ag/ag/agen5/fmemopen.c
-    /u/bkorb/ag/ag/agen5/funcCase.c
-    /u/bkorb/ag/ag/agen5/funcDef.c
-    /u/bkorb/ag/ag/agen5/funcEval.c
-    /u/bkorb/ag/ag/agen5/funcFor.c
-    /u/bkorb/ag/ag/agen5/funcIf.c
-    /u/bkorb/ag/ag/agen5/functions.c
-    /u/bkorb/ag/ag/agen5/schemedef.scm
-    /u/bkorb/ag/ag/doc/autogen-texi.txt
+    /u/bkorb/tools/ag/autogen-bld/doc/auto_gen.tpl
+    /u/bkorb/tools/ag/autogen-bld/agen5/opts.def
+    /u/bkorb/tools/ag/autogen-bld/doc/bitmaps.texi
+    /u/bkorb/tools/ag/autogen-bld/columns/invoke-columns.texi
+    /u/bkorb/tools/ag/autogen-bld/getdefs/invoke-getdefs.texi
+    /u/bkorb/tools/ag/autogen-bld/xml2ag/invoke-xml2ag.texi
+    /u/bkorb/tools/ag/autogen-bld/doc/snprintfv.texi
+    /u/bkorb/tools/ag/autogen-bld/agen5/defParse-fsm.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/opts.h
+    /u/bkorb/tools/ag/autogen-bld/autoopts/libopts.texi
+    /u/bkorb/tools/ag/autogen-bld/doc/autogen-intro.texi
+    /u/bkorb/tools/ag/autogen-bld/agen5/invoke-autogen.texi
+    /u/bkorb/tools/ag/autogen-bld/agen5/agShell.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expExtract.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expGperf.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expMake.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expState.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/expString.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/fmemopen.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/funcDef.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/funcEval.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/functions.c
+    /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm
+    /u/bkorb/tools/ag/autogen-bld/doc/autogen-texi.txt
 
 @end ignore
 
@@ -67,8 +67,8 @@ directories:
 @ifnothtml
 This file documents GNU AutoGen Version 5.18.
 
-AutoGen copyright @copyright{} 1992-2015 Bruce Korb
-AutoOpts copyright @copyright{} 1992-2015 Bruce Korb
+AutoGen copyright @copyright{} 1992-2018 Bruce Korb
+AutoOpts copyright @copyright{} 1992-2018 Bruce Korb
 snprintfv copyright @copyright{} 1999-2000 Gary V. Vaughan
 
 AutoGen is free software: you can redistribute it and/or modify it
@@ -95,13 +95,13 @@ notice identical to this one except for the removal of this paragraph.
 @finalout
 @titlepage
 @title AutoGen - The Automated Program Generator
-@subtitle For version 5.18, August 2016
+@subtitle For version 5.18, August 2018
 @author Bruce Korb
 @author @email{bkorb@@gnu.org}
 
 @page
 @vskip 0pt plus 1filll
-AutoGen copyright @copyright{} 1992-2015 Bruce Korb
+AutoGen copyright @copyright{} 1992-2018 Bruce Korb
 @sp 2
 This is the second edition of the GNU AutoGen documentation,
 @sp 2
@@ -139,13 +139,13 @@ includes stand-alone support for configuration file parsing, @xref{Features}.
 @xref{Add-Ons, Add-on packages for AutoGen}, section for additional
 programs and libraries associated with AutoGen.
 
-This edition documents version 5.18, August 2016.
+This edition documents version 5.18, August 2018.
 
 @ignore
 
 This file is part of AutoGen.
 AutoGen is free software.
-AutoGen is Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+AutoGen is Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 
 AutoGen is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -2017,7 +2017,7 @@ but they cannot be invoked.
 * SCM tpl-file-line::      @file{tpl-file-line} - get the template file+line number
 * SCM tpl-file-next-line:: @file{tpl-file-next-line} - get the template file plus next line number
 * SCM warn::               @file{warn} - display warning message and continue
-* SCM autogen-version::     @file{autogen-version} - ``5.18.12''
+* SCM autogen-version::     @file{autogen-version} - ``5.18.16''
 * SCM c-file-line-fmt::     format file info as, ``@code{#line nn "file"}''
 @end menu
 
@@ -2028,7 +2028,7 @@ but they cannot be invoked.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 454.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 454.
 @end ignore
 
 Usage:  (ag-fprintf ag-diversion format [ format-arg ... ])
@@ -2056,7 +2056,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 378.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 360.
 @end ignore
 
 Usage:  (ag-function? ag-name)
@@ -2074,7 +2074,7 @@ ag-name - name of AutoGen macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 215.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 197.
 @end ignore
 
 Usage:  (base-name)
@@ -2090,7 +2090,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/agShell.c line 29.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/agShell.c line 29.
 @end ignore
 
 Usage:  (chdir dir)
@@ -2110,7 +2110,7 @@ dir - new directory name
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 310.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 292.
 @end ignore
 
 Usage:  (count ag-name)
@@ -2131,7 +2131,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 330.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 312.
 @end ignore
 
 Usage:  (def-file)
@@ -2148,7 +2148,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 762.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 749.
 @end ignore
 
 Usage:  (def-file-line ag-name [ msg-fmt ])
@@ -2179,7 +2179,7 @@ msg-fmt - Optional - formatting for line message
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 86.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 86.
 @end ignore
 
 Usage:  (dne prefix [ first_prefix ] [ optpfx ])
@@ -2233,7 +2233,7 @@ optpfx - Optional - shifted prefix
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 355.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcEval.c line 337.
 @end ignore
 
 Usage:  (emit alist ...)
@@ -2253,7 +2253,7 @@ alist - list of arguments to stringify and emit
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 294.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 294.
 @end ignore
 
 Usage:  (emit-string-table st-name)
@@ -2272,7 +2272,7 @@ st-name - the name of the array of characters
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 279.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 279.
 @end ignore
 
 Usage:  (error message)
@@ -2304,7 +2304,7 @@ message - message to display before exiting
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 344.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 326.
 @end ignore
 
 Usage:  (exist? ag-name)
@@ -2334,7 +2334,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 329.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expExtract.c line 318.
 @end ignore
 
 Usage:  (find-file file-name [ suffix ])
@@ -2355,7 +2355,7 @@ suffix - Optional - file suffix to try, too
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 87.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 64.
 @end ignore
 
 Usage:  (first-for? [ for_var ])
@@ -2374,7 +2374,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 214.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 191.
 @end ignore
 
 Usage:  (for-by by)
@@ -2394,7 +2394,7 @@ by - the iteration increment for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 172.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 149.
 @end ignore
 
 Usage:  (for-from from)
@@ -2414,7 +2414,7 @@ from - the initial index for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 151.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 128.
 @end ignore
 
 Usage:  (for-index [ for_var ])
@@ -2433,7 +2433,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 234.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 211.
 @end ignore
 
 Usage:  (for-sep separator)
@@ -2454,7 +2454,7 @@ each FOR iteration
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 193.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 170.
 @end ignore
 
 Usage:  (for-to to)
@@ -2474,7 +2474,7 @@ to - the final index for the AutoGen FOR macro
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 131.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 108.
 @end ignore
 
 Usage:  (found-for? [ for_var ])
@@ -2493,7 +2493,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 431.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 413.
 @end ignore
 
 Usage:  (get ag-name [ alt-val ])
@@ -2515,7 +2515,7 @@ alt-val - Optional - value if not present
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 468.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 450.
 @end ignore
 
 Usage:  (get-c-name ag-name)
@@ -2535,7 +2535,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 506.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 488.
 @end ignore
 
 Usage:  (get-down-name ag-name)
@@ -2555,7 +2555,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 487.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 469.
 @end ignore
 
 Usage:  (get-up-name ag-name)
@@ -2575,7 +2575,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 525.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 507.
 @end ignore
 
 Usage:  (high-lim ag-name)
@@ -2602,7 +2602,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 457.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcEval.c line 439.
 @end ignore
 
 Usage:  (insert-file alist ...)
@@ -2619,7 +2619,7 @@ alist - list of files to emit
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 133.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 133.
 @end ignore
 
 Usage:  (insert-suspended susp-name)
@@ -2637,7 +2637,7 @@ susp-name - the name of the suspended output
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 111.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 88.
 @end ignore
 
 Usage:  (last-for? [ for_var ])
@@ -2657,7 +2657,7 @@ for_var - Optional - which for loop
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 570.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 552.
 @end ignore
 
 Usage:  (len ag-name)
@@ -2678,7 +2678,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 590.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 572.
 @end ignore
 
 Usage:  (low-lim ag-name)
@@ -2695,7 +2695,7 @@ ag-name - name of AutoGen value
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 803.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 801.
 @end ignore
 
 Usage:  (make-header-guard name)
@@ -2760,7 +2760,7 @@ name - header group name
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 561.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 561.
 @end ignore
 
 Usage:  (make-tmp-dir)
@@ -2775,7 +2775,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 399.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 381.
 @end ignore
 
 Usage:  (match-value? op ag-name test-str)
@@ -2805,7 +2805,7 @@ test-str - string to test against
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 748.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 730.
 @end ignore
 
 Usage:  (max-file-time)
@@ -2822,7 +2822,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 273.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 249.
 @end ignore
 
 Usage:  (mk-gettextable string)
@@ -2840,7 +2840,7 @@ string - a multi-paragraph string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 201.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 201.
 @end ignore
 
 Usage:  (out-delete)
@@ -2858,7 +2858,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 738.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 736.
 @end ignore
 
 Usage:  (out-depth)
@@ -2874,7 +2874,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 438.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 438.
 @end ignore
 
 Usage:  (out-emit-suspended susp_nm)
@@ -2892,7 +2892,7 @@ susp_nm - A name tag of suspended output
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 768.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 766.
 @end ignore
 
 Usage:  (out-line)
@@ -2908,7 +2908,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 226.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 226.
 @end ignore
 
 Usage:  (out-move new-name)
@@ -2927,7 +2927,7 @@ new-name - new name for the current output file
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 751.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 749.
 @end ignore
 
 Usage:  (out-name)
@@ -2945,7 +2945,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 273.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 273.
 @end ignore
 
 Usage:  (out-pop [ disp ])
@@ -2968,7 +2968,7 @@ disp - Optional - return contents of the file
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 537.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 537.
 @end ignore
 
 Usage:  (out-push-add file-name)
@@ -2986,7 +2986,7 @@ file-name - name of the file to append text to
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 592.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 592.
 @end ignore
 
 Usage:  (out-push-new [ file-name ])
@@ -3008,7 +3008,7 @@ file-name - Optional - name of the file to create
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 402.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 402.
 @end ignore
 
 Usage:  (out-resume susp_nm)
@@ -3027,7 +3027,7 @@ susp_nm - A name tag for reactivating
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 359.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 359.
 @end ignore
 
 Usage:  (out-suspend suspName)
@@ -3049,7 +3049,7 @@ suspName - A name tag for reactivating
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 676.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 676.
 @end ignore
 
 Usage:  (out-switch file-name)
@@ -3070,7 +3070,7 @@ file-name - name of the file to create
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expOutput.c line 321.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expOutput.c line 321.
 @end ignore
 
 Usage:  (output-file-next-line [ line_off ] [ alt_fmt ])
@@ -3097,7 +3097,7 @@ alt_fmt - Optional - alternate format string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 617.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 599.
 @end ignore
 
 Usage:  (set-option opt)
@@ -3115,7 +3115,7 @@ opt - AutoGen option name + its argument
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 480.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 469.
 @end ignore
 
 Usage:  (set-writable [ set? ])
@@ -3135,7 +3135,7 @@ set? - Optional - boolean arg, false to make output non-writable
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 727.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 707.
 @end ignore
 
 Usage:  (stack ag-name)
@@ -3153,7 +3153,7 @@ ag-name - AutoGen value name
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 387.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 387.
 @end ignore
 
 Usage:  (stack-join join ag-name)
@@ -3175,7 +3175,7 @@ ag-name - name of autogen values to stack
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 633.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 615.
 @end ignore
 
 Usage:  (suffix)
@@ -3190,7 +3190,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 646.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 628.
 @end ignore
 
 Usage:  (tpl-file [ full_path ])
@@ -3210,7 +3210,7 @@ full_path - Optional - include full path to file
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 695.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 677.
 @end ignore
 
 Usage:  (tpl-file-line [ msg-fmt ])
@@ -3240,7 +3240,7 @@ msg-fmt - Optional - formatting for line message
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 727.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 709.
 @end ignore
 
 Usage:  (tpl-file-next-line [ msg-fmt ])
@@ -3259,7 +3259,7 @@ msg-fmt - Optional - formatting for line message
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 252.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 252.
 @end ignore
 
 Usage:  (warn message)
@@ -3287,7 +3287,7 @@ Generated from auto_gen.tpl line 291.
 
 This is a symbol defining the current AutoGen version number string.
 It was first defined in AutoGen-5.2.14.
-It is currently ``5.18.12''.
+It is currently ``5.18.16''.
 
 @node SCM c-file-line-fmt
 @subsection format file info as, ``@code{#line nn "file"}''
@@ -3391,7 +3391,7 @@ of spelling that is, ``(not (= ...))''.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 775.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 775.
 @end ignore
 
 Usage:  (agpl prog-name prefix)
@@ -3411,7 +3411,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 824.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 824.
 @end ignore
 
 Usage:  (bsd prog_name owner prefix)
@@ -3433,7 +3433,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 795.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 775.
 @end ignore
 
 Usage:  (c-string string)
@@ -3458,7 +3458,7 @@ string - string to reformat
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 336.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcEval.c line 318.
 @end ignore
 
 Usage:  (error-source-line)
@@ -3476,7 +3476,7 @@ This Scheme function takes no arguments.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expExtract.c line 202.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expExtract.c line 191.
 @end ignore
 
 Usage:  (extract file-name marker-fmt [ caveat ] [ default ])
@@ -3576,7 +3576,7 @@ default - Optional - default initial text
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 298.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c line 290.
 @end ignore
 
 Usage:  (format-arg-count format)
@@ -3615,7 +3615,7 @@ format - formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 231.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c line 223.
 @end ignore
 
 Usage:  (fprintf port format [ format-arg ... ])
@@ -3638,7 +3638,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGperf.c line 111.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGperf.c line 111.
 @end ignore
 
 Usage:  (gperf name str)
@@ -3664,7 +3664,7 @@ str - string to hash
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 339.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 339.
 @end ignore
 
 Usage:  (gperf-code st-name)
@@ -3708,7 +3708,7 @@ st-name - the name of the gperf hash list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 751.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 751.
 @end ignore
 
 Usage:  (gpl prog-name prefix)
@@ -3728,7 +3728,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 254.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c line 246.
 @end ignore
 
 Usage:  (hide-email display eaddr)
@@ -3749,7 +3749,7 @@ eaddr - email address
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 110.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 110.
 @end ignore
 
 Usage:  (html-escape-encode str)
@@ -3769,7 +3769,7 @@ str - string to make substitutions in
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 291.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 267.
 @end ignore
 
 Usage:  (in? test-string string-list ...)
@@ -3789,7 +3789,7 @@ string-list - list of strings to check
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 358.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 334.
 @end ignore
 
 Usage:  (join separator list ...)
@@ -3811,7 +3811,7 @@ list - list of strings to join
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 769.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 749.
 @end ignore
 
 Usage:  (kr-string string)
@@ -3832,7 +3832,7 @@ string - string to reformat
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 799.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 799.
 @end ignore
 
 Usage:  (lgpl prog_name owner prefix)
@@ -3854,7 +3854,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 850.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 850.
 @end ignore
 
 Usage:  (license lic_name prog_name owner prefix)
@@ -3878,7 +3878,7 @@ prefix - String for starting each output line
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 673.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 673.
 @end ignore
 
 Usage:  (license-description license prog-name prefix [ owner ])
@@ -3904,7 +3904,7 @@ owner - Optional - owner of the program
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 616.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 616.
 @end ignore
 
 Usage:  (license-full license prog-name prefix [ owner ] [ years ])
@@ -3965,7 +3965,7 @@ years - Optional - copyright years
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 697.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 697.
 @end ignore
 
 Usage:  (license-info license prog-name prefix [ owner ] [ years ])
@@ -3995,7 +3995,7 @@ years - Optional - copyright years
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expFormat.c line 724.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expFormat.c line 724.
 @end ignore
 
 Usage:  (license-name license)
@@ -4012,7 +4012,7 @@ license - name of license type
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGperf.c line 41.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGperf.c line 41.
 @end ignore
 
 Usage:  (make-gperf name strings ...)
@@ -4047,7 +4047,7 @@ strings - list of strings to hash
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expMake.c line 255.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expMake.c line 255.
 @end ignore
 
 Usage:  (makefile-script text)
@@ -4134,7 +4134,7 @@ text - the text of the script
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 127.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 126.
 @end ignore
 
 Usage:  (max list ...)
@@ -4151,7 +4151,7 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 186.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 185.
 @end ignore
 
 Usage:  (min list ...)
@@ -4168,16 +4168,17 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 456.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 432.
 @end ignore
 
 Usage:  (prefix prefix text)
 @*
 Prefix every line in the second string with the first string.
-This includes empty lines, though trailing white space will
-be removed if the line consists only of the "prefix".
-Also, if the last character is a newline, then *two* prefixes will
-be inserted into the result text.
+This includes empty lines.  Trailing white space will be removed
+so if the prefix is all horizontal white space, then it will be
+removed from otherwise blank lines.  Also, if the last character
+is a newline, then *two* prefixes will be inserted into the result
+text.
 
 For example, if the first string is "# " and the second contains:
 @example
@@ -4206,7 +4207,7 @@ text - multi-line block of text
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 208.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c line 200.
 @end ignore
 
 Usage:  (printf format [ format-arg ... ])
@@ -4228,7 +4229,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 541.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 521.
 @end ignore
 
 Usage:  (raw-shell-str string)
@@ -4254,7 +4255,7 @@ string - string to transform
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/agShell.c line 60.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/agShell.c line 60.
 @end ignore
 
 Usage:  (shell command ...)
@@ -4283,7 +4284,7 @@ command - shell command - the result is from stdout
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 638.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 618.
 @end ignore
 
 Usage:  (shell-str string)
@@ -4353,7 +4354,7 @@ string - string to transform
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/agShell.c line 108.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/agShell.c line 108.
 @end ignore
 
 Usage:  (shellf format [ format-arg ... ])
@@ -4373,7 +4374,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expPrint.c line 186.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expPrint.c line 178.
 @end ignore
 
 Usage:  (sprintf format [ format-arg ... ])
@@ -4392,7 +4393,7 @@ format-arg - Optional - list of arguments to formatting string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 426.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 425.
 @end ignore
 
 Usage:  (string-capitalize str)
@@ -4411,7 +4412,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 383.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 382.
 @end ignore
 
 Usage:  (string-capitalize! str)
@@ -4429,7 +4430,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 288.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 229.
 @end ignore
 
 Usage:  (*=* text match)
@@ -4452,7 +4453,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 155.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 96.
 @end ignore
 
 Usage:  (*==* text match)
@@ -4472,7 +4473,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 482.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 481.
 @end ignore
 
 Usage:  (string-downcase str)
@@ -4490,7 +4491,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 451.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 450.
 @end ignore
 
 Usage:  (string-downcase! str)
@@ -4508,7 +4509,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 560.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 501.
 @end ignore
 
 Usage:  (*~ text match)
@@ -4529,7 +4530,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 547.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 488.
 @end ignore
 
 Usage:  (*~~ text match)
@@ -4550,7 +4551,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 336.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 277.
 @end ignore
 
 Usage:  (*= text match)
@@ -4570,7 +4571,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 184.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 125.
 @end ignore
 
 Usage:  (*== text match)
@@ -4591,7 +4592,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 259.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 200.
 @end ignore
 
 Usage:  (== text match)
@@ -4611,7 +4612,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 748.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 689.
 @end ignore
 
 Usage:  (~ text match)
@@ -4633,7 +4634,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 406.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 347.
 @end ignore
 
 Usage:  (= text match)
@@ -4661,7 +4662,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 478.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 419.
 @end ignore
 
 Usage:  (*~* text match)
@@ -4682,7 +4683,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 465.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 406.
 @end ignore
 
 Usage:  (*~~* text match)
@@ -4703,7 +4704,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 735.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 676.
 @end ignore
 
 Usage:  (~~ text match)
@@ -4724,7 +4725,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 654.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 595.
 @end ignore
 
 Usage:  (~* text match)
@@ -4745,7 +4746,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 641.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 582.
 @end ignore
 
 Usage:  (~~* text match)
@@ -4766,7 +4767,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 373.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 314.
 @end ignore
 
 Usage:  (=* text match)
@@ -4786,7 +4787,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 223.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 164.
 @end ignore
 
 Usage:  (==* text match)
@@ -4805,7 +4806,7 @@ match - pattern/substring to search for
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 937.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 917.
 @end ignore
 
 Usage:  (string-substitute source match repl)
@@ -4835,7 +4836,7 @@ repl - replacement strings or substrings
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 239.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 239.
 @end ignore
 
 Usage:  (string-table-add st-name str-val)
@@ -4865,7 +4866,7 @@ str-val - the (possibly) new value to add
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 277.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 277.
 @end ignore
 
 Usage:  (string-table-add-ref st-name str-val)
@@ -4886,7 +4887,7 @@ str-val - the (possibly) new value to add
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 146.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 146.
 @end ignore
 
 Usage:  (string-table-new st-name)
@@ -4974,7 +4975,7 @@ st-name - the name of the array of characters
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/schemedef.scm line 326.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/schemedef.scm line 326.
 @end ignore
 
 Usage:  (string-table-size st-name)
@@ -4991,7 +4992,7 @@ st-name - the name of the array of characters
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 287.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 286.
 @end ignore
 
 Usage:  (string->c-name! str)
@@ -5010,7 +5011,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 506.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 505.
 @end ignore
 
 Usage:  (string->camelcase str)
@@ -5029,7 +5030,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 917.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 897.
 @end ignore
 
 Usage:  (string-tr source match translation)
@@ -5051,7 +5052,7 @@ translation - conversion list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 843.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 823.
 @end ignore
 
 Usage:  (string-tr! source match translation)
@@ -5078,7 +5079,7 @@ translation - conversion list
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 359.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 358.
 @end ignore
 
 Usage:  (string-upcase str)
@@ -5096,7 +5097,7 @@ str - input string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 328.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 327.
 @end ignore
 
 Usage:  (string-upcase! str)
@@ -5113,7 +5114,7 @@ str - input/output string
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 708.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 688.
 @end ignore
 
 Usage:  (sub-shell-str string)
@@ -5132,7 +5133,7 @@ string - string to transform
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expGuile.c line 245.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expGuile.c line 244.
 @end ignore
 
 Usage:  (sum list ...)
@@ -5149,7 +5150,7 @@ list - list of values.  Strings are converted to numbers
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expString.c line 979.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expString.c line 959.
 @end ignore
 
 Usage:  (time-string->number time_spec)
@@ -5171,7 +5172,7 @@ time_spec - string to parse
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/expState.c line 228.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/expState.c line 210.
 @end ignore
 
 Usage:  (version-compare op v1 v2)
@@ -5353,7 +5354,7 @@ macros take no arguments and ignore everything after the macro name
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 38.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 38.
 @end ignore
 
 @findex BREAK
@@ -5367,7 +5368,7 @@ the (last-for?) function will never yield "#t".
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 877.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 818.
 @end ignore
 
 @findex CASE
@@ -5436,7 +5437,7 @@ in this texi doc as ``string-*?'' predicates (@pxref{Common Functions}).
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 350.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 350.
 @end ignore
 
 @findex COMMENT
@@ -5457,7 +5458,7 @@ entire macro function is treated as a comment and ignored.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 28.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 28.
 @end ignore
 
 @findex CONTINUE
@@ -5469,7 +5470,7 @@ This will skip the remainder of the loop and start the next.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcDef.c line 389.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcDef.c line 379.
 @end ignore
 
 @findex DEBUG
@@ -5492,7 +5493,7 @@ might actually want to use this.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcDef.c line 533.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcDef.c line 523.
 @end ignore
 
 @findex DEFINE
@@ -5557,7 +5558,7 @@ body of the template at the beginning of the file.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 260.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 249.
 @end ignore
 
 @findex ELIF
@@ -5573,7 +5574,7 @@ the arguments to @code{IF}.  For a complete description @xref{IF}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 288.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 277.
 @end ignore
 
 @findex ELSE
@@ -5588,7 +5589,7 @@ the @code{IF} function.  For a complete description @xref{IF}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcDef.c line 597.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcDef.c line 587.
 @end ignore
 
 @findex ENDDEF
@@ -5601,7 +5602,7 @@ For a complete description @xref{DEFINE}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 725.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 702.
 @end ignore
 
 @findex ENDFOR
@@ -5614,7 +5615,7 @@ For a complete description @xref{FOR}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 134.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 123.
 @end ignore
 
 @findex ENDIF
@@ -5627,7 +5628,7 @@ For a complete description @xref{IF}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 217.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 206.
 @end ignore
 
 @findex ENDWHILE
@@ -5640,7 +5641,7 @@ For a complete description @xref{WHILE}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 944.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 885.
 @end ignore
 
 @findex ESAC
@@ -5653,7 +5654,7 @@ For a complete description, @xref{CASE}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcEval.c line 580.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcEval.c line 562.
 @end ignore
 
 @findex EXPR
@@ -5669,7 +5670,7 @@ macro is inferred.  The result of the expression evaluation
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcFor.c line 645.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcFor.c line 622.
 @end ignore
 
 @findex FOR
@@ -5752,7 +5753,7 @@ values of @code{var} that have actually been defined.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 98.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 87.
 @end ignore
 
 @findex IF
@@ -5791,7 +5792,7 @@ is interpreted as @i{false}.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 179.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 179.
 @end ignore
 
 @findex INCLUDE
@@ -5810,7 +5811,7 @@ terminating macro functions.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcDef.c line 669.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcDef.c line 659.
 @end ignore
 
 @findex INVOKE
@@ -5838,7 +5839,7 @@ time the macro is evaluated.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 95.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 95.
 @end ignore
 
 @findex RETURN
@@ -5855,7 +5856,7 @@ Please be careful using it.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcCase.c line 1277.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcCase.c line 1218.
 @end ignore
 
 @findex SELECT
@@ -5873,7 +5874,7 @@ the @code{CASE} macro description.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/functions.c line 243.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/functions.c line 243.
 @end ignore
 
 @findex UNKNOWN
@@ -5890,7 +5891,7 @@ You may not specify @code{UNKNOWN} explicitly.
 
 @ignore
 Generated from auto_gen.tpl line 580.
-Extracted from /u/bkorb/ag/ag/agen5/funcIf.c line 190.
+Extracted from /u/bkorb/tools/ag/autogen-bld/agen5/funcIf.c line 179.
 @end ignore
 
 @findex WHILE
@@ -6411,12 +6412,13 @@ env VERBOSE=1 gmake TESTS="for.test forcomma.test" check
 @ignore
 END   == INSTALLATION == DO NOT CHANGE THIS COMMENT or the surrounding 'ignore's
 Extraction from autogen.texi
-@end ignore@page
+@end ignore
+@page
 @node AutoOpts
 @chapter Automated Option Processing
 @cindex autoopts
 
-AutoOpts 41.1 is bundled with AutoGen.  It is a tool that virtually eliminates the
+AutoOpts 42.1 is bundled with AutoGen.  It is a tool that virtually eliminates the
 hassle of processing options and keeping man pages, info docs and usage text
 up to date.  This package allows you to specify several program attributes,
 thousands of option types and many option attributes.  From this, it then
@@ -7278,8 +7280,8 @@ This attribute will cause two procedures to be added to the code file:
 (see @code{prefix}, below).  They are declared in the
 generated header, thus:
 @example
-extern void vusage_message(char const * fmt, va_list ap);
-extern void usage_message(char const * fmt, ...);
+noreturn extern void vusage_message(char const * fmt, va_list ap);
+noreturn extern void usage_message(char const * fmt, ...);
 @end example
 @noindent
 These functions print the message to @file{stderr} and invoke the usage
@@ -7296,22 +7298,12 @@ message.
 
 The profiles for these functions are:
 @example
-extern void vdie( int exit_code, char const * fmt, va_list);
-extern void die(  int exit_code, char const * fmt, ...);
-extern void fserr(int exit_code, char const * op, char const * fname);
-static inline void
+noreturn extern void vdie( int exit_code, char const * fmt, va_list);
+noreturn extern void die(  int exit_code, char const * fmt, ...);
+noreturn extern void fserr(int exit_code, char const * op, char const * fname);
+noreturn static inline void
 nomem_err(size_t sz, char const * what) @{...@}
 @end example
-
-@item no-return
-@vindex no-return
-If @code{usage-message} or @code{die-code} are specified, you may also
-specify that the generated functions are marked as ``noreturn'' with
-this attribute.  If this attribute is not empty, then the specified string
-is used instead of ``noreturn''.  If ``noreturn'' has not been defined
-before these functions are declared, then it will be ``#define''-d to the
-empty string.  No such protection is made for any non-default value.
-These functions will be declared ``extern noreturn void''.
 
 @item export
 @vindex export
@@ -7319,7 +7311,7 @@ This string is inserted into the .h interface file.  Generally used for
 global variables or @code{#include} directives required by
 @code{flag-code} text and shared with other program text.
 Do not specify your configuration header (@file{config.h}) in this
-attribute or the @code{include} attribute, however.  Instead, use
+attribute or the @code{include} attribute.  Instead, use
 @code{config-header}, above.
 
 @item guard-option-names
@@ -9360,12 +9352,22 @@ definition file.  It will produce abbreviated help text to @file{stdout} and
 exit with zero status (@code{EXIT_SUCCESS}).
 
 @item version -v
-This will print the program name, title and version.  If it is followed by
-the letter @code{c} and a value for @code{copyright} and @code{owner} have
-been provided, then the copyright will be printed, too.  If it is followed
-by the letter @code{n}, then the full copyright notice (if available) will
-be printed.  The @code{version} attribute must be specified in the option
-definition file.
+
+This will print the program name, title and version.  If it is not
+followed by anything or is followed by the letter @code{v}, just the
+program name and version will be printed. If followed by the letter
+@code{c} and a value for @code{copyright} and @code{owner} have been
+provided, then the copyright will be printed, too.  If it is followed by
+the letter @code{n}, then the full copyright notice (if available) will
+be printed.  The @code{version} attribute must be specified in the
+option definition file.
+
+Because some target platforms discourage optional arguments to options,
+the autoopts library can be compiled with @code{NO_OPTIONAL_OPT_ARGS}
+defined. Alternatively, the @code{version-type} attribute can be added
+to the option definitions and it can specify which flavor is preferred.
+In either case, an argument to the @code{--version} option will then be
+disallowed.
 
 @item load-opts -<
 @cindex configuration file
@@ -9404,6 +9406,29 @@ and @code{optionProcess} will not return.  You may wish to invoke
 to reinvoke @code{optionProcess}.
 
 This option is activated by specifying one or more @code{homerc} attributes.
+
+The method of saving the state may be altered by specifying flags before
+the output file name. ``Flags'' are specified by placing a list of them
+before the file name and separating them from the name with one or two
+greater-than characters (``>''). There are three flags currently supported:
+
+@table @samp
+@item default
+If an option has a default value (has not been set), then the default value
+is inserted as a comment.
+
+@item usage
+Every option that can be processed from the configuration file will have a
+comment that contains the usage string that gets printed with the @code{--help} text
+
+@item update
+Instead of removing the old file and writing a new one, the output file is kept,
+but any pre-existing segment labeled with @code{<?program prog-name>} is removed.
+The new program segment is placed at the end of the file. This flag is implied if
+the flags are separated from the file name with doubled greater-than characters.
+In other words, @code{update,usage > @i{file-name}} and @code{usage >> @i{file-name}}
+are identical.
+@end table
 
 @item reset-option -R
 This option takes the name of an option for the current program and resets its
@@ -11408,7 +11433,7 @@ I tend to be wordy in my @code{doc} attributes:
 # getdefs sample configuration file
 ## This source file is copyrighted and licensed under the following terms:
 #
-#  Copyright (C) 1999-2014 Bruce Korb, all rights reserved.
+#  Copyright (C) 1999-2018 Bruce Korb, all rights reserved.
 #  This is free software. It is licensed for use, modification and
 #  redistribution under the terms of the GNU General Public License,
 #  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -11785,7 +11810,7 @@ will produce the following output:
 @example
 Hello, World!
 Buzz off, World!
-Hello, Bruce Korb!
+Hello, Bruce Korb,,,!
 @end example
 @ignore
 START == AO-DATA2 == DO NOT CHANGE THIS COMMENT or the surrounding 'ignore's
@@ -11977,7 +12002,10 @@ directive and the program section with a matching program name.
 
 @item [PROG_NAME]
 This is basically an alias for @code{<?program prog-name>}, except that
-the program name must be upper cased and segmented only with underscores.
+the program name must be upper cased and segmented only with underscores
+and it is @strong{not} recognized as a program segment when updating
+configuration files with the @code{--save-opts} option. In other words,
+use this only for Windows compatibility.
 @end table
 
 @noindent
@@ -12104,8 +12132,6 @@ Operands and options may be intermixed.  They will be reordered.
 
 The following option preset mechanisms are supported:
  - reading file errorsRC
-Packaged by Bruce (2016-08-29)
-Report test_errors bugs to bkorb@@gnu.org
 @end example
 
 Using the invocation,
@@ -12155,8 +12181,8 @@ extracted from the script file.
 If the script file already exists and contains Automated Option Processing
 text, the second line of the file through the ending tag will be replaced
 by the newly generated text.  The first '#!' line will be regenerated.
-Packaged by Bruce (2016-08-29)
-Report genshellopt bugs to bkorb@@gnu.org
+
+Please send bug reports to:  <autogen-users@@lists.sourceforge.net>
 
 = = = = = = = =
 
@@ -12183,18 +12209,7 @@ Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
    Str template       Template Name
    Str agarg          AutoGen Argument
    Str base-name      Base name for output file(s)
-   opt version        output version information and exit
-   no  help           display extended usage information and exit
-   no  more-help      extended usage information passed thru pager
-   opt save-opts      save the option state to a config file
-   Str load-opts      load options from a config file
-
-All arguments are named options.
-If no 'input' argument is provided or is set to simply "-", and if 'stdin'
-is not a 'tty', then the list of input files will be read from 'stdin'.
-Packaged by Bruce (2016-08-29)
-Report getdefs bugs to bkorb@@gnu.org
-@end example
+  @end example
 
 @noindent
 Resulting in the following script:
@@ -12203,13 +12218,14 @@ Resulting in the following script:
 # # # # # # # # # # -- do not modify this marker --
 #
 #  DO NOT EDIT THIS SECTION
- OF /u/bkorb/ag/ag/doc/ag-texi-14514.d/.ag-cjRsM3/genshellopt.sh
+ OF /u/bkorb/tools/ag/autogen-bld/doc/ag-texi-32340.d/.ag-5GQlKL/genshellopt.sh
 #
 #  From here to the next `-- do not modify this marker --',
-#  the text has been generated Monday August 29, 2016 at 02:37:00 PM PDT
+#  the text has been generated Sunday August 26, 2018 at 10:46:02 AM PDT
 #  From the GETDEFS option definitions
 #
-GETDEFS_LONGUSAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
+GETDEFS_LONGUSAGE_TEXT='getdefs error:  invalid option descriptor for version
+getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
 Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
 
 Specify which definitions are of interest and what to say about them:
@@ -12267,24 +12283,7 @@ Definition output disposition options::
 Version, usage and configuration options:
 
    Arg Option-Name    Description
-   opt version        output version information and exit
-   no  help           display extended usage information and exit
-   no  more-help      extended usage information passed thru pager
-   opt save-opts      save the option state to a config file
-   Str load-opts      load options from a config file
-                                - disabled as '\''--no-load-opts'\''
-                                - may appear multiple times
-
-All arguments are named options.
-If no '\''input'\'' argument is provided or is set to simply "-", and if '\''stdin'\''
-is not a '\''tty'\'', then the list of input files will be read from '\''stdin'\''.
-
-The following option preset mechanisms are supported:
- - reading file /dev/null
-This program extracts AutoGen definitions from a list of source files.
-Definitions are delimited by '\''/*=<entry-type> <entry-name>\n'\'' and '\''=*/\n'\''.
-Packaged by Bruce (2016-08-29)
-Report getdefs bugs to bkorb@@gnu.org'
+  '
 
 GETDEFS_USAGE_TEXT='getdefs (GNU AutoGen) - AutoGen Definition Extraction Tool - Ver. 1.5
 Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
@@ -12306,17 +12305,7 @@ Usage:  getdefs [ <option-name>[@{=| @}<val>] ]...
    Str template       Template Name
    Str agarg          AutoGen Argument
    Str base-name      Base name for output file(s)
-   opt version        output version information and exit
-   no  help           display extended usage information and exit
-   no  more-help      extended usage information passed thru pager
-   opt save-opts      save the option state to a config file
-   Str load-opts      load options from a config file
-
-All arguments are named options.
-If no '\''input'\'' argument is provided or is set to simply "-", and if '\''stdin'\''
-is not a '\''tty'\'', then the list of input files will be read from '\''stdin'\''.
-Packaged by Bruce (2016-08-29)
-Report getdefs bugs to bkorb@@gnu.org'
+  getdefs error:  invalid option descriptor for version'
 
 
 GETDEFS_DEFS_TO_GET=$@{GETDEFS_DEFS_TO_GET@}

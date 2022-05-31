@@ -3,7 +3,7 @@
 #
 # Author:            Bruce Korb <bkorb@gnu.org>
 ##  This file is part of AutoGen.
-##  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+##  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ##  AutoGen is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -83,7 +83,15 @@ test -z "${BASH_VERSION}" && \
     local() { "$@" ; }
 
 # Setup run_ag
+test ${#top_srcdir} -eq 0 && {
+    echo "NO TOP DIRECTORY in $PWD"
+    exit 1
+} 1>&2
 f=$(\cd ${top_srcdir}/autoopts/tpl >/dev/null && pwd)
+test ${#top_builddir} -eq 0 && {
+    echo "NO BUILD DIRECTORY in $PWD"
+    exit 1
+} 1>&2
 g=$(\cd ${top_builddir}/autoopts/tpl >/dev/null && pwd)
 tpl_dir='-L'$f
 test "X$f" = "X$g" || tpl_dir=$tpl_dir' -L'$g
@@ -185,21 +193,18 @@ make_opts()
 
 # # # # # # # # # # # # # # # # # # #
 #
-#  Make the proto.h header & make sure the static proc declarations
-#  are all current at the top of each module.
+#  Extract all the static procedure declarations into a "proto.h" header.
+#  These functions are shared throughout the autoopts code.
 #
 make_proto()
 {
-    local target=stamp-proto temp_proto=proto-h$$ proto_h=proto.h
-    echo '#' stamped `date` > ${target}-$$
+    local temp_proto=proto-h$$ proto_h=proto.h
 
     exec 5> $temp_proto
 
     local files=`ls -1 *.c | grep -v 'fsm\.c$'`
-    local locs=
     local base_dir=`basename \`pwd\``
     local marker=`echo ${base_dir} | tr '[a-z]' '[A-Z]'`_PROTO_H_GUARD
-    local ct=0
 
     cat >&5 <<- _EOF_
 	/* -*- buffer-read-only: t -*- vi: set ro:
@@ -213,66 +218,31 @@ make_proto()
 	_EOF_
 
     deplist=
+    local sed_static='\@^\(noreturn \)\?static @, \@^{@ p'
+    local sed_trim='s/)$/);/;s/^{.*//'
+
     for f in ${files}
     do
-        test ! -f ${f} && echo "not a file:  $f" >&2 && continue
-        ct=`echo \`egrep '(START|END)-STATIC-FORWARD' $f | wc -l\` `
+        grep -q 'buffer-read-only:' $f && continue
 
-        case ${ct} in
-        ( 2 )
-            rm -f $f.[XY]
-
-            exec 4> $f.X
-            sed '/START-STATIC-FORWARD/q' $f >&4
-            sed -n '/END-STATIC-FORWARD/,$p' $f > $f.Y
-            sed -n '/^static /,/^{/p' $f.Y | \
-                sed 's/^{.*//;s/)$/);/;$d' >&4
-            cat $f.Y >&4
-            exec 4>&-
-
-            cmp -s $f.X $f || {
-                echo WARNING: ${f} has been updated >&2
-                mv -f $f.X $f
-            }
-
-            rm -f $f.[XY]
-            deplist=$deplist' \'$nl$ht$f
-            ;;
-
-        ( 0 ) : ;;
-        ( * )
-            echo "bad marker line count:" $ct in $f >&2
-            continue
-        esac
-
-        egrep '^LOCAL ' $f >/dev/null && {
-            printf '/*\n *  Extracted from %s\n */\n' $f
-            sed -n '/^LOCAL /,/^{/p' $f | \
-                sed 's/^LOCAL /static /;s@)$@);@;s/^{.*//'
+        txt=$(sed -n "$sed_static" $f | sed "$sed_trim")
+        test ${#txt} -gt 4 && {
+            printf '\n/*\n * Static declarations from %s\n */\n' $f
+            echo "$txt"
         } >&5
     done
+    cat >&5 <<- _EOF
 
-    test -d "$DEPDIR" && {
-        echo "${proto_h}  : stamp-proto"
-        echo "stamp-proto : $deplist"
-    } > $DEPDIR/stamp-proto.d
-
-    echo "#endif /* ${marker} */" >&5
+	#endif /* ${marker} */
+	_EOF
     exec 5>&-
 
     if test -f ${proto_h} && cmp -s ${temp_proto} ${proto_h}
     then
         rm -f ${temp_proto}
-        if test -f ${target}
-        then
-            rm -f ${target}-$$
-        else
-            mv -f ${target}-$$ ${target}
-            touch ${proto_h}
-        fi
+        touch ${proto_h}
     else
         mv -f ${temp_proto} ${proto_h}
-        mv -f ${target}-$$  ${target}
     fi
 }
 

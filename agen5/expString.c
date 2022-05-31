@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,29 +25,6 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-/* = = = START-STATIC-FORWARD = = = */
-static size_t
-stringify_for_sh(char * pzNew, uint_t qt, char const * pzDta);
-
-static SCM
-shell_stringify(SCM obj, uint_t qt);
-
-static int
-sub_count(char const * haystack, char const * needle);
-
-static void
-do_substitution(
-    char const * src_str,
-    ssize_t      str_len,
-    SCM          match,
-    SCM          repl,
-    char **      ppz_res,
-    ssize_t *    res_len);
-
-static inline void
-tr_char_range(unsigned char * ch_map, unsigned char * from, unsigned char * to);
-/* = = = END-STATIC-FORWARD = = = */
 
 static size_t
 stringify_for_sh(char * pzNew, uint_t qt, char const * pzDta)
@@ -219,14 +196,13 @@ do_substitution(
     }
 }
 
-
-/*
+/**
  *  Recursive routine.  It calls itself for list values and calls
  *  "do_substitution" for string values.  Each substitution will
  *  be done in the order found in the tree walk of list values.
  *  The "match" and "repl" trees *must* be identical in structure.
  */
-LOCAL void
+static void
 do_multi_subs(char ** ppzStr, ssize_t * pStrLen, SCM match, SCM repl)
 {
     char * pzStr = *ppzStr;
@@ -463,10 +439,11 @@ ag_scm_join(SCM sep, SCM list)
  *
  * doc:
  *  Prefix every line in the second string with the first string.
- *  This includes empty lines, though trailing white space will
- *  be removed if the line consists only of the "prefix".
- *  Also, if the last character is a newline, then *two* prefixes will
- *  be inserted into the result text.
+ *  This includes empty lines.  Trailing white space will be removed
+ *  so if the prefix is all horizontal white space, then it will be
+ *  removed from otherwise blank lines.  Also, if the last character
+ *  is a newline, then *two* prefixes will be inserted into the result
+ *  text.
  *
  *  For example, if the first string is "# " and the second contains:
  *  @example
@@ -507,6 +484,9 @@ ag_scm_prefix(SCM prefx, SCM txt)
         r_str = scan = scribble_get((ssize_t)out_size);
     }
 
+    /*
+     * If the text starts with a newline, then do not apply
+     */
     memcpy(scan, prefix, pfx_size);
     scan += pfx_size;
     pfx_size++;

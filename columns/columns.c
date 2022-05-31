@@ -5,11 +5,11 @@
  *  @{
  */
 /*
- *  Columns Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+ *  Columns Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *  Columns is free software.
  *  This file is part of AutoGen.
  *
- *  AutoGen Copyright (C) 1992-2014 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -51,40 +51,26 @@ size_t       columnCt   = 0;
 size_t       columnSz   = 0;
 size_t       indentSize = 0;
 
-/* = = = START-STATIC-FORWARD = = = */
-static void
-fserr_die(char const * fmt, ...);
-
-static inline void *
+MOD_LOCAL inline void *
 malloc_or_die(size_t sz);
-
-static char const *
+MOD_LOCAL char const *
 construct_first_pfx(char const * f_indent);
-
-static uint32_t
+MOD_LOCAL uint32_t
 pad_indentation(char const * pzIndentArg, char const ** pfx);
-
-static void
+MOD_LOCAL void
 readLines(void);
-
-static void
+MOD_LOCAL void
 writeColumns(void);
-
-static void
+MOD_LOCAL void
 trim_last_separation(void);
-
-static void
+MOD_LOCAL void
 writeRows(void);
-
-static int
+MOD_LOCAL int
 emitWord(char const * word, size_t len, int col);
-
-static void
+MOD_LOCAL void
 writeFill(void);
-
-static int
+MOD_LOCAL int
 compProc(const void * p1, const void * p2);
-/* = = = END-STATIC-FORWARD = = = */
 
 int
 main(int argc, char ** argv)
@@ -127,31 +113,17 @@ main(int argc, char ** argv)
     return EXIT_SUCCESS;
 }
 
-
-static void
-fserr_die(char const * fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "%s fserr %d (%s):  ", columnsOptions.pzProgName,
-            errno, strerror(errno));
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    exit(EXIT_FAILURE);
-}
-
-static inline void *
+MOD_LOCAL inline void *
 malloc_or_die(size_t sz)
 {
     void * res = malloc(sz);
-    if (res == NULL) {
-        errno = ENOMEM;
-        fserr_die("could not allocate %d bytes", sz);
-    }
+    if (res == NULL)
+        die(COLUMNS_EXIT_FAILURE, "could not allocate %d bytes", sz);
+
     return res;
 }
 
-static char const *
+MOD_LOCAL char const *
 construct_first_pfx(char const * f_indent)
 {
     static char const pad_fmt[] = "%%-%ds";
@@ -194,7 +166,7 @@ construct_first_pfx(char const * f_indent)
     return res;
 }
 
-static uint32_t
+MOD_LOCAL uint32_t
 pad_indentation(char const * pzIndentArg, char const ** pfx)
 {
     char * pz;
@@ -263,8 +235,7 @@ pad_indentation(char const * pzIndentArg, char const ** pfx)
     return cct;
 }
 
-
-static void
+MOD_LOCAL void
 readLines(void)
 {
     int sepLen = HAVE_OPT(SEPARATION)
@@ -420,8 +391,7 @@ readLines(void)
         columnSz = (size_t)(maxEntryWidth + OPT_VALUE_SPREAD - 1);
 }
 
-
-static void
+MOD_LOCAL void
 writeColumns(void)
 {
     char zFmt[ 12 ];
@@ -567,7 +537,7 @@ writeColumns(void)
     free(pPL);
 }
 
-static void
+MOD_LOCAL void
 trim_last_separation(void)
 {
     char * pz = papzLines[ usedCt-1 ];
@@ -575,7 +545,7 @@ trim_last_separation(void)
     *pz = NUL;
 }
 
-static void
+MOD_LOCAL void
 writeRows(void)
 {
     char zFmt[32];
@@ -652,7 +622,7 @@ writeRows(void)
     }
 }
 
-static int
+MOD_LOCAL int
 emitWord(char const * word, size_t len, int col)
 {
     static int ended_with_period = 0;
@@ -685,7 +655,7 @@ emitWord(char const * word, size_t len, int col)
  *  writeFill -- fill the output.  Pack together as much as will fit
  *  on each line.
  */
-static void
+MOD_LOCAL void
 writeFill(void)
 {
     char ** ppzLL = papzLines;
@@ -754,7 +724,7 @@ writeFill(void)
 /*
  *  Line comparison procedure
  */
-static int
+MOD_LOCAL int
 compProc(const void * p1, const void * p2)
 {
     char const * pz1 = *(char * const *)p1;

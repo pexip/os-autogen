@@ -9,7 +9,7 @@
  */
 /*
  * This file is part of AutoGen.
- * AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ * AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,17 +25,6 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* = = = START-STATIC-FORWARD = = = */
-static void
-trace_macro(templ_t * tpl, macro_t * mac);
-
-static void
-do_stdout_tpl(templ_t * tpl);
-
-static void
-open_output(out_spec_t * spec);
-/* = = = END-STATIC-FORWARD = = = */
-
 /**
  *  Generate all the text within a block.
  *  The caller must know the exact bounds of the block.
@@ -44,7 +33,7 @@ open_output(out_spec_t * spec);
  * @param mac   first macro in series
  * @param emac  one past last macro in series
  */
-LOCAL void
+static void
 gen_block(templ_t * tpl, macro_t * mac, macro_t * emac)
 {
     /*
@@ -175,7 +164,7 @@ do_stdout_tpl(templ_t * tpl)
  * pop the current output spec structure.  Deallocate it and the
  * file name, too, if necessary.
  */
-LOCAL out_spec_t *
+static out_spec_t *
 next_out_spec(out_spec_t * os)
 {
     out_spec_t * res = os->os_next;
@@ -187,7 +176,7 @@ next_out_spec(out_spec_t * os)
     return res;
 }
 
-LOCAL void
+static void
 process_tpl(templ_t * tpl)
 {
     /*
@@ -284,8 +273,51 @@ process_tpl(templ_t * tpl)
     } while (output_specs != NULL);
 }
 
+static void
+set_utime(char const * fname)
+{
+#ifdef HAVE_UTIMENSAT
+    enum { ACCESS_IDX = 0, MODIFY_IDX = 1 };
+    struct timespec const times[2] = {
+        [ACCESS_IDX] = {
+            .tv_sec     = 0,
+            .tv_nsec    = UTIME_OMIT
+        },
+        [MODIFY_IDX] = {
+            .tv_sec     = outfile_time.tv_sec,
+            .tv_nsec    = outfile_time.tv_nsec
+        }
+    };
+    utimensat(AT_FDCWD, fname, times, 0);
 
-LOCAL void
+#else
+    struct utimbuf const tbuf = {
+        .actime  = time(NULL),
+        .modtime = outfile_time
+    };
+
+    /*
+     *  The putative start time is one second earlier than the
+     *  earliest output file time, regardless of when that is.
+     */
+    if (outfile_time <= start_time)
+        start_time = outfile_time - 1;
+
+    utime(fname, &tbuf);
+#endif
+}
+
+/**
+ * close current output file
+ *
+ * @param purge "true" means the output is to be discarded
+ *
+ * Most output files will be set to read only, though that may
+ * get overridden. If the file name has been allocated, then it
+ * is also freed. The current output is set to the next in the
+ * stack.
+ */
+static void
 out_close(bool purge)
 {
     if ((cur_fpstack->stk_flags & FPF_NOCHMOD) == 0)
@@ -308,21 +340,8 @@ out_close(bool purge)
         if (purge || ((cur_fpstack->stk_flags & FPF_UNLINK) != 0))
             unlink(cur_fpstack->stk_fname);
 
-        else {
-            struct utimbuf tbuf;
-
-            tbuf.actime  = time(NULL);
-            tbuf.modtime = outfile_time;
-
-            /*
-             *  The putative start time is one second earlier than the
-             *  earliest output file time, regardless of when that is.
-             */
-            if (outfile_time <= start_time)
-                start_time = outfile_time - 1;
-
-            utime(cur_fpstack->stk_fname, &tbuf);
-        }
+        else
+            set_utime(cur_fpstack->stk_fname);
     }
 
     /*

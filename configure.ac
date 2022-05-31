@@ -4,7 +4,7 @@ dnl
 dnl Author:           Bruce Korb <bkorb@gnu.org>
 dnl
 dnl  This file is part of AutoGen.
-dnl  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+dnl  AutoGen Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
 dnl
 dnl AutoGen is free software: you can redistribute it and/or modify it
 dnl under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@ dnl
 dnl You should have received a copy of the GNU General Public License along
 dnl with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl
-AC_INIT([GNU AutoGen],[5.18.12],[autogen-users@lists.sourceforge.net])
+AC_INIT([GNU AutoGen],[5.18.16],[autogen-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR([agen5/autogen.c])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
@@ -30,7 +30,8 @@ ag_top_builddir=`pwd`]
 AM_INIT_AUTOMAKE([gnu check-news 1.5 dist-xz])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CONFIG_MACRO_DIR([config])
-AC_LIBTOOL_WIN32_DLL    m4_define(AC_PROVIDE_AC_LIBTOOL_WIN32_DLL)
+AC_LIBTOOL_WIN32_DLL
+m4_define(AC_PROVIDE_AC_LIBTOOL_WIN32_DLL)
 AC_PROG_LIBTOOL
 ifdef([AC_REVISION],AC_REVISION($Revision: 4.34 $),)dnl
 [config_start_time=`date +%s 2>/dev/null`]
@@ -106,32 +107,11 @@ fi]
 AC_DEFINE_UNQUOTED([SNV_LONG_DOUBLE],$snv_long_double,
                    [Define this to the long+double type])
 AC_CHECK_TYPES([long long, uintmax_t, size_t, wchar_t])
-AC_CHECK_SIZEOF(char*, 4)
-AC_CHECK_SIZEOF(int,   4)
-AC_CHECK_SIZEOF(long,  4)
-AC_CHECK_SIZEOF(short, 2)
+AC_CHECK_SIZEOF(char*)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(short)
 # ----------------------------------------------------------------------
-AC_CHECK_FUNCS(strchr strlcpy snprintf dlopen)
-AC_SEARCH_LIBS(copysign, [m],
-               [AC_DEFINE(HAVE_COPYSIGN, 1,
-                          [Define to 1 if you have the `copysign' function.])])
-AC_SEARCH_LIBS(copysignl, [m],
-               [AC_DEFINE(HAVE_COPYSIGNL, 1,
-                          [Define to 1 if you have the `copysignl' function.])])
-AC_SEARCH_LIBS(modfl, [m],
-               [AC_DEFINE(HAVE_MODFL, 1,
-                          [Define to 1 if you have the `modfl' function.])])
-
-# ----------------------------------------------------------------------
-# Check for the functions needed from libgen and libdl
-# ----------------------------------------------------------------------
-
-AM_CONDITIONAL([NEED_PATHFIND], [test X$ac_cv_func_pathfind = Xyes])
-[if test X$ac_cv_func_dlopen = Xyes
-then DYNAMIC_AG=-export-dynamic
-else DYNAMIC_AG=""
-fi]
-AC_SUBST(DYNAMIC_AG)
 
 # ----------------------------------------------------------------------
 # Do all our own macros
@@ -215,15 +195,14 @@ else
  INCLIST="${INCLIST} -I\${top_builddir}/autoopts -I\${top_srcdir}/autoopts"
 fi
 ]AC_SUBST(INCLIST)[
-test ${ag_gv} -ge 108000 \
-  -a "X${WERROR}" = Xyes \
-  -a "X${GCC}" = Xyes && \
-    CFLAGS=`echo $CFLAGS -Wall -Werror -Wcast-align -Wmissing-prototypes \
+WARN_CFLAGS=
+test "X${GCC}" = Xyes && {
+  CFLAGS="$CFLAGS -Wno-format-contains-nul -fno-strict-aliasing"
+  WARN_CFLAGS="$CFLAGS "`echo -Wall -Werror -Wcast-align -Wmissing-prototypes \
 	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
-	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=3 \
-	-Wextra -Wno-cast-qual
-`
-]dnl -Wconversion -Wsign-conversion -Wstrict-overflow
+	-Wstrict-aliasing=3 -Wextra -Wno-cast-qual`
+}]dnl -Wconversion -Wsign-conversion -Wstrict-overflow
+AC_SUBST(WARN_CFLAGS)
 AC_CONFIG_HEADER(config.h:config-h.in)
 AH_TOP([#ifndef AUTOGEN_CONFIG_H])
 AH_TOP([#define AUTOGEN_CONFIG_H 1])

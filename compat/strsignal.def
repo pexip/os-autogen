@@ -5,7 +5,7 @@ autogen definitions strsignal;
  *
  *  This file is part of AutoGen.
  *
- *  AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -23,9 +23,9 @@ autogen definitions strsignal;
 
 #shell
 
-RE_sigfind='[A-Z12]+[ 	]+[1-9][0-9]*'
-RE_sigdef='^#[ 	]*define[ 	][ 	]*_*SIG'
-RE_inc='^#[ 	]*include[ 	][ 	]*<'
+RE_sigfind=$'[A-Z12]+[ \t]+[1-9][0-9]*'
+RE_sigdef=$'^#[ \t]*define[ \t][ \t]*_*SIG'
+RE_inc=$'^#[ \t]*include[ \t][ \t]*<'
 
 threshold=5             # minimum number of signals to accept
 num=0                   # number of signals defined in this file

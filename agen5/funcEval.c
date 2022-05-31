@@ -9,7 +9,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,30 +25,12 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* = = = START-STATIC-FORWARD = = = */
-static inline char const *
-tpl_text(templ_t * tpl, macro_t * mac);
-
-static void
-tpl_warning(templ_t * tpl, macro_t * mac, char const * msg);
-
-static char const *
-is_mac_entry_ok(bool * allocated, def_ent_t * ent,
-                int * code, templ_t * tpl, macro_t * mac);
-
-static void
-emit_insertion_file(char const * fname, FILE * outfp);
-
-static int
-expr_type(char * pz);
-/* = = = END-STATIC-FORWARD = = = */
-
 /**
  * Convert SCM to displayable string.
  * @param s the input scm
  * @returns a string a human can read
  */
-LOCAL char const *
+static char const *
 scm2display(SCM s)
 {
     static char  z[48];
@@ -212,7 +194,7 @@ is_mac_entry_ok(bool * allocated, def_ent_t * ent,
  * @param allocated tell caller if result has been allocated
  * @returns a string representing the result.
  */
-LOCAL char const *
+static char const *
 eval_mac_expr(bool * allocated)
 {
     templ_t *     tpl   = current_tpl;
@@ -537,7 +519,7 @@ ag_scm_insert_file(SCM val)
  * @param expr input expression string
  * @returns an SCM value representing the result
  */
-LOCAL SCM
+static SCM
 eval(char const * expr)
 {
     bool   allocated = false;

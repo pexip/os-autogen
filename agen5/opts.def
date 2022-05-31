@@ -7,7 +7,7 @@ addtogroup = 'autogen';
  *  "([12][90][0-9][0-9])"
  *
  *  This file is part of AutoGen.
- *  Copyright (C) 1992-2016 Bruce Korb - all rights reserved
+ *  Copyright (C) 1992-2018 Bruce Korb - all rights reserved
  *
  *  AutoGen is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -24,7 +24,7 @@ addtogroup = 'autogen';
  */
 
 copyright = {
-    date  = "1992-2015";
+    date  = "1992-2018";
     owner = "Bruce Korb";
     eaddr = 'autogen-users@lists.sourceforge.net';
     type  = gpl;
@@ -186,36 +186,6 @@ flag = {
 
     flag-code = "    tpl_fname = pOptDesc->optArg.argString;";
 #else
-    doc = "Pass-through AutoGen argument";
-#endif
-};
-
-flag = {
-    name      = lib-template;
-    value     = l;
-    arg-type  = string;
-    arg-name  = TPL-FILE;
-    descrip   = "Load AutoGen macros from @file{TPL-FILE}";
-    max       = NOLIMIT;
-    deprecated;
-#ifndef XML2AG
-    doc = <<-  _EOF_
-	DEFINE macros are saved from this template file for use in processing
-	the main macro file.  Template text aside from the DEFINE macros is
-	is ignored.
-
-	Do not use this.  Instead, use the INCLUDE macro in your template.
-	_EOF_;
-
-    flag-code = <<- _EOCode_
-	    templ_t * tpl;
-	    processing_state = PROC_STATE_LIB_LOAD;
-	    tpl = tpl_load(pOptDesc->optArg.argString, NULL);
-	    tpl_unload(tpl);
-	    processing_state = PROC_STATE_OPTIONS;
-	_EOCode_;
-#else
-    stack-arg;
     doc = "Pass-through AutoGen argument";
 #endif
 };
@@ -793,7 +763,18 @@ flag = {
 flag = {
     name        = autoopts-opts;
     documentation;
-    descrip = 'help, version and option handling';
+    descrip = 'help, version, option and error handling';
+};
+
+flag = {
+    name       = no-abort;
+    descrip    = "Do not abort on errors";
+
+    doc = <<-  _EOF_
+	By default, @code{AutoGen} will abort on an error leaving behind a core image.
+	That is sometimes inconvenient. If present on the command line or in
+	the environment, AutoGen will call @code{exit(1)} instead of @code{abort()}.
+	_EOF_;
 };
 #endif
 

@@ -5,7 +5,7 @@
 ## Author:	    Bruce Korb <bkorb@gnu.org>
 ##
 ## This file is part of AutoGen.
-## AutoGen Copyright (C) 1992-2015 by Bruce Korb - all rights reserved
+## AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
 ##
 ## AutoGen is free software: you can redistribute it and/or modify it
 ## under the terms of the GNU General Public License as published by the
@@ -23,40 +23,54 @@
 TARG = getdefs
 
 bin_PROGRAMS    = getdefs
-gdsrcs          = getdefs.h proto.h getdefs.c gdemit.c gdinit.c
+getdefs_LDFLAGS = -no-install
+gdsrcs          = getdefs.h proto.h gdemit.c gdinit.c getdefs.c
 getdefs_SOURCES = proto.h
 BUILT_SOURCES   = gd.c
 nodist_getdefs_SOURCES = $(BUILT_SOURCES)
 
 SUBDIRS         = test
 EXTRA_DIST      = opts.def $(gdsrcs)
-RUNAG           = $(AGexe) -L$(top_srcdir)/autoopts/tpl \
-	 -L$(top_builddir)/autoopts/tpl
-
-if AMDEP
-DEP_ARG         = -MF$(DEPDIR)/opts-dep -MT$@ -MP
-INF_DEP         = -b$(TARG) -MF$(DEPDIR)/info-dep -MT$@ -MP
-MAN_DEP         = -b$(TARG) -MF$(DEPDIR)/man-dep  -MTstamp-man -MP
-include $(DEPDIR)/opts-dep
-include $(DEPDIR)/info-dep
-include $(DEPDIR)/man-dep
-else
-DEP_ARG         =
-INF_DEP         =
-MAN_DEP         =
-endif
-
-getdefs_LDADD   = $(top_builddir)/autoopts/libopts.la
-man_MANS        = $(TARG).1
-DOCFILES        = $(TARG).texi $(TARG).menu $(TARG).1
-DISTCLEANFILES  = $(DOCFILES) $(nodist_getdefs_SOURCES) *-stamp
-AM_CPPFLAGS     = @INCLIST@
-AG_ENV          = top_builddir=$(top_builddir) \
-  top_srcdir=$(top_srcdir) PATH=`cd ../columns >/dev/null && pwd`:$$PATH ; \
-  export top_builddir top_srcdir PATH
+AG_ENV          =  top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" \
+	VERBOSE="$(V)"
+RUN_AG          = $(AG_ENV) $(SHELL) "${top_srcdir}/build-aux/run-ag.sh"
 
 all : gen
 gen : $(BUILT_SOURCES) $(DOCFILES)
+
+if AMDEP
+DEPFL_OPTS = $(DEPDIR)/opts-dep.mk
+DEPFL_TEXI = $(DEPDIR)/info-dep.mk
+DEPFL_MAN  = $(DEPDIR)/man-dep.mk
+
+$(DEPFL_OPTS) :
+	$(RUN_AG) "$@"
+include $(DEPFL_OPTS)
+
+$(DEPFL_MAN) :
+	$(RUN_AG) "$@"
+include $(DEPFL_MAN)
+
+$(DEPFL_INFO) :
+	$(RUN_AG) "$@"
+include $(DEPFL_INFO)
+else
+DEPFL_OPTS = $@
+DEPFL_TEXI = $@
+DEPFL_MAN  = $@
+endif
+
+AGARG_OPTS = -MF$(DEPFL_OPTS) -MT$@ -MP
+AGARG_TEXI = -MF$(DEPFL_TEXI) -MT$@ -MP -Tagtexi-cmd
+AGARG_MAN  = -MF$(DEPFL_MAN)  -MT$@ -MP -Tagman-cmd
+
+getdefs_LDADD   = $(top_builddir)/autoopts/libopts.la
+man_MANS        = $(TARG).1
+TEXI_FILES      = $(TARG).texi $(TARG).menu
+DOCFILES        = $(TEXI_FILES) $(man_MANS)
+DISTCLEANFILES  = $(DOCFILES) $(nodist_getdefs_SOURCES) *-stamp
+AM_CPPFLAGS     = @INCLIST@
+AM_CFLAGS       = @WARN_CFLAGS@
 
 gd.c : $(gdsrcs)
 	exec > $@ ; \
@@ -69,23 +83,19 @@ gd.c : $(gdsrcs)
 
 $(getdefs_OBJECTS) opts.h opts.c : stamp-opts
 stamp-opts : opts.def
-	@test -x $(AGexe) || { cd ../agen5   && $(MAKE) $(AGnam) ; }
-	@test -x $(CLexe) || { cd ../columns && $(MAKE) $(CLnam) ; }
-	$(AG_ENV) ; DEPFILE=$(DEPFILE_opts) \
-	  $(RUNAG) $(DEP_ARG) $(srcdir)/opts.def
+	$(RUN_AG) $(AGARG_OPTS) $(srcdir)/opts.def
 
-$(DOCFILES) : stamp-doc
-stamp-doc :
-	@test -x $(TARG)$(EXEEXT) || $(MAKE) $(TARG)$(EXEEXT)
-	@test -x $(AGexe) || { cd ../agen5   && $(MAKE) $(AGnam) ; }
-	@test -x $(CLexe) || { cd ../columns && $(MAKE) $(CLnam) ; }
-	$(AG_ENV) ; \
-	$(RUNAG) $(MAN_DEP) -Tagman-cmd $(srcdir)/opts.def ; \
-	$(RUNAG) $(INF_DEP) -Tagtexi-cmd -DLEVEL=section $(srcdir)/opts.def
+$(man_MANS) : stamp-man
+stamp-man : $(TARG)$(EXEEXT)
+	$(RUN_AG) $(AGARG_MAN)  $(srcdir)/opts.def
+
+$(TEXI_FILES) : stamp-doc
+stamp-doc : $(TARG)$(EXEEXT)
+	$(RUN_AG) $(AGARG_TEXI) -DLEVEL=section $(srcdir)/opts.def
 
 .NOTPARALLEL:
 
-.PHONY : local-maintainer-clean
+.PHONY : local-maintainer-clean stamp-man
 local-maintainer-clean : clean-stamp-opts clean-stamp-doc clean-stamp-man
 	rm -f *~
 

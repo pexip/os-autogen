@@ -10,7 +10,7 @@
  */
 /*
  *  This file is part of AutoGen.
- *  AutoGen Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+ *  AutoGen Copyright (C) 1992-2018 by Bruce Korb - all rights reserved
  *
  * AutoGen is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -39,7 +39,7 @@ KEYWORD_TABLE
 #undef _KW_
 
 #define _KW_(w) z ## w,
-static char const * const kword_table[] = { KEYWORD_TABLE };
+ static char const * const kword_table[] = { KEYWORD_TABLE };
 #undef _KW_
 
 #define _KW_(w) DP_EV_ ## w,
@@ -50,44 +50,6 @@ te_dp_event kword_tkns[] = { KEYWORD_TABLE };
 
 #define ERROR  (-1)
 #define FINISH (-1)
-
-/* = = = START-STATIC-FORWARD = = = */
-static void
-pop_context(void);
-
-static int
-count_nl(char const * pz);
-
-static void
-trim_whitespace(void);
-
-static void
-lex_escaped_char(void);
-
-static tSuccess
-lex_backquote(void);
-
-static tSuccess
-lex_comment(void);
-
-static tSuccess
-lex_dollar(void);
-
-static tSuccess
-lex_here_string(void);
-
-static void
-loadScheme(void);
-
-static void
-alist_to_autogen_def(void);
-
-static char *
-gather_name(char * scan, te_dp_event * ret_val);
-
-static char *
-build_here_str(char * scan);
-/* = = = END-STATIC-FORWARD = = = */
 
 /**
  *  Pop off an include context and resume from the including file.
@@ -307,7 +269,7 @@ lex_here_string(void)
  *
  *   LEXICAL SCANNER
  */
-LOCAL te_dp_event
+static te_dp_event
 yylex(void)
 {
 #define SET_LIT_TKN(t) \
@@ -374,7 +336,7 @@ scan_again:
         if (lex_dollar() == SUCCESS)
             break;
         goto bad_token;
-        
+
     case '<':
         switch (lex_here_string()) {
         case SUCCESS: break;
@@ -440,7 +402,7 @@ scan_again:
 }
 
 
-LOCAL void
+static void
 yyerror(char * s)
 {
     char * pz;

@@ -129,8 +129,8 @@ The following option preset mechanisms are supported:
  - reading file ./.columnsrc
  - reading file $HOME/.columnsrc
  - examining environment variables named COLUMNS_*
-Packaged by Bruce (2016-08-29)
-Report columns bugs to bkorb@@gnu.org
+
+Please send bug reports to:  <autogen-users@@lists.sourceforge.net>
 @end example
 @exampleindent 4
 

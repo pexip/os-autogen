@@ -1,3 +1,9 @@
+autogen (1:5.18.16-4pexip1) pexip; urgency=medium
+
+  * Initial bullseye build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 02 Jun 2022 14:42:01 +0100
+
 autogen (1:5.18.16-4) unstable; urgency=low
 
   * Improved reproducible build on merged /usr system, pass paths for shell

@@ -1,3 +1,16 @@
+autogen (1:5.18.16-5) unstable; urgency=low
+
+  * Pull a couple of patches from Suse:
+    + 40_suse_01-autogen-catch-race-error.patch
+    + 40_suse_03-gcc9-fix-wrestrict.patch
+    + 40_suse_04-guile-version.patch (allows building against guile-3.0)
+    + 40_suse_05-sprintf-overflow.patch
+    + 40_suse_06-autogen-avoid-GCC-code-analysis-bug.patch
+    + 40_suse_07-installable-programs.patch
+  * Build against guile-3.0 Closes: #969697 (Thanks, Vagrant Cascadian)
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 24 May 2022 19:13:45 +0200
+
 autogen (1:5.18.16-4pexip3) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion

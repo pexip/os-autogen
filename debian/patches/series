@@ -2,3 +2,9 @@
 20_no_Werror.diff
 30_ag_macros.m4_syntax_error.diff
 31_allow_overriding_AGexe_for_crossbuild.diff
+40_suse_01-autogen-catch-race-error.patch
+40_suse_03-gcc9-fix-wrestrict.patch
+40_suse_04-guile-version.patch
+40_suse_05-sprintf-overflow.patch
+40_suse_06-autogen-avoid-GCC-code-analysis-bug.patch
+40_suse_07-installable-programs.patch

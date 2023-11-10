@@ -21,7 +21,8 @@ override_dh_auto_configure:
 		--enable-timeout=78 \
 		--with-libxml2-libs="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --libs libxml-2.0)" \
 		--with-libxml2-cflags="$(shell $(DEB_HOST_GNU_TYPE)-pkg-config --cflags libxml-2.0)" \
-		GREP=/bin/grep POSIX_SHELL=/bin/sh SHELL=/bin/sh
+		GREP=/bin/grep POSIX_SHELL=/bin/sh SHELL=/bin/sh \
+		GUILE=/usr/bin/guile-3.0
 
 override_dh_auto_build:
 	dh_auto_build --verbose

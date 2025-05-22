@@ -1,3 +1,42 @@
+autogen (1:5.18.16-7) unstable; urgency=medium
+
+  * Revert "Stop labeling autogen Multi-Arch: foreign." for trixie.
+    (Closes: #1105138)
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 22 May 2025 18:52:45 +0200
+
+autogen (1:5.18.16-6) unstable; urgency=medium
+
+  [ Bastian Germann ]
+  * Fix binaries-have-file-conflict for autoopts.m4 Closes: #1104969
+  * Fix mismatched-override spelling-error-in-readme-debian
+
+  [ Andreas Metzler ]
+  * Revert noop change in previous NMU. It invoked dpkg-parsechangelog in
+    debian/rules instead of using SOURCE_DATE_EPOCH as exported by
+    usr/share/dpkg/pkg-info.mk. Both yield the same result.
+  * Use mtime of NEWS as manpage date instead of SOURCE_DATE_EPOCH.
+    The latter used to be binNMU-invariant but is not anymore.
+    (Closes: #1104867)
+  * libopts25-dev needs Breaks/Replaces: autogen (<< 1:5.18.16-6)
+    (related to 1104969)
+  * Stop labeling autogen Multi-Arch: foreign.
+    It ships both a pkgconfig file in an arch dependent path and a
+    config-script which returns an arch dependent path. (Thanks, lintian)
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 10 May 2025 18:10:49 +0200
+
+autogen (1:5.18.16-5.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Drop versioned constraint on tar
+  * Record changelog date in manpages (Closes: #1104867)
+
+  [ Andreas Metzler ]
+  * Drop ancient (2014 and pre-2008) Breaks/Conflicts/Replaces.
+
+ -- Bastian Germann <bage@debian.org>  Thu, 08 May 2025 20:03:08 +0200
+
 autogen (1:5.18.16-5) unstable; urgency=low
 
   * Pull a couple of patches from Suse:

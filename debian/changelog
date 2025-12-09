@@ -1,3 +1,9 @@
+autogen (1:5.18.16-7+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream release
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 09 Dec 2025 11:32:32 +0000
+
 autogen (1:5.18.16-7) unstable; urgency=medium
 
   * Revert "Stop labeling autogen Multi-Arch: foreign." for trixie.

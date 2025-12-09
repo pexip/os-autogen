@@ -1,7 +1,6 @@
 usr/lib/*/pkgconfig/autoopts.pc
 usr/lib/*/autogen/tpl-config.tlib
 usr/share/info/autogen.info*
-usr/share/aclocal/autoopts.m4
 usr/share/autogen/*
 usr/share/man/man1/*
 usr/bin/autoopts-config

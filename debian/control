@@ -9,7 +9,6 @@ Build-Depends: chrpath,
  guile-3.0-dev,
  libxml2-dev,
  pkg-config,
- tar (>= 1.28),
  autogen <cross>
 Build-Depends-Indep: texinfo, texlive, cm-super-minimal
 Standards-Version: 4.5.0
@@ -42,10 +41,9 @@ Description: automated text file generator
 
 Package: autogen-doc
 Section: doc
-Breaks: autogen (<< 1:5.18.3-4)
-Replaces: autogen (<< 1:5.18.3-4)
 Depends: ${misc:Depends}
 Architecture: all
+Multi-Arch: foreign
 Description: automated text file generator - documentation
  AutoGen is a tool designed for generating program files that contain
  repetitive text with varied substitutions. This is especially valuable if
@@ -57,7 +55,6 @@ Package: libopts25
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Replaces: autogen
 Section: libs
 Multi-Arch: same
 Description: automated option processing library based on autogen
@@ -70,8 +67,8 @@ Package: libopts25-dev
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: libopts25 (= ${binary:Version}), ${misc:Depends}
-Conflicts: libopts9-dev
-Replaces: autogen, libopts9-dev
+Breaks: autogen (<< 1:5.18.16-6)
+Replaces: autogen (<< 1:5.18.16-6)
 Section: libdevel
 Multi-Arch: same
 Description: automated option processing library based on autogen
